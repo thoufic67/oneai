@@ -1,0 +1,13 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+Techstack
+Always use the following
+- HeroUI
+- Tailwindcss
+- NextJs
+- Framer motion
+- Lucide
