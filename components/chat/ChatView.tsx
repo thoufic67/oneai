@@ -1,3 +1,5 @@
+import React, { useRef, useEffect } from "react";
+
 // Types for the chat messages
 interface Message {
   role: "user" | "assistant";
@@ -9,6 +11,17 @@ interface ChatViewProps {
 }
 
 export function ChatView({ messages }: ChatViewProps) {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   return (
     <div className="h-[600px] overflow-y-auto pr-4">
       <div className="flex flex-col gap-4">
@@ -39,6 +52,7 @@ export function ChatView({ messages }: ChatViewProps) {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
     </div>
   );

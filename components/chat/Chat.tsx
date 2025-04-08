@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { ChatInput } from "./ChatInput";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { ChatInput, ChatInputHandle } from "./ChatInput";
 import { ChatView } from "./ChatView";
+import { chatService } from "@/services/api";
 
 interface Message {
   role: "user" | "assistant";
@@ -11,34 +12,91 @@ interface Message {
 
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [streamingMessage, setStreamingMessage] = useState<Message | null>(
+    null
+  );
+  const chatInputRef = useRef<ChatInputHandle>(null);
+
+  useEffect(() => {
+    if (chatInputRef.current) {
+      chatInputRef.current.focus();
+    }
+  }, []);
 
   const handleSubmit = async (content: string) => {
-    // Add user message
-    const userMessage: Message = { role: "user", content };
-    setMessages((prev) => [...prev, userMessage]);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    // Simulate AI response (replace this with actual API call)
-    const aiMessage: Message = {
-      role: "assistant",
-      content:
-        "This is a simulated AI response. Replace this with actual API integration.",
-    };
+      // Add user message
+      const userMessage: Message = { role: "user", content };
+      setMessages((prev) => [...prev, userMessage]);
 
-    // Add AI response after a short delay to simulate processing
-    setTimeout(() => {
-      setMessages((prev) => [...prev, aiMessage]);
-    }, 1000);
+      // Initialize streaming message
+      setStreamingMessage({ role: "assistant", content: "" });
+
+      // Get AI response with streaming
+      await chatService.createChatCompletion(
+        {
+          messages: [...messages, userMessage],
+          stream: true,
+        },
+        (chunk) => {
+          // Immediately update UI with each chunk
+          setStreamingMessage((prev) =>
+            prev
+              ? { ...prev, content: prev.content + chunk }
+              : { role: "assistant", content: chunk }
+          );
+        },
+        (final) => {
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: final },
+          ]);
+          setStreamingMessage(null);
+          // Focus the chat input after response is complete
+          chatInputRef.current?.focus();
+        }
+      );
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+      console.error("Chat error:", error);
+      setStreamingMessage(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  // Combine regular messages with streaming message for display
+  const displayMessages = useMemo(() => {
+    return streamingMessage !== null
+      ? [...messages, streamingMessage]
+      : messages;
+  }, [messages, streamingMessage]);
 
   return (
     <div className="flex flex-col gap-4">
-      {messages.length > 0 ? (
+      {error && (
+        <div className="p-4 text-red-500 bg-red-100 rounded">{error}</div>
+      )}
+      {displayMessages.length > 0 ? (
         <>
-          <ChatView messages={messages} />
-          <ChatInput onSubmit={handleSubmit} />
+          <ChatView messages={displayMessages} />
+          <ChatInput
+            ref={chatInputRef}
+            onSubmit={handleSubmit}
+            disabled={isLoading}
+          />
         </>
       ) : (
-        <ChatInput onSubmit={handleSubmit} />
+        <ChatInput
+          ref={chatInputRef}
+          onSubmit={handleSubmit}
+          disabled={isLoading}
+        />
       )}
     </div>
   );
