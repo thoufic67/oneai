@@ -6,8 +6,15 @@ alwaysApply: true
 
 Techstack
 Always use the following
-- HeroUI
-- Tailwindcss
+- HeroUI components
+- Tailwindcss for css
 - NextJs
-- Framer motion
-- Lucide
+- Framer motion for animation
+- Lucide for any icons
+
+Important: 
+* Never try to use a different component library
+* Don't use the older next ui components always use heroui
+
+
+Feel free to use the playwright tool to open in browser for testing after making the file changes

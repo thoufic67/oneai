@@ -50,8 +50,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="How can I help you today?"
-              className="w-full border-0 bg-transparent p-0 focus:ring-0"
+              className="w-full border-0 bg-transparent p-0 focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none min-h-[100px] resize-y"
               disabled={disabled}
+              size="md"
             />
           </div>
 
