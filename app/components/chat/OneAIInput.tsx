@@ -15,7 +15,7 @@ interface ModelOption {
   value: string;
 }
 
-interface GlowingInputProps {
+interface OneAIInputProps {
   classNames?: {
     inputWrapper?: string;
     label?: string;
@@ -38,7 +38,7 @@ interface GlowingInputProps {
   onModelChange?: (model: string) => void;
 }
 
-const GlowingInput = forwardRef<HTMLTextAreaElement, GlowingInputProps>(
+const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
   (props, ref) => {
     const { theme } = useTheme();
     const {
@@ -160,7 +160,7 @@ const GlowingInput = forwardRef<HTMLTextAreaElement, GlowingInputProps>(
   }
 );
 
-GlowingInput.displayName = "GlowingInput";
+OneAIInput.displayName = "OneAIInput";
 
-export default GlowingInput;
-export { GlowingInput };
+export default OneAIInput;
+export { OneAIInput };

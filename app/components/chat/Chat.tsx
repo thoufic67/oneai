@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { chatService } from "@/services/api";
 import { ChatBubble } from "./ChatBubble";
-import { GlowingInput } from "./GlowingInput";
+import { OneAIInput } from "./OneAIInput";
 import {
   Button,
   Chip,
@@ -148,7 +148,7 @@ export function Chat() {
   // Create shared input component to avoid duplication
   const renderChatInput = () => (
     <div className="flex flex-col gap-2">
-      <GlowingInput
+      <OneAIInput
         ref={inputRef}
         disabled={isLoading}
         value={inputMessage}
