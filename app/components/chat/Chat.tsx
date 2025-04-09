@@ -58,7 +58,7 @@ export function Chat() {
   );
   const [inputMessage, setInputMessage] = useState("");
   const [selectedModel, setSelectedModel] = useState<ModelType>(
-    models[2].value
+    models[1].value
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
