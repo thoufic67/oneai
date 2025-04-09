@@ -86,8 +86,8 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
 
   if (!inline && match) {
     return (
-      <div className="relative group">
-        <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto">
+      <div className="relative group max-w-[95%] overflow-x-auto">
+        <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto max-w-full">
           <code className={className} {...props}>
             {children}
           </code>
@@ -212,13 +212,17 @@ export function ChatBubble({
 
   return (
     <motion.div
-      className={`flex w-full p-2 ${isAssistant ? "justify-start" : "justify-end"}`}
+      className={`flex w-full max-w-full p-2 ${isAssistant ? "justify-start" : "justify-end"}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       <div className={`flex gap-2 max-w-full break-words text-wrap w-fit`}>
-        <motion.div className={`flex flex-col gap-2 w-full items-end w-fit`}>
+        <motion.div
+          className={`flex flex-col gap-2 w-full ${
+            isAssistant ? "items-start" : "items-end"
+          } w-fit`}
+        >
           {!isAssistant && (
             <Avatar
               src="https://ui-avatars.com/api/?name=T"
@@ -233,7 +237,7 @@ export function ChatBubble({
                 : "items-end bg-primary text-white shadow-md px-4 py-2"
             } w-fit relative`}
           >
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap markdown-content">
+            <div className="prose prose-sm dark:prose-invert max-w-3xl relative overflow-x-auto whitespace-pre-wrap markdown-content">
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={MarkdownComponents}
