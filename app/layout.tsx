@@ -38,10 +38,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${inter.className} min-h-screen font-sans antialiased`}>
+      <body className={`${inter.className} font-sans antialiased`}>
         <Providers>
           <BackgroundGradient />
-          <div className="relative flex flex-col h-screen">
+          <div className="relative flex flex-col">
             {/* <Navbar /> */}
             <main className="container mx-auto max-w-7xl pt-6 px-6 flex-grow">
               {children}

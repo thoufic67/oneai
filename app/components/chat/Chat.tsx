@@ -11,6 +11,7 @@ import {
   NavbarContent,
   NavbarBrand,
   NavbarItem,
+  Tooltip,
 } from "@heroui/react";
 import { AlertCircle, Send, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -200,15 +201,17 @@ export function Chat() {
         </NavbarBrand>
         <NavbarContent justify="end">
           <NavbarItem>
-            <Button
-              isIconOnly
-              variant="ghost"
-              radius="full"
-              onPress={handleNewChat}
-              aria-label="New Chat"
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+            <Tooltip content="New Chat">
+              <Button
+                isIconOnly
+                variant="ghost"
+                radius="full"
+                onPress={handleNewChat}
+                aria-label="New Chat"
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </Tooltip>
           </NavbarItem>
         </NavbarContent>
       </Navbar>
