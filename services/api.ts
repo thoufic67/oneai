@@ -9,6 +9,7 @@ interface ChatCompletionRequest {
   messages: Message[];
   model?: string;
   stream?: boolean;
+  web?: boolean;
 }
 
 class ChatService {

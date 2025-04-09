@@ -4,10 +4,17 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { chatService } from "@/services/api";
 import { ChatBubble } from "./ChatBubble";
 import { GlowingInput } from "./GlowingInput";
-import { Button, Chip } from "@heroui/react";
-import { Send } from "lucide-react";
-import { motion } from "framer-motion";
-
+import {
+  Button,
+  Chip,
+  Navbar,
+  NavbarContent,
+  NavbarBrand,
+  NavbarItem,
+} from "@heroui/react";
+import { AlertCircle, Send, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -53,13 +60,15 @@ export function Chat() {
   const [selectedModel, setSelectedModel] = useState<ModelType>(
     models[2].value
   );
+  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    // Remove auto-focus on initial load
+    // if (inputRef.current) {
+    //   inputRef.current.focus();
+    // }
   }, []);
 
   useEffect(() => {
@@ -94,6 +103,7 @@ export function Chat() {
           messages: [...messages, userMessage],
           stream: true,
           model: selectedModel,
+          web: webSearchEnabled,
         },
         (chunk) => {
           // Immediately update UI with each chunk
@@ -122,142 +132,153 @@ export function Chat() {
     }
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setStreamingMessage(null);
+    setError(null);
+    setInputMessage("");
+    inputRef.current?.focus();
+  };
+
   // Combine regular messages with streaming message for display
   const displayMessages = useMemo(() => {
     return messages;
   }, [messages]);
 
-  return (
-    <div className="flex flex-col h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)] mx-auto">
-      {messages.length === 0 ? (
-        <div className="flex flex-col h-full justify-center items-center">
-          <motion.div className="flex flex-col justify-center items-center gap-4 mb-8">
-            <p className="text-left text-3xl font-normal delay-100 sm:text-4xl md:text-5xl leading-9">
-              <span className="drop-shadow-2xl relative mb-5 duration-700 transition-[opacity,filter] text-transparent bg-clip-text bg-gradient-to-r to-purple-400 from-pink-600">
-                Hello!
-              </span>
-              <br />
-              <span className="drop-shadow-2xl text-gray-500">
-                How can I help you today?
-              </span>
-            </p>
-          </motion.div>
-          <div className="w-full max-w-3xl px-4">
-            <div className="flex flex-col gap-2">
-              <GlowingInput
-                ref={inputRef}
-                disabled={isLoading}
-                value={inputMessage}
-                onValueChange={setInputMessage}
-                placeholder="Ask AI anything"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                endContent={
-                  <Button
-                    isIconOnly
-                    variant="ghost"
-                    radius="full"
-                    onPress={handleSubmit}
-                    isDisabled={isLoading}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                }
-              />
-              <div className="flex gap-2 justify-center">
-                {models.map((model) => (
-                  <Chip
-                    key={model.value}
-                    variant={selectedModel === model.value ? "flat" : "light"}
-                    color="secondary"
-                    radius="full"
-                    className="cursor-pointer"
-                    onClick={() => setSelectedModel(model.value as ModelType)}
-                  >
-                    {model.name}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div
-            className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
-            ref={chatContainerRef}
+  // Create shared input component to avoid duplication
+  const renderChatInput = () => (
+    <div className="flex flex-col gap-2">
+      <GlowingInput
+        ref={inputRef}
+        disabled={isLoading}
+        value={inputMessage}
+        onValueChange={setInputMessage}
+        placeholder="Ask AI anything"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+          }
+        }}
+        endContent={
+          <Button
+            isIconOnly
+            variant="ghost"
+            radius="full"
+            onPress={handleSubmit}
+            isDisabled={isLoading}
           >
-            {displayMessages.map((message, index) => (
-              <ChatBubble
-                key={index}
-                isAssistant={message.role === "assistant"}
-                content={message.content}
-                isLoading={message === streamingMessage && isLoading}
-              />
-            ))}
-            {streamingMessage && (
-              <ChatBubble
-                isAssistant={true}
-                content={streamingMessage.content}
-                isLoading={true}
-              />
-            )}
-          </div>
+            <Send className="h-4 w-4" />
+          </Button>
+        }
+        modelOptions={models}
+        selectedModel={selectedModel}
+        onModelChange={(model) => setSelectedModel(model as ModelType)}
+        webSearchEnabled={webSearchEnabled}
+        onWebSearchToggle={setWebSearchEnabled}
+      />
+    </div>
+  );
 
-          {error && (
-            <div className="p-4 text-red-500 bg-red-100 rounded">{error}</div>
-          )}
+  return (
+    <div className="flex flex-col h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)] mx-auto max-w-3xl">
+      <Navbar className="bg-transparent">
+        <NavbarBrand>
+          <p className="font-bold text-inherit">OneAI</p>
+        </NavbarBrand>
+        <NavbarContent justify="end">
+          <NavbarItem>
+            <Button
+              isIconOnly
+              variant="ghost"
+              radius="full"
+              onPress={handleNewChat}
+              aria-label="New Chat"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </NavbarItem>
+        </NavbarContent>
+      </Navbar>
 
-          <div className="sticky bottom-0 left-0 right-0 w-full bg-background/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
-            <div className="max-w-4xl mx-auto p-4">
-              <div className="flex flex-col gap-2">
-                <GlowingInput
-                  ref={inputRef}
-                  disabled={isLoading}
-                  value={inputMessage}
-                  onValueChange={setInputMessage}
-                  placeholder="Ask AI anything"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit();
-                    }
-                  }}
-                  endContent={
-                    <Button
-                      isIconOnly
-                      variant="ghost"
-                      radius="full"
-                      onPress={handleSubmit}
-                      isDisabled={isLoading}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  }
+      <AnimatePresence mode="wait">
+        {messages.length === 0 ? (
+          <motion.div
+            key="empty-state"
+            className="flex flex-col h-full justify-center items-center -mt-24"
+          >
+            <motion.div className="flex flex-col justify-center items-center gap-4 mb-8">
+              <p className="text-left text-3xl font-normal delay-100 sm:text-4xl md:text-5xl leading-9">
+                <span className="drop-shadow-2xl relative mb-5 duration-700 transition-[opacity,filter] text-transparent bg-clip-text bg-gradient-to-r to-purple-400 from-pink-600">
+                  Hello!
+                </span>
+                <br />
+                <span className="drop-shadow-2xl text-gray-500">
+                  How can I help you today?
+                </span>
+              </p>
+            </motion.div>
+            <motion.div
+              className="w-full max-w-3xl px-4"
+              layout
+              layoutId="chat-input-container"
+            >
+              {renderChatInput()}
+            </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="chat-view"
+            className="flex flex-col h-full w-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div
+              className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
+              ref={chatContainerRef}
+            >
+              {displayMessages.map((message, index) => (
+                <ChatBubble
+                  key={index}
+                  isAssistant={message.role === "assistant"}
+                  content={message.content}
+                  isLoading={message === streamingMessage && isLoading}
                 />
-                <div className="flex gap-2 justify-center">
-                  {models.map((model) => (
-                    <Chip
-                      key={model.value}
-                      variant={selectedModel === model.value ? "flat" : "light"}
-                      color="secondary"
-                      radius="full"
-                      className="cursor-pointer"
-                      onClick={() => setSelectedModel(model.value as ModelType)}
-                    >
-                      {model.name}
-                    </Chip>
-                  ))}
-                </div>
-              </div>
+              ))}
+              {streamingMessage && (
+                <ChatBubble
+                  isAssistant={true}
+                  content={streamingMessage.content}
+                  isLoading={true}
+                />
+              )}
+              <Image
+                src="/loading-animation.svg"
+                alt="logo"
+                width={100}
+                height={100}
+                className={`w-8 h-8 ${isLoading ? "animate-spin" : ""}`}
+              />
             </div>
-          </div>
-        </>
-      )}
+
+            {error && (
+              <div className="p-4 text-red-500 bg-red-100 rounded mb-4 mx-auto flex items-center gap-2 rounded-lg">
+                <AlertCircle className="w-4 h-4" />
+                {error || "An error occurred"}
+              </div>
+            )}
+
+            <motion.div
+              className="sticky bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800"
+              layout
+              layoutId="chat-input-container"
+            >
+              <div className="max-w-3xl mx-auto p-4">{renderChatInput()}</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
