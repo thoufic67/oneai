@@ -63,7 +63,7 @@ export function Chat() {
   );
   const [inputMessage, setInputMessage] = useState("");
   const [selectedModel, setSelectedModel] = useState<ModelType>(
-    models[1].value
+    models[0].value
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -220,11 +220,10 @@ export function Chat() {
             className="flex flex-col h-full justify-center items-center -mt-24"
           >
             <motion.div className="flex flex-col justify-center items-center gap-4 mb-8">
-              <p className="text-left text-3xl font-normal delay-100 sm:text-4xl md:text-5xl leading-9">
+              <p className="text-left text-xl font-normal delay-100 sm:text-2xl md:text-3xl leading-9">
                 <span className="drop-shadow-2xl relative mb-5 duration-700 transition-[opacity,filter] text-transparent bg-clip-text bg-gradient-to-r to-purple-400 from-pink-600">
                   Hello!
-                </span>
-                <br />
+                </span>{" "}
                 <span className="drop-shadow-2xl text-gray-500">
                   How can I help you today?
                 </span>

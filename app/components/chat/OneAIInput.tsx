@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownItem,
   Button,
+  Chip,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { forwardRef, useState } from "react";
@@ -108,10 +109,10 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
             <div className="flex items-center justify-start gap-2 mt-2">
               <button
                 onClick={toggleWebSearch}
-                className={`flex items-center space-x-1 rounded-full px-3 py-2 text-xs border border-gray-300  ${
+                className={`flex items-center space-x-1 rounded-full px-3 py-2 text-xs border border-default-300  ${
                   isWebSearchEnabled
-                    ? "bg-violet-600 text-white "
-                    : "bdark:border-gray-800 bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                    ? "bg-primary text-white "
+                    : "text-default-500"
                 } transition-colors duration-300`}
                 type="button"
               >
@@ -123,11 +124,11 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
                 <Dropdown>
                   <DropdownTrigger>
                     <Button
-                      variant="flat"
-                      color="secondary"
+                      variant="solid"
+                      color="primary"
                       size="sm"
                       radius="full"
-                      className="text-xs flex items-center gap-1"
+                      className="text-xs flex items-center gap-1 border border-default-300 "
                     >
                       {selectedModelName}
                       <ChevronDown className="h-3 w-3" />
