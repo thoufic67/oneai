@@ -3,12 +3,10 @@ import { PasswordForm } from "@/app/components/PasswordForm";
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center justify-between p-4 md:p-4">
-      <div className="w-full mx-auto space-y-8">
-        <PasswordForm>
-          <Chat />
-        </PasswordForm>
-      </div>
-    </main>
+    <div className="w-full mx-auto space-y-8">
+      <PasswordForm>
+        <Chat />
+      </PasswordForm>
+    </div>
   );
 }

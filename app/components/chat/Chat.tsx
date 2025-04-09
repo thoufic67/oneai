@@ -4,22 +4,27 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { chatService } from "@/services/api";
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
-import {
-  Button,
-  Chip,
-  Navbar,
-  NavbarContent,
-  NavbarBrand,
-  NavbarItem,
-  Tooltip,
-} from "@heroui/react";
-import { AlertCircle, Send, Plus } from "lucide-react";
+import { Sidebar } from "./Sidebar";
+import { Button } from "@heroui/react";
+import { AlertCircle, Send, Plus, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { v4 as uuidv4 } from "uuid";
+
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  timestamp: number;
+  model: ModelType;
+  webSearchEnabled: boolean;
+}
+
 interface Model {
   name: string;
   value: ModelType;
@@ -67,15 +72,61 @@ export function Chat() {
     models[0].value
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Load chat history from localStorage on mount
   useEffect(() => {
-    // Remove auto-focus on initial load
-    // if (inputRef.current) {
-    //   inputRef.current.focus();
-    // }
+    const savedChats = localStorage.getItem("oneai-chat-history");
+    if (savedChats) {
+      try {
+        const parsedChats = JSON.parse(savedChats) as ChatSession[];
+        setChatHistory(parsedChats);
+
+        // If there's an active chat, load it
+        if (parsedChats.length > 0) {
+          const mostRecentChat = parsedChats.sort(
+            (a: ChatSession, b: ChatSession) => b.timestamp - a.timestamp
+          )[0];
+          setCurrentChatId(mostRecentChat.id);
+          setMessages(mostRecentChat.messages);
+          setSelectedModel(mostRecentChat.model);
+          setWebSearchEnabled(mostRecentChat.webSearchEnabled);
+        }
+      } catch (error) {
+        console.error("Error parsing chat history:", error);
+      }
+    }
   }, []);
+
+  // Save chat history when messages or current chat changes
+  useEffect(() => {
+    if (!currentChatId || messages.length === 0) return;
+
+    // Update the current chat in history
+    setChatHistory((prevHistory) => {
+      const updatedHistory = prevHistory.map((chat) =>
+        chat.id === currentChatId
+          ? {
+              ...chat,
+              messages,
+              timestamp: Date.now(),
+              model: selectedModel,
+              webSearchEnabled,
+            }
+          : chat
+      );
+
+      localStorage.setItem(
+        "oneai-chat-history",
+        JSON.stringify(updatedHistory)
+      );
+      return updatedHistory;
+    });
+  }, [messages, currentChatId, selectedModel, webSearchEnabled]);
 
   useEffect(() => {
     scrollToBottom();
@@ -88,6 +139,10 @@ export function Chat() {
     }
   };
 
+  const toggleSidebar = () => {
+    setSidebarExpanded(!sidebarExpanded);
+  };
+
   const handleSubmit = async () => {
     if (inputMessage.trim().length === 0) return;
 
@@ -97,8 +152,34 @@ export function Chat() {
 
       // Add user message
       const userMessage: Message = { role: "user", content: inputMessage };
-      setMessages((prev) => [...prev, userMessage]);
+      const updatedMessages = [...messages, userMessage];
+      setMessages(updatedMessages);
       setInputMessage("");
+
+      // Create a new chat if this is the first message
+      if (!currentChatId) {
+        const newChatId = uuidv4();
+        const newChat: ChatSession = {
+          id: newChatId,
+          title:
+            userMessage.content.slice(0, 30) +
+            (userMessage.content.length > 30 ? "..." : ""),
+          messages: updatedMessages,
+          timestamp: Date.now(),
+          model: selectedModel,
+          webSearchEnabled,
+        };
+
+        setCurrentChatId(newChatId);
+        setChatHistory((prevHistory) => {
+          const newChatHistory = [newChat, ...prevHistory];
+          localStorage.setItem(
+            "oneai-chat-history",
+            JSON.stringify(newChatHistory)
+          );
+          return newChatHistory;
+        });
+      }
 
       // Initialize streaming message
       setStreamingMessage({ role: "assistant", content: "" });
@@ -106,7 +187,10 @@ export function Chat() {
       // Get AI response with streaming
       await chatService.createChatCompletion(
         {
-          messages: [...messages, userMessage],
+          messages: updatedMessages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
           stream: true,
           model: selectedModel,
           web: webSearchEnabled,
@@ -120,11 +204,34 @@ export function Chat() {
           );
         },
         (final) => {
-          setMessages((prev) => [
-            ...prev,
-            { role: "assistant", content: final },
-          ]);
+          const finalResponse: Message = { role: "assistant", content: final };
+          const finalMessages = [...updatedMessages, finalResponse];
+          setMessages(finalMessages);
           setStreamingMessage(null);
+
+          // Update chat history with assistant's response
+          if (currentChatId) {
+            setChatHistory((prevHistory) => {
+              const updatedHistory = prevHistory.map((chat) =>
+                chat.id === currentChatId
+                  ? {
+                      ...chat,
+                      messages: finalMessages,
+                      timestamp: Date.now(),
+                      model: selectedModel,
+                      webSearchEnabled,
+                    }
+                  : chat
+              );
+
+              localStorage.setItem(
+                "oneai-chat-history",
+                JSON.stringify(updatedHistory)
+              );
+              return updatedHistory;
+            });
+          }
+
           // Focus the chat input after response is complete
           inputRef.current?.focus();
         }
@@ -143,7 +250,25 @@ export function Chat() {
     setStreamingMessage(null);
     setError(null);
     setInputMessage("");
+    setCurrentChatId(null);
+    setSelectedModel(models[0].value);
+    setWebSearchEnabled(false);
+    setSidebarExpanded(false);
     inputRef.current?.focus();
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    const selectedChat = chatHistory.find((chat) => chat.id === chatId);
+    if (selectedChat) {
+      setCurrentChatId(chatId);
+      setMessages(selectedChat.messages);
+      setSelectedModel(selectedChat.model);
+      setWebSearchEnabled(selectedChat.webSearchEnabled);
+      setStreamingMessage(null);
+      setError(null);
+      setInputMessage("");
+      setSidebarExpanded(false);
+    }
   };
 
   // Combine regular messages with streaming message for display
@@ -187,112 +312,94 @@ export function Chat() {
   );
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)] mx-auto max-w-3xl">
-      <Navbar className="bg-transparent rounded-lg bg-primary-100/10 backdrop-blur-lg">
-        <NavbarBrand>
-          <Image
-            src="/one-ai-favicon.svg"
-            alt="OneAI Logo"
-            width={24}
-            height={24}
-            className="mr-2"
-          />
-          <p className="font-bold text-inherit">OneAI</p>
-        </NavbarBrand>
-        <NavbarContent justify="end">
-          <NavbarItem>
-            <Tooltip content="New Chat">
-              <Button
-                isIconOnly
-                variant="ghost"
-                radius="full"
-                onPress={handleNewChat}
-                aria-label="New Chat"
+    <div className="flex h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)]">
+      <Sidebar
+        onNewChat={handleNewChat}
+        onSelectChat={handleSelectChat}
+        currentChatId={currentChatId}
+        expanded={sidebarExpanded}
+        onToggle={toggleSidebar}
+      />
+
+      <div className="flex flex-col flex-1 max-w-3xl mx-auto w-full">
+        <AnimatePresence mode="wait">
+          {messages.length === 0 ? (
+            <motion.div
+              key="empty-state"
+              className="flex flex-col h-full justify-center items-center -mt-24"
+            >
+              <motion.div className="flex flex-col justify-center items-center gap-4 mb-8">
+                <p className="text-left text-xl font-normal delay-100 sm:text-2xl md:text-3xl leading-9">
+                  <span className="drop-shadow-2xl relative mb-5 duration-700 transition-[opacity,filter] text-transparent bg-clip-text bg-gradient-to-r to-purple-400 from-pink-600">
+                    Hello!
+                  </span>{" "}
+                  <span className="drop-shadow-2xl text-gray-500">
+                    How can I help you today?
+                  </span>
+                </p>
+              </motion.div>
+              <motion.div
+                className="w-full max-w-3xl px-4"
+                layout
+                layoutId="chat-input-container"
               >
-                <Plus className="h-5 w-5" />
-              </Button>
-            </Tooltip>
-          </NavbarItem>
-        </NavbarContent>
-      </Navbar>
-
-      <AnimatePresence mode="wait">
-        {messages.length === 0 ? (
-          <motion.div
-            key="empty-state"
-            className="flex flex-col h-full justify-center items-center -mt-24"
-          >
-            <motion.div className="flex flex-col justify-center items-center gap-4 mb-8">
-              <p className="text-left text-xl font-normal delay-100 sm:text-2xl md:text-3xl leading-9">
-                <span className="drop-shadow-2xl relative mb-5 duration-700 transition-[opacity,filter] text-transparent bg-clip-text bg-gradient-to-r to-purple-400 from-pink-600">
-                  Hello!
-                </span>{" "}
-                <span className="drop-shadow-2xl text-gray-500">
-                  How can I help you today?
-                </span>
-              </p>
+                {renderChatInput()}
+              </motion.div>
             </motion.div>
+          ) : (
             <motion.div
-              className="w-full max-w-3xl px-4"
-              layout
-              layoutId="chat-input-container"
+              key="chat-view"
+              className="flex flex-col h-full w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
             >
-              {renderChatInput()}
-            </motion.div>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="chat-view"
-            className="flex flex-col h-full w-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div
-              className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
-              ref={chatContainerRef}
-            >
-              {displayMessages.map((message, index) => (
-                <ChatBubble
-                  key={index}
-                  isAssistant={message.role === "assistant"}
-                  content={message.content}
-                  isLoading={message === streamingMessage && isLoading}
+              <div
+                className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
+                ref={chatContainerRef}
+              >
+                {displayMessages.map((message, index) => (
+                  <ChatBubble
+                    key={index}
+                    isAssistant={message.role === "assistant"}
+                    content={message.content}
+                    isLoading={message === streamingMessage && isLoading}
+                  />
+                ))}
+                {streamingMessage && (
+                  <ChatBubble
+                    isAssistant={true}
+                    content={streamingMessage.content}
+                    isLoading={true}
+                  />
+                )}
+                <Image
+                  src="/loading-animation.svg"
+                  alt="logo"
+                  width={100}
+                  height={100}
+                  className={`w-8 h-8 ${isLoading ? "animate-spin" : ""}`}
                 />
-              ))}
-              {streamingMessage && (
-                <ChatBubble
-                  isAssistant={true}
-                  content={streamingMessage.content}
-                  isLoading={true}
-                />
-              )}
-              <Image
-                src="/loading-animation.svg"
-                alt="logo"
-                width={100}
-                height={100}
-                className={`w-8 h-8 ${isLoading ? "animate-spin" : ""}`}
-              />
-            </div>
-
-            {error && (
-              <div className="p-4 text-red-500 bg-red-100 rounded mb-4 mx-auto flex items-center gap-2 rounded-lg">
-                <AlertCircle className="w-4 h-4" />
-                {error || "An error occurred"}
               </div>
-            )}
 
-            <motion.div
-              className="sticky bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800"
-              layout
-              layoutId="chat-input-container"
-            >
-              <div className="max-w-3xl mx-auto p-4">{renderChatInput()}</div>
+              {error && (
+                <div className="p-4 text-red-500 bg-red-100 rounded mb-4 mx-auto flex items-center gap-2 rounded-lg">
+                  <AlertCircle className="w-4 h-4" />
+                  {error || "An error occurred"}
+                </div>
+              )}
+
+              <motion.div
+                className="sticky bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800"
+                layout
+                layoutId="chat-input-container"
+              >
+                <div className="max-w-3xl mx-auto p-4">{renderChatInput()}</div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -81,7 +81,7 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
               : "opacity-10 group-hover:opacity-10 group-focus:opacity-10"
           } transition duration-1000 group-hover:duration-200`}
         />
-        <div className="relative bg-transparent ring-gray-900/5 rounded-lg leading-none flex items-top justify-start space-x-6">
+        <div className=" p-2 relative bg-transparent ring-gray-900/5 rounded-lg leading-none flex items-top justify-start space-x-6">
           <div className="relative w-full">
             <Textarea
               ref={ref}
