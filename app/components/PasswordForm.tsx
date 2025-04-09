@@ -79,7 +79,6 @@ export function PasswordForm({ children }: PasswordFormProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   errorMessage={error ? "Incorrect password" : ""}
                   isInvalid={error}
-                  autoFocus
                 />
               </div>
               <Button type="submit" color="primary" fullWidth>
