@@ -27,6 +27,7 @@ interface Model {
 type ModelType =
   | "gpt-4o-mini"
   | "anthropic/claude-3.5-haiku"
+  | "anthropic/claude-3.7-sonnet"
   | "deepseek/deepseek-chat-v3-0324:free"
   | "deepseek/deepseek-r1-zero:free";
 
@@ -38,6 +39,10 @@ const models: Model[] = [
   {
     name: "Claude 3.5",
     value: "anthropic/claude-3.5-haiku",
+  },
+  {
+    name: "Claude 3.7",
+    value: "anthropic/claude-3.7-sonnet",
   },
   {
     name: "DeepSeek-V3-0324",

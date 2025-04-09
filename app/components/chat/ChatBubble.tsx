@@ -3,13 +3,14 @@ import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useEffect, useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, RefreshCcw } from "lucide-react";
 import React from "react";
 
 interface ChatBubbleProps {
   isAssistant: boolean;
   content: string;
   isLoading?: boolean;
+  onRegenerate?: () => void;
 }
 
 // Heading components for different levels
@@ -195,6 +196,7 @@ export function ChatBubble({
   isAssistant,
   content,
   isLoading,
+  onRegenerate,
 }: ChatBubbleProps) {
   const [messageCopied, setMessageCopied] = useState(false);
 
@@ -205,25 +207,18 @@ export function ChatBubble({
   const copyMessageToClipboard = () => {
     navigator.clipboard.writeText(content);
     setMessageCopied(true);
+    setTimeout(() => setMessageCopied(false), 2000);
   };
 
   return (
     <motion.div
-      className={`flex w-full p-2`}
+      className={`flex w-full p-2 ${isAssistant ? "justify-start" : "justify-end"}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div
-        className={`flex ${
-          isAssistant ? "" : "flex-row-reverse"
-        } gap-2 max-w-full break-words text-wrap w-fit`}
-      >
-        <motion.div
-          className={`flex flex-col gap-2 w-full ${
-            isAssistant ? "" : "items-start"
-          } w-fit`}
-        >
+      <div className={`flex gap-2 max-w-full break-words text-wrap w-fit`}>
+        <motion.div className={`flex flex-col gap-2 w-full items-end w-fit`}>
           {!isAssistant && (
             <Avatar
               src="https://ui-avatars.com/api/?name=T"
@@ -248,13 +243,24 @@ export function ChatBubble({
             </div>
 
             {isAssistant && !isLoading && (
-              <button
-                onClick={copyMessageToClipboard}
-                className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
-                aria-label="Copy message"
-              >
-                {messageCopied ? <Check size={16} /> : <Copy size={16} />}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={copyMessageToClipboard}
+                  className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                  aria-label="Copy message"
+                >
+                  {messageCopied ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+                {
+                  <button
+                    onClick={onRegenerate}
+                    className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                    aria-label="Regenerate message"
+                  >
+                    <RefreshCcw size={16} />
+                  </button>
+                }
+              </div>
             )}
           </div>
         </motion.div>
