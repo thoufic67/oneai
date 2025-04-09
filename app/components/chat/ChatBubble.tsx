@@ -14,7 +14,7 @@ interface ChatBubbleProps {
 
 // Heading components for different levels
 const Heading = ({ level, children }: { level: number; children: any }) => {
-  const className = `font-bold mb-2 mt-3 leading-tight ${
+  const className = `font-bold mb-1 mt-2 leading-tight ${
     level === 1
       ? "text-2xl"
       : level === 2
@@ -144,7 +144,29 @@ const TableCell = ({ children, isHeader }: any) => {
 
 // Paragraph component
 const Paragraph = ({ children, className = "" }: any) => {
-  return <p className={`my-2 ${className}`}>{children}</p>;
+  // Skip rendering if children is just whitespace or empty
+  if (
+    React.Children.count(children) === 0 ||
+    (React.Children.count(children) === 1 &&
+      typeof React.Children.toArray(children)[0] === "string" &&
+      (React.Children.toArray(children)[0] as string).trim() === "")
+  ) {
+    return null;
+  }
+  return <p className={`my-1 ${className}`}>{children}</p>;
+};
+
+// List components for more compact rendering
+const List = ({ ordered, children }: { ordered: boolean; children: any }) => {
+  return ordered ? (
+    <ol className="pl-5 my-1 list-decimal">{children}</ol>
+  ) : (
+    <ul className="pl-5 my-1 list-disc">{children}</ul>
+  );
+};
+
+const ListItem = ({ children }: any) => {
+  return <li className="my-0.5">{children}</li>;
 };
 
 const MarkdownComponents = {
@@ -164,6 +186,9 @@ const MarkdownComponents = {
   tr: TableRow,
   td: ({ children }: any) => <TableCell>{children}</TableCell>,
   th: ({ children }: any) => <TableCell isHeader>{children}</TableCell>,
+  ul: ({ children }: any) => <List ordered={false}>{children}</List>,
+  ol: ({ children }: any) => <List ordered={true}>{children}</List>,
+  li: ListItem,
 };
 
 export function ChatBubble({
@@ -225,7 +250,7 @@ export function ChatBubble({
             {isAssistant && !isLoading && (
               <button
                 onClick={copyMessageToClipboard}
-                className="self-end mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
                 aria-label="Copy message"
               >
                 {messageCopied ? <Check size={16} /> : <Copy size={16} />}

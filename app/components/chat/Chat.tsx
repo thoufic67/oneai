@@ -182,7 +182,7 @@ export function Chat() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)] mx-auto max-w-3xl">
-      <Navbar className="bg-transparent">
+      <Navbar className="bg-transparent rounded-lg bg-primary-100/10 backdrop-blur-lg">
         <NavbarBrand>
           <p className="font-bold text-inherit">OneAI</p>
         </NavbarBrand>
