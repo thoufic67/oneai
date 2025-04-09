@@ -75,7 +75,7 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
     return (
       <div className="relative group cursor-pointer bg-transparent">
         <div
-          className={`shadow-lg rounded-lg absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 backdrop-blur-xl ${
+          className={`rounded-lg absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 backdrop-blur-xl ${
             theme === "dark"
               ? "opacity-30 group-hover:opacity-30 group-focus:opacity-30"
               : "opacity-10 group-hover:opacity-10 group-focus:opacity-10"
@@ -102,7 +102,7 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
                   {endContent}
                 </div>
               }
-              variant="faded"
+              variant="underlined"
             />
 
             {/* Search and Model Options */}
