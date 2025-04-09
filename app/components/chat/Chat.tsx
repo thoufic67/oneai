@@ -189,6 +189,13 @@ export function Chat() {
     <div className="flex flex-col h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)] mx-auto max-w-3xl">
       <Navbar className="bg-transparent rounded-lg bg-primary-100/10 backdrop-blur-lg">
         <NavbarBrand>
+          <Image
+            src="/one-ai-favicon.svg"
+            alt="OneAI Logo"
+            width={24}
+            height={24}
+            className="mr-2"
+          />
           <p className="font-bold text-inherit">OneAI</p>
         </NavbarBrand>
         <NavbarContent justify="end">
