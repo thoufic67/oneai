@@ -10,6 +10,29 @@ interface ChatCompletionRequest {
   model?: string;
   stream?: boolean;
   web?: boolean;
+  conversationId?: string;
+}
+
+// API response interfaces
+interface Conversation {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: "user" | "assistant" | "system";
+  model_id: string;
+  content: string;
+  tokens_used?: number;
+  parent_message_id?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
 }
 
 class ChatService {
@@ -22,8 +45,8 @@ class ChatService {
 
   async createChatCompletion(
     request: ChatCompletionRequest,
-    onChunk?: (chunk: string) => void,
-    onFinal?: (final: string) => void
+    onChunk?: (chunk: string, conversationId: string) => void,
+    onFinal?: (final: string, conversationId: string) => void
   ) {
     try {
       if (request.stream) {
@@ -47,8 +70,8 @@ class ChatService {
 
   private async handleStreamingRequest(
     request: ChatCompletionRequest,
-    onChunk?: (chunk: string) => void,
-    onFinal?: (final: string) => void
+    onChunk?: (chunk: string, conversationId: string) => void,
+    onFinal?: (final: string, conversationId: string) => void
   ) {
     const response = await fetch(`${this.baseUrl}/v1/chat/stream`, {
       method: "POST",
@@ -67,6 +90,7 @@ class ChatService {
 
     const decoder = new TextDecoder();
     let fullResponse = "";
+    let currentConversationId = request.conversationId || "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -84,16 +108,24 @@ class ChatService {
 
           // Handle [DONE] message
           if (jsonString === "[DONE]") {
-            onFinal?.(fullResponse);
-            return fullResponse;
+            onFinal?.(fullResponse, currentConversationId);
+            return {
+              text: fullResponse,
+              conversationId: currentConversationId,
+            };
           }
 
           const json = JSON.parse(jsonString);
           const content = json.content ?? "";
 
+          // Extract conversationId if present
+          if (json.conversationId) {
+            currentConversationId = json.conversationId;
+          }
+
           if (content) {
             fullResponse += content;
-            onChunk?.(content);
+            onChunk?.(content, currentConversationId);
           }
         } catch (error) {
           console.error("Error parsing SSE chunk:", error);
@@ -101,8 +133,107 @@ class ChatService {
       }
     }
 
-    return fullResponse;
+    return { text: fullResponse, conversationId: currentConversationId };
+  }
+
+  // --- Conversation Management Methods ---
+
+  async getConversations(limit = 10): Promise<Conversation[]> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/v1/conversations?limit=${limit}`
+      );
+      return response.data.conversations;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error fetching conversations: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async getConversation(id: string): Promise<Conversation> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/v1/conversations/${id}`
+      );
+      return response.data.conversation;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error fetching conversation: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async getConversationMessages(
+    conversationId: string
+  ): Promise<ChatMessage[]> {
+    try {
+      const response = await axios.get(
+        `${this.baseUrl}/v1/conversations/${conversationId}/messages`
+      );
+      return response.data.messages;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error fetching messages: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async createConversation(title: string): Promise<Conversation> {
+    try {
+      const response = await axios.post(`${this.baseUrl}/v1/conversations`, {
+        title,
+      });
+      return response.data.conversation;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error creating conversation: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateConversation(id: string, title: string): Promise<Conversation> {
+    try {
+      const response = await axios.patch(
+        `${this.baseUrl}/v1/conversations/${id}`,
+        { title }
+      );
+      return response.data.conversation;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error updating conversation: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteConversation(id: string): Promise<void> {
+    try {
+      await axios.delete(`${this.baseUrl}/v1/conversations/${id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error deleting conversation: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
   }
 }
 
 export const chatService = new ChatService();
+export type { Conversation, ChatMessage, Message };

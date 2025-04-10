@@ -4,12 +4,7 @@ import { useState, useEffect } from "react";
 import { Button, Divider, ScrollShadow } from "@heroui/react";
 import { Plus, MessageSquare, X, Menu, MessageCircle } from "lucide-react";
 import Image from "next/image";
-
-interface ChatHistory {
-  id: string;
-  title: string;
-  timestamp: number;
-}
+import { chatService, Conversation } from "@/services/api";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -26,28 +21,28 @@ export function Sidebar({
   expanded,
   onToggle,
 }: SidebarProps) {
-  const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load chat history from localStorage on mount
+  // Load conversations from API on mount
   useEffect(() => {
-    const savedChats = localStorage.getItem("oneai-chat-history");
-    if (savedChats) {
+    const fetchConversations = async () => {
       try {
-        const parsedChats = JSON.parse(savedChats);
-        // Convert to ChatHistory format for sidebar display
-        const formattedChats = parsedChats
-          .map((chat: any) => ({
-            id: chat.id,
-            title: chat.title,
-            timestamp: chat.timestamp,
-          }))
-          .sort((a: ChatHistory, b: ChatHistory) => b.timestamp - a.timestamp);
-
-        setChatHistory(formattedChats);
-      } catch (error) {
-        console.error("Error parsing chat history:", error);
+        setIsLoading(true);
+        const data = await chatService.getConversations(10); // Get the latest 10 conversations
+        setConversations(data);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load conversations";
+        setError(errorMessage);
+        console.error("Error loading conversations:", err);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
+
+    fetchConversations();
   }, []);
 
   // Collapsed sidebar view
@@ -78,7 +73,7 @@ export function Sidebar({
               radius="full"
               className="text-gray-500"
               onPress={() =>
-                chatHistory.length > 0 && onSelectChat(chatHistory[0].id)
+                conversations.length > 0 && onSelectChat(conversations[0].id)
               }
             >
               <MessageCircle className="h-5 w-5" />
@@ -145,7 +140,13 @@ export function Sidebar({
           </Button>
         </div>
 
-        {chatHistory.length > 0 && (
+        {isLoading ? (
+          <div className="flex justify-center items-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+          </div>
+        ) : error ? (
+          <div className="px-4 py-2 text-sm text-red-500">{error}</div>
+        ) : conversations.length > 0 ? (
           <>
             <Divider className="my-2" />
             <div className="px-4 py-1">
@@ -154,23 +155,29 @@ export function Sidebar({
 
             <ScrollShadow className="flex-1 overflow-y-auto">
               <div className="px-2 py-1 space-y-1">
-                {chatHistory.map((chat) => (
+                {conversations.map((conversation) => (
                   <Button
-                    key={chat.id}
-                    variant={currentChatId === chat.id ? "flat" : "ghost"}
+                    key={conversation.id}
+                    variant={
+                      currentChatId === conversation.id ? "flat" : "ghost"
+                    }
                     radius="lg"
                     className="w-full justify-start text-sm text-left h-auto py-2 px-3"
                     startContent={
                       <MessageSquare className="h-4 w-4 shrink-0" />
                     }
-                    onPress={() => onSelectChat(chat.id)}
+                    onPress={() => onSelectChat(conversation.id)}
                   >
-                    <div className="truncate w-full">{chat.title}</div>
+                    <div className="truncate w-full">{conversation.title}</div>
                   </Button>
                 ))}
               </div>
             </ScrollShadow>
           </>
+        ) : (
+          <div className="px-4 py-2 text-sm text-gray-500">
+            No conversations yet
+          </div>
         )}
 
         <div className="mt-auto p-3">

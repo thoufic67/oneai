@@ -1,34 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import { chatService } from "@/services/api";
+import {
+  chatService,
+  Message,
+  Conversation,
+  ChatMessage,
+} from "@/services/api";
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
 import { Sidebar } from "./Sidebar";
 import { Button } from "@heroui/react";
-import { AlertCircle, Send, Plus, Menu } from "lucide-react";
+import { AlertCircle, Send, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { v4 as uuidv4 } from "uuid";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
-
-interface ChatSession {
-  id: string;
-  title: string;
-  messages: Message[];
-  timestamp: number;
-  model: ModelType;
-  webSearchEnabled: boolean;
-}
-
-interface Model {
-  name: string;
-  value: ModelType;
-}
 
 type ModelType =
   | "gpt-4o-mini"
@@ -36,6 +21,11 @@ type ModelType =
   | "anthropic/claude-3.7-sonnet"
   | "deepseek/deepseek-chat-v3-0324:free"
   | "deepseek/deepseek-r1-zero:free";
+
+interface Model {
+  name: string;
+  value: ModelType;
+}
 
 const models: Model[] = [
   {
@@ -61,6 +51,7 @@ const models: Model[] = [
 ];
 
 export function Chat() {
+  // State for current messages display
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,60 +64,39 @@ export function Chat() {
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history from localStorage on mount
-  useEffect(() => {
-    const savedChats = localStorage.getItem("oneai-chat-history");
-    if (savedChats) {
-      try {
-        const parsedChats = JSON.parse(savedChats) as ChatSession[];
-        setChatHistory(parsedChats);
+  // Load latest conversation if available
+  useEffect(() => {}, []);
 
-        // If there's an active chat, load it
-        if (parsedChats.length > 0) {
-          const mostRecentChat = parsedChats.sort(
-            (a: ChatSession, b: ChatSession) => b.timestamp - a.timestamp
-          )[0];
-          setCurrentChatId(mostRecentChat.id);
-          setMessages(mostRecentChat.messages);
-          setSelectedModel(mostRecentChat.model);
-          setWebSearchEnabled(mostRecentChat.webSearchEnabled);
-        }
-      } catch (error) {
-        console.error("Error parsing chat history:", error);
-      }
+  // Load conversation messages when a conversation is selected
+  const loadConversationMessages = async (conversationId: string) => {
+    try {
+      setLoadingConversation(true);
+      const messagesData =
+        await chatService.getConversationMessages(conversationId);
+
+      // Convert API messages to component format
+      const formattedMessages: Message[] = messagesData.map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
+
+      setMessages(formattedMessages);
+
+      // Update model if present in message metadata
+      // Note: This would need to be implemented on the backend to store model in message metadata
+    } catch (error) {
+      console.error("Error loading conversation messages:", error);
+      setError("Failed to load conversation messages");
+    } finally {
+      setLoadingConversation(false);
     }
-  }, []);
-
-  // Save chat history when messages or current chat changes
-  useEffect(() => {
-    if (!currentChatId || messages.length === 0) return;
-
-    // Update the current chat in history
-    setChatHistory((prevHistory) => {
-      const updatedHistory = prevHistory.map((chat) =>
-        chat.id === currentChatId
-          ? {
-              ...chat,
-              messages,
-              timestamp: Date.now(),
-              model: selectedModel,
-              webSearchEnabled,
-            }
-          : chat
-      );
-
-      localStorage.setItem(
-        "oneai-chat-history",
-        JSON.stringify(updatedHistory)
-      );
-      return updatedHistory;
-    });
-  }, [messages, currentChatId, selectedModel, webSearchEnabled]);
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -150,87 +120,51 @@ export function Chat() {
       setIsLoading(true);
       setError(null);
 
-      // Add user message
+      // Add user message to UI for immediate feedback
       const userMessage: Message = { role: "user", content: inputMessage };
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInputMessage("");
 
-      // Create a new chat if this is the first message
-      if (!currentChatId) {
-        const newChatId = uuidv4();
-        const newChat: ChatSession = {
-          id: newChatId,
-          title:
-            userMessage.content.slice(0, 30) +
-            (userMessage.content.length > 30 ? "..." : ""),
-          messages: updatedMessages,
-          timestamp: Date.now(),
-          model: selectedModel,
-          webSearchEnabled,
-        };
-
-        setCurrentChatId(newChatId);
-        setChatHistory((prevHistory) => {
-          const newChatHistory = [newChat, ...prevHistory];
-          localStorage.setItem(
-            "oneai-chat-history",
-            JSON.stringify(newChatHistory)
-          );
-          return newChatHistory;
-        });
-      }
+      // Prepare message history for API call
+      const messageHistory: Message[] = updatedMessages;
 
       // Initialize streaming message
       setStreamingMessage({ role: "assistant", content: "" });
 
       // Get AI response with streaming
-      await chatService.createChatCompletion(
+      const { text, conversationId } = await chatService.createChatCompletion(
         {
-          messages: updatedMessages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
+          messages: messageHistory,
           stream: true,
           model: selectedModel,
           web: webSearchEnabled,
+          conversationId: currentChatId || undefined,
         },
-        (chunk) => {
+        (chunk, convId) => {
           // Immediately update UI with each chunk
           setStreamingMessage((prev) =>
             prev
               ? { ...prev, content: prev.content + chunk }
               : { role: "assistant", content: chunk }
           );
-        },
-        (final) => {
-          const finalResponse: Message = { role: "assistant", content: final };
-          const finalMessages = [...updatedMessages, finalResponse];
-          setMessages(finalMessages);
-          setStreamingMessage(null);
 
-          // Update chat history with assistant's response
-          if (currentChatId) {
-            setChatHistory((prevHistory) => {
-              const updatedHistory = prevHistory.map((chat) =>
-                chat.id === currentChatId
-                  ? {
-                      ...chat,
-                      messages: finalMessages,
-                      timestamp: Date.now(),
-                      model: selectedModel,
-                      webSearchEnabled,
-                    }
-                  : chat
-              );
-
-              localStorage.setItem(
-                "oneai-chat-history",
-                JSON.stringify(updatedHistory)
-              );
-              return updatedHistory;
-            });
+          // If we got a new conversation ID and we didn't have one before, update it
+          if (convId && !currentChatId) {
+            setCurrentChatId(convId);
           }
+        },
+        async (finalText, convId) => {
+          if (convId && currentChatId !== convId) {
+            setCurrentChatId(convId);
+          }
+
+          // Load the full conversation messages from the API after response
+          if (convId) {
+            await loadConversationMessages(convId);
+          }
+
+          setStreamingMessage(null);
 
           // Focus the chat input after response is complete
           inputRef.current?.focus();
@@ -245,7 +179,7 @@ export function Chat() {
     }
   };
 
-  const handleNewChat = () => {
+  const handleNewChat = async () => {
     setMessages([]);
     setStreamingMessage(null);
     setError(null);
@@ -257,17 +191,17 @@ export function Chat() {
     inputRef.current?.focus();
   };
 
-  const handleSelectChat = (chatId: string) => {
-    const selectedChat = chatHistory.find((chat) => chat.id === chatId);
-    if (selectedChat) {
+  const handleSelectChat = async (chatId: string) => {
+    try {
       setCurrentChatId(chatId);
-      setMessages(selectedChat.messages);
-      setSelectedModel(selectedChat.model);
-      setWebSearchEnabled(selectedChat.webSearchEnabled);
+      await loadConversationMessages(chatId);
       setStreamingMessage(null);
       setError(null);
       setInputMessage("");
       setSidebarExpanded(false);
+    } catch (error) {
+      console.error("Error selecting chat:", error);
+      setError("Failed to load selected conversation");
     }
   };
 
@@ -323,7 +257,11 @@ export function Chat() {
 
       <div className="flex flex-col flex-1 max-w-3xl mx-auto w-full">
         <AnimatePresence mode="wait">
-          {messages.length === 0 ? (
+          {loadingConversation ? (
+            <div className="flex justify-center items-center h-full">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            </div>
+          ) : messages.length === 0 ? (
             <motion.div
               key="empty-state"
               className="flex flex-col h-full justify-center items-center -mt-24"
