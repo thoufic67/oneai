@@ -46,7 +46,7 @@ class ChatService {
   async createChatCompletion(
     request: ChatCompletionRequest,
     onChunk?: (chunk: string, conversationId: string) => void,
-    onFinal?: (final: string, conversationId: string) => void
+    onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
     try {
       if (request.stream) {
@@ -71,7 +71,7 @@ class ChatService {
   private async handleStreamingRequest(
     request: ChatCompletionRequest,
     onChunk?: (chunk: string, conversationId: string) => void,
-    onFinal?: (final: string, conversationId: string) => void
+    onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
     const response = await fetch(`${this.baseUrl}/v1/chat/stream`, {
       method: "POST",
@@ -91,6 +91,7 @@ class ChatService {
     const decoder = new TextDecoder();
     let fullResponse = "";
     let currentConversationId = request.conversationId || "";
+    let conversationTitle = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -108,14 +109,32 @@ class ChatService {
 
           // Handle [DONE] message
           if (jsonString === "[DONE]") {
-            onFinal?.(fullResponse, currentConversationId);
+            onFinal?.(fullResponse, currentConversationId, conversationTitle);
             return {
               text: fullResponse,
               conversationId: currentConversationId,
+              title: conversationTitle || undefined,
             };
           }
 
           const json = JSON.parse(jsonString);
+
+          // Check if this is the done message with a title
+          if (json.done) {
+            if (json.conversationId) {
+              currentConversationId = json.conversationId;
+            }
+            if (json.title) {
+              conversationTitle = json.title;
+            }
+            onFinal?.(fullResponse, currentConversationId, conversationTitle);
+            return {
+              text: fullResponse,
+              conversationId: currentConversationId,
+              title: conversationTitle || undefined,
+            };
+          }
+
           const content = json.content ?? "";
 
           // Extract conversationId if present
@@ -133,7 +152,11 @@ class ChatService {
       }
     }
 
-    return { text: fullResponse, conversationId: currentConversationId };
+    return {
+      text: fullResponse,
+      conversationId: currentConversationId,
+      title: conversationTitle || undefined,
+    };
   }
 
   // --- Conversation Management Methods ---

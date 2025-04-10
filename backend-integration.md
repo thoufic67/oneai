@@ -10,6 +10,7 @@ This guide explains how to integrate the OpenRouter chat completion service with
 - [Error Handling](#error-handling)
 - [TypeScript Types](#typescript-types)
 - [Conversation Management](#conversation-management)
+- [Automatic Conversation Title Generation](#automatic-conversation-title-generation)
 
 ## Setup
 
@@ -92,7 +93,7 @@ class ChatService {
   private async handleStreamingRequest(
     request: ChatCompletionRequest,
     onChunk?: (chunk: string, conversationId: string) => void
-  ): Promise<{ text: string; conversationId: string }> {
+  ): Promise<{ text: string; conversationId: string; title?: string }> {
     const response = await fetch(`${this.baseUrl}/chat/stream`, {
       method: "POST",
       headers: {
@@ -111,6 +112,7 @@ class ChatService {
     const decoder = new TextDecoder();
     let fullResponse = "";
     let currentConversationId = request.conversationId || "";
+    let conversationTitle = "";
 
     while (true) {
       const { done, value } = await reader.read();
@@ -132,6 +134,10 @@ class ChatService {
           if (json.done) {
             currentConversationId =
               json.conversationId || currentConversationId;
+            // Check if the response includes a title (for new conversations)
+            if (json.title) {
+              conversationTitle = json.title;
+            }
             continue;
           }
 
@@ -151,6 +157,7 @@ class ChatService {
     return {
       text: fullResponse,
       conversationId: currentConversationId,
+      title: conversationTitle || undefined,
     };
   }
 
@@ -531,7 +538,7 @@ import { Message, ChatMessage } from '../types';
 
 interface Props {
   conversationId?: string;
-  onConversationCreated?: (id: string) => void;
+  onConversationCreated?: (id: string, title?: string) => void;
 }
 
 export default function ConversationChat({ conversationId, onConversationCreated }: Props) {
@@ -591,8 +598,8 @@ export default function ConversationChat({ conversationId, onConversationCreated
     try {
       setLoading(true);
 
-      // Get streaming response with potential new conversation ID
-      const { text, conversationId: newConversationId } = await chatService.createChatCompletion(
+      // Get streaming response with potential new conversation ID and title
+      const { text, conversationId: newConversationId, title } = await chatService.createChatCompletion(
         {
           messages: messageHistory,
           conversationId: activeConversationId || undefined,
@@ -603,7 +610,7 @@ export default function ConversationChat({ conversationId, onConversationCreated
           setStreamingResponse(prev => prev + chunk);
           if (!activeConversationId && convId) {
             setActiveConversationId(convId);
-            onConversationCreated?.(convId);
+            onConversationCreated?.(convId, title);
           }
         }
       );
@@ -611,7 +618,7 @@ export default function ConversationChat({ conversationId, onConversationCreated
       // If we got a new conversation ID, update it
       if (newConversationId && newConversationId !== activeConversationId) {
         setActiveConversationId(newConversationId);
-        onConversationCreated?.(newConversationId);
+        onConversationCreated?.(newConversationId, title);
       }
 
       // Load the full message history from the server
@@ -674,6 +681,13 @@ import ConversationChat from '../components/ConversationChat';
 export default function ChatPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<string | undefined>();
 
+  // Handle both conversation ID and title from new conversations
+  const handleConversationCreated = (id: string, title?: string) => {
+    setSelectedConversationId(id);
+    // Optionally refresh the conversation list to show the new title
+    // or update the title in the current list if using state management
+  };
+
   return (
     <div className="chat-page">
       <div className="sidebar">
@@ -686,7 +700,7 @@ export default function ChatPage() {
           />
         ) : (
           <ConversationChat
-            onConversationCreated={setSelectedConversationId}
+            onConversationCreated={handleConversationCreated}
           />
         )}
       </div>
@@ -695,11 +709,45 @@ export default function ChatPage() {
 }
 ```
 
-Remember to:
+## Automatic Conversation Title Generation
 
-1. Handle loading states appropriately
-2. Implement proper error boundaries
-3. Consider implementing retry logic for failed requests
-4. Add appropriate TypeScript types for all components and functions
-5. Use environment variables for configuration
-6. Implement proper security measures (rate limiting, input validation, etc.)
+The backend automatically generates a descriptive title for new conversations using a GPT-3.5-turbo model based on the user's first message. This provides a better user experience as conversations are named meaningfully without requiring manual input.
+
+### How It Works
+
+1. When a user starts a new conversation (no `conversationId` provided):
+
+   - The backend creates a conversation with a default title (truncated user message)
+   - In the background, it sends the first user message to GPT-3.5-turbo to generate a concise title (max 5 words)
+   - The generated title is stored in the database and returned in the final SSE message
+
+2. The title is included in the final SSE message with the `done` flag:
+
+   ```json
+   {
+     "done": true,
+     "conversationId": "123e4567-e89b-12d3-a456-426614174000",
+     "title": "Weather Forecast Question"
+   }
+   ```
+
+3. Your frontend can use this title to:
+   - Display in the conversation list
+   - Show as the page title
+   - Use in breadcrumb navigation
+
+### Frontend Implementation
+
+In your streaming handler, capture the title from the "done" message:
+
+```typescript
+// Extract title from SSE response
+const { text, conversationId, title } = await chatService.createChatCompletion({
+  messages: [{ role: "user", content: "What's the weather like today?" }],
+  stream: true,
+});
+
+console.log(`New conversation created: ${conversationId} with title: ${title}`);
+```
+
+The title is only returned for new conversations. For existing conversations, the title field will be undefined.

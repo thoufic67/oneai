@@ -10,7 +10,7 @@ import {
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
 import { Sidebar } from "./Sidebar";
-import { Button } from "@heroui/react";
+import { Button, Navbar, NavbarBrand, NavbarContent } from "@heroui/react";
 import { AlertCircle, Send, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -66,6 +66,12 @@ export function Chat() {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
+  const [newConversation, setNewConversation] = useState<
+    Conversation | undefined
+  >(undefined);
+  const [currentConversation, setCurrentConversation] = useState<
+    Conversation | undefined
+  >(undefined);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -76,6 +82,11 @@ export function Chat() {
       setLoadingConversation(true);
       const messagesData =
         await chatService.getConversationMessages(conversationId);
+
+      // Also get the conversation details
+      const conversationDetails =
+        await chatService.getConversation(conversationId);
+      setCurrentConversation(conversationDetails);
 
       // Convert API messages to component format
       const formattedMessages: Message[] = messagesData.map((msg) => ({
@@ -130,43 +141,87 @@ export function Chat() {
       setStreamingMessage({ role: "assistant", content: "" });
 
       // Get AI response with streaming
-      const { text, conversationId } = await chatService.createChatCompletion(
-        {
-          messages: messageHistory,
-          stream: true,
-          model: selectedModel,
-          web: webSearchEnabled,
-          conversationId: currentChatId || undefined,
-        },
-        (chunk, convId) => {
-          // Immediately update UI with each chunk
-          setStreamingMessage((prev) =>
-            prev
-              ? { ...prev, content: prev.content + chunk }
-              : { role: "assistant", content: chunk }
+      const { text, conversationId, title } =
+        await chatService.createChatCompletion(
+          {
+            messages: messageHistory,
+            stream: true,
+            model: selectedModel,
+            web: webSearchEnabled,
+            conversationId: currentChatId || undefined,
+          },
+          (chunk, convId) => {
+            // Immediately update UI with each chunk
+            setStreamingMessage((prev) =>
+              prev
+                ? { ...prev, content: prev.content + chunk }
+                : { role: "assistant", content: chunk }
+            );
+
+            // If we got a new conversation ID and we didn't have one before, update it
+            if (convId && !currentChatId) {
+              setCurrentChatId(convId);
+
+              // Create a temporary conversation with default title (will be updated later)
+              const tempTitle =
+                userMessage.content.slice(0, 30) +
+                (userMessage.content.length > 30 ? "..." : "");
+              const tempConversation: Conversation = {
+                id: convId,
+                title: tempTitle,
+                user_id: "", // Will be filled by the backend
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+              setNewConversation(tempConversation);
+            }
+          },
+          async (finalText, convId, generatedTitle) => {
+            if (convId && currentChatId !== convId) {
+              setCurrentChatId(convId);
+
+              // If we have a title from auto-generation, update the conversation object
+              if (generatedTitle) {
+                try {
+                  // First update the conversation in the backend
+                  const updatedConversation =
+                    await chatService.updateConversation(
+                      convId,
+                      generatedTitle
+                    );
+
+                  // Then update our local state to update the sidebar
+                  setNewConversation(updatedConversation);
+                } catch (error) {
+                  console.error("Error updating conversation title:", error);
+                }
+              }
+            }
+
+            // Load the full conversation messages from the API after response
+            if (convId) {
+              await loadConversationMessages(convId);
+            }
+
+            setStreamingMessage(null);
+
+            // Focus the chat input after response is complete
+            inputRef.current?.focus();
+          }
+        );
+
+      // If this is a new conversation and we got a title immediately, update it
+      if (title && conversationId && !currentChatId) {
+        try {
+          const updatedConversation = await chatService.updateConversation(
+            conversationId,
+            title
           );
-
-          // If we got a new conversation ID and we didn't have one before, update it
-          if (convId && !currentChatId) {
-            setCurrentChatId(convId);
-          }
-        },
-        async (finalText, convId) => {
-          if (convId && currentChatId !== convId) {
-            setCurrentChatId(convId);
-          }
-
-          // Load the full conversation messages from the API after response
-          if (convId) {
-            await loadConversationMessages(convId);
-          }
-
-          setStreamingMessage(null);
-
-          // Focus the chat input after response is complete
-          inputRef.current?.focus();
+          setNewConversation(updatedConversation);
+        } catch (error) {
+          console.error("Error updating conversation title:", error);
         }
-      );
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       console.error("Chat error:", error);
@@ -185,6 +240,7 @@ export function Chat() {
     setSelectedModel(models[0].value);
     setWebSearchEnabled(false);
     setSidebarExpanded(false);
+    setCurrentConversation(undefined);
     inputRef.current?.focus();
   };
 
@@ -242,17 +298,61 @@ export function Chat() {
     </div>
   );
 
+  // Update current conversation when a new one is created
+  useEffect(() => {
+    if (newConversation) {
+      setCurrentConversation(newConversation);
+    }
+  }, [newConversation]);
+
   return (
-    <div className="flex h-[calc(100dvh-2rem)] md:h-[calc(100dvh-2rem)]">
+    <div className="flex h-[calc(100dvh-1rem)] md:h-[calc(100dvh-6rem)]">
       <Sidebar
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
         currentChatId={currentChatId}
         expanded={sidebarExpanded}
         onToggle={toggleSidebar}
+        newConversation={newConversation}
       />
 
       <div className="flex flex-col flex-1 max-w-3xl mx-auto w-full">
+        {currentChatId && messages.length > 0 && (
+          <Navbar className="bg-transparent" isBlurred>
+            <NavbarContent className="flex sm:justify-center">
+              <div className="sm:hidden">
+                <Button
+                  isIconOnly
+                  variant="ghost"
+                  radius="full"
+                  onPress={toggleSidebar}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </div>
+              <NavbarBrand className="hidden sm:flex">
+                <p className="text-lg font-bold text-center w-full">
+                  {currentConversation?.title || "Conversation"}
+                </p>
+              </NavbarBrand>
+            </NavbarContent>
+          </Navbar>
+        )}
+
+        {/* Show menu button for mobile when no navbar */}
+        {(!currentChatId || messages.length === 0) && (
+          <div className="sm:hidden absolute top-4 left-4 z-10">
+            <Button
+              isIconOnly
+              variant="ghost"
+              radius="full"
+              onPress={toggleSidebar}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
+
         <AnimatePresence mode="wait">
           {loadingConversation ? (
             <div className="flex justify-center items-center h-full">

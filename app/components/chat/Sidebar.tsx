@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button, Divider, ScrollShadow } from "@heroui/react";
 import { Plus, MessageSquare, X, Menu, MessageCircle } from "lucide-react";
 import Image from "next/image";
@@ -12,6 +12,7 @@ interface SidebarProps {
   currentChatId: string | null;
   expanded: boolean;
   onToggle: () => void;
+  newConversation?: Conversation; // New prop to receive a newly created conversation
 }
 
 export function Sidebar({
@@ -20,39 +21,63 @@ export function Sidebar({
   currentChatId,
   expanded,
   onToggle,
+  newConversation,
 }: SidebarProps) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Create a fetchConversations function that can be called when needed
+  const fetchConversations = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await chatService.getConversations(10); // Get the latest 10 conversations
+      setConversations(data);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load conversations";
+      setError(errorMessage);
+      console.error("Error loading conversations:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Load conversations from API on mount
   useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        setIsLoading(true);
-        const data = await chatService.getConversations(10); // Get the latest 10 conversations
-        setConversations(data);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to load conversations";
-        setError(errorMessage);
-        console.error("Error loading conversations:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchConversations();
 
     return () => {
       setConversations([]);
     };
-  }, []);
+  }, [fetchConversations]);
+
+  // Handle new conversation added via props
+  useEffect(() => {
+    if (newConversation) {
+      // Check if the conversation already exists in our list
+      const exists = conversations.some(
+        (conv) => conv.id === newConversation.id
+      );
+
+      if (!exists) {
+        // Add the new conversation to the beginning of the list
+        setConversations((prev) => [newConversation, ...prev]);
+      } else {
+        // Update the existing conversation (like its title)
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === newConversation.id ? newConversation : conv
+          )
+        );
+      }
+    }
+  }, [newConversation]);
 
   // Collapsed sidebar view
   if (!expanded) {
     return (
-      <div className="flex flex-col h-full w-16 border-r border-gray-200 dark:border-gray-800 bg-background/60 backdrop-blur-md items-center">
+      <div className="hidden md:flex flex-col h-full w-16 border-r border-gray-200 dark:border-gray-800 bg-background/60 backdrop-blur-md items-center">
         <div className="flex flex-col h-full items-center justify-start gap-8 py-6">
           <div>
             <Button isIconOnly variant="ghost" radius="full" onPress={onToggle}>
