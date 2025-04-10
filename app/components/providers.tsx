@@ -3,6 +3,7 @@
 import * as React from "react";
 import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider } from "./theme-provider";
+import { ShortcutKeyProvider } from "./search/ShortcutKeyProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +12,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="light"
       disableTransitionOnChange
     >
-      <HeroUIProvider>{children}</HeroUIProvider>
+      <HeroUIProvider>
+        <ShortcutKeyProvider>{children}</ShortcutKeyProvider>
+      </HeroUIProvider>
     </ThemeProvider>
   );
 }
