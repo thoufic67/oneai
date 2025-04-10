@@ -70,9 +70,6 @@ export function Chat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load latest conversation if available
-  useEffect(() => {}, []);
-
   // Load conversation messages when a conversation is selected
   const loadConversationMessages = async (conversationId: string) => {
     try {

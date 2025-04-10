@@ -43,6 +43,10 @@ export function Sidebar({
     };
 
     fetchConversations();
+
+    return () => {
+      setConversations([]);
+    };
   }, []);
 
   // Collapsed sidebar view
