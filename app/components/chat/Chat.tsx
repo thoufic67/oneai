@@ -81,31 +81,17 @@ export function Chat() {
     Conversation | undefined
   >(undefined);
 
-  // Track loaded conversation IDs to avoid redundant fetches
-  const [loadedConversations, setLoadedConversations] = useState<Set<string>>(
-    new Set()
-  );
-
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Load conversation when path contains a conversation ID
   useEffect(() => {
-    // Skip loading if new chat route
-    if (isNewChat) {
-      handleNewChat(false);
-      return;
-    }
-
-    // Only proceed if we have a conversation ID and it hasn't been loaded
-    if (
-      conversationId &&
-      !loadedConversations.has(conversationId) &&
-      !isLoading
-    ) {
+    if (conversationId && !isNewChat) {
       handleSelectChat(conversationId, false);
+    } else if (isNewChat) {
+      handleNewChat(false);
     }
-  }, [conversationId, isNewChat, loadedConversations, isLoading]);
+  }, [conversationId, isNewChat]);
 
   // Load conversation messages when a conversation is selected
   const loadConversationMessages = async (conversationId: string) => {
@@ -127,8 +113,8 @@ export function Chat() {
 
       setMessages(formattedMessages);
 
-      // Mark this conversation as loaded
-      setLoadedConversations((prev) => new Set(prev).add(conversationId));
+      // Update model if present in message metadata
+      // Note: This would need to be implemented on the backend to store model in message metadata
     } catch (error) {
       console.error("Error loading conversation messages:", error);
       setError("Failed to load conversation messages");
@@ -206,11 +192,10 @@ export function Chat() {
               };
               setNewConversation(tempConversation);
 
-              // Mark this conversation as loaded since we're creating it
-              setLoadedConversations((prev) => new Set(prev).add(convId));
-
-              // Update the URL to the new conversation ID
-              router.push(`/c/${convId}`);
+              // if (conversationId !== convId) {
+              //   // Update the URL to the new conversation ID
+              //   router.push(`/c/${convId}`);
+              // }
             }
           },
           async (finalText, convId, generatedTitle) => {
@@ -234,18 +219,21 @@ export function Chat() {
                 }
               }
 
-              // Update URL to the conversation ID route
-              router.push(`/c/${convId}`);
+              // if (currentChatId !== convId) {
+              //   // Update URL to the conversation ID route
+              //   router.push(`/c/${convId}`);
+              // }
             }
 
-            // Add the final assistant message to the messages list
-            if (finalText) {
-              const assistantMessage: Message = {
+            // Add the final streamed message to the messages array
+
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
                 role: "assistant",
-                content: finalText,
-              };
-              setMessages((prev) => [...prev, assistantMessage]);
-            }
+                content: finalText || streamingMessage?.content || "",
+              },
+            ]);
 
             setStreamingMessage(null);
 
@@ -276,7 +264,6 @@ export function Chat() {
   };
 
   const handleNewChat = async (navigate = true) => {
-    // Reset everything for a new chat
     setMessages([]);
     setStreamingMessage(null);
     setError(null);
@@ -292,22 +279,13 @@ export function Chat() {
       router.push("/new");
     }
 
-    // Focus the input when ready
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
+    inputRef.current?.focus();
   };
 
   const handleSelectChat = async (chatId: string, navigate = true) => {
     try {
-      // Set current chat ID immediately to prevent double-loading
       setCurrentChatId(chatId);
-
-      // Only load conversation if not already loaded
-      if (!loadedConversations.has(chatId)) {
-        await loadConversationMessages(chatId);
-      }
-
+      await loadConversationMessages(chatId);
       setStreamingMessage(null);
       setError(null);
       setInputMessage("");
@@ -315,15 +293,8 @@ export function Chat() {
 
       // Navigate to the selected conversation route if needed
       if (navigate) {
-        // Mark as loaded before navigation to prevent duplicate fetching
-        setLoadedConversations((prev) => new Set(prev).add(chatId));
         router.push(`/c/${chatId}`);
       }
-
-      // Focus input after a brief delay
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
     } catch (error) {
       console.error("Error selecting chat:", error);
       setError("Failed to load selected conversation");
