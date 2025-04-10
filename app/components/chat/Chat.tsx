@@ -17,39 +17,83 @@ import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 
+// Add utility functions for session storage with expiration
+const storeWithExpiry = (key: string, value: any) => {
+  if (typeof window === "undefined") return;
+
+  const item = {
+    value: value,
+    expiry: new Date().getTime() + 24 * 60 * 60 * 1000, // 1 day expiry
+  };
+  sessionStorage.setItem(key, JSON.stringify(item));
+};
+
+const getWithExpiry = (key: string, defaultValue: any) => {
+  if (typeof window === "undefined") return defaultValue;
+
+  const itemStr = sessionStorage.getItem(key);
+  if (!itemStr) return defaultValue;
+
+  try {
+    const item = JSON.parse(itemStr);
+    const now = new Date().getTime();
+
+    if (now > item.expiry) {
+      sessionStorage.removeItem(key);
+      return defaultValue;
+    }
+
+    return item.value;
+  } catch (e) {
+    return defaultValue;
+  }
+};
+
 type ModelType =
   | "gpt-4o-mini"
-  | "anthropic/claude-3.5-haiku"
   | "anthropic/claude-3.7-sonnet"
+  | "mistral/ministral-8b"
+  | "grok/grok-3.5-sonnet"
   | "deepseek/deepseek-chat-v3-0324:free"
   | "deepseek/deepseek-r1-zero:free";
 
 interface Model {
   name: string;
   value: ModelType;
+  logo: string;
 }
 
 const models: Model[] = [
   {
-    name: "GPT-4o-mini",
+    name: "ChatGPT",
     value: "gpt-4o-mini",
+    logo: "/logos/openai.svg",
   },
   {
-    name: "Claude 3.5",
-    value: "anthropic/claude-3.5-haiku",
-  },
-  {
-    name: "Claude 3.7",
+    name: "Claude",
     value: "anthropic/claude-3.7-sonnet",
+    logo: "/logos/anthropic.svg",
   },
   {
-    name: "DeepSeek-V3-0324",
+    name: "Mistral",
+    value: "mistral/ministral-8b",
+    logo: "/logos/mistral.svg",
+  },
+  {
+    name: "Grok",
+    value: "grok/grok-3.5-sonnet",
+    logo: "/logos/grok.svg",
+  },
+  {
+    name: "DeepSeek",
     value: "deepseek/deepseek-chat-v3-0324:free",
+    logo: "/logos/deepseek.svg",
   },
-  {
-    name: "DeepSeek-R1-Zero",
-    value: "deepseek/deepseek-r1-zero:free",
-  },
+  // {
+  //   name: "DeepSeek-R1-Zero",
+  //   value: "deepseek/deepseek-r1-zero:free",
+  //   logo: "/logos/deepseek-r1.svg",
+  // },
 ];
 
 export function Chat() {
@@ -67,10 +111,15 @@ export function Chat() {
     null
   );
   const [inputMessage, setInputMessage] = useState("");
-  const [selectedModel, setSelectedModel] = useState<ModelType>(
-    models[0].value
+
+  // Load initial values from session storage with expiration
+  const [selectedModel, setSelectedModel] = useState<ModelType>(() =>
+    getWithExpiry("oneai_selected_model", models[0].value)
   );
-  const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+  const [webSearchEnabled, setWebSearchEnabled] = useState(() =>
+    getWithExpiry("oneai_web_search_enabled", false)
+  );
+
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
@@ -83,6 +132,15 @@ export function Chat() {
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Persist preferences to session storage when they change
+  useEffect(() => {
+    storeWithExpiry("oneai_selected_model", selectedModel);
+  }, [selectedModel]);
+
+  useEffect(() => {
+    storeWithExpiry("oneai_web_search_enabled", webSearchEnabled);
+  }, [webSearchEnabled]);
 
   // Load conversation when path contains a conversation ID
   useEffect(() => {
@@ -269,8 +327,7 @@ export function Chat() {
     setError(null);
     setInputMessage("");
     setCurrentChatId(null);
-    setSelectedModel(models[0].value);
-    setWebSearchEnabled(false);
+    // Don't reset model and web search preferences to preserve user's choices
     setSidebarExpanded(false);
     setCurrentConversation(undefined);
 
@@ -299,6 +356,18 @@ export function Chat() {
       console.error("Error selecting chat:", error);
       setError("Failed to load selected conversation");
     }
+  };
+
+  // Handle model change and save to session storage
+  const handleModelChange = (model: string) => {
+    setSelectedModel(model as ModelType);
+    storeWithExpiry("oneai_selected_model", model);
+  };
+
+  // Handle web search toggle and save to session storage
+  const handleWebSearchToggle = (enabled: boolean) => {
+    setWebSearchEnabled(enabled);
+    storeWithExpiry("oneai_web_search_enabled", enabled);
   };
 
   // Combine regular messages with streaming message for display
@@ -334,9 +403,9 @@ export function Chat() {
         }
         modelOptions={models}
         selectedModel={selectedModel}
-        onModelChange={(model) => setSelectedModel(model as ModelType)}
+        onModelChange={handleModelChange}
         webSearchEnabled={webSearchEnabled}
-        onWebSearchToggle={setWebSearchEnabled}
+        onWebSearchToggle={handleWebSearchToggle}
       />
     </div>
   );

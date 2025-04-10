@@ -10,10 +10,12 @@ import {
 import { useTheme } from "next-themes";
 import { forwardRef, useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
+import Image from "next/image";
 
 interface ModelOption {
   name: string;
   value: string;
+  logo?: string;
 }
 
 interface OneAIInputProps {
@@ -68,9 +70,11 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
       }
     };
 
-    const selectedModelName =
-      modelOptions.find((model) => model.value === selectedModel)?.name ||
-      "Select Model";
+    const selectedModelData = modelOptions.find(
+      (model) => model.value === selectedModel
+    );
+    const selectedModelName = selectedModelData?.name || "Select Model";
+    const selectedModelLogo = selectedModelData?.logo;
 
     return (
       <div className="relative group cursor-pointer bg-transparent">
@@ -109,7 +113,7 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
             <div className="flex items-center justify-start gap-2 mt-2">
               <button
                 onClick={toggleWebSearch}
-                className={`flex items-center space-x-1 rounded-full px-3 py-2 text-xs border border-default-300  ${
+                className={`flex items-center space-x-1 rounded-full px-3 py-[7px] text-xs border border-default-300  ${
                   isWebSearchEnabled
                     ? "bg-primary text-white "
                     : "text-default-500"
@@ -128,8 +132,19 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
                       color="primary"
                       size="sm"
                       radius="full"
-                      className="text-xs flex items-center gap-1 border border-default-300 "
+                      className="text-xs flex items-center gap-1 border border-default-300"
                     >
+                      {selectedModelLogo && (
+                        <div className="relative w-4 h-4 mr-1">
+                          <img
+                            src={selectedModelLogo}
+                            alt={selectedModelName}
+                            width={16}
+                            height={16}
+                            className="w-full h-full bg-default-300 rounded-full p-[2px]"
+                          />
+                        </div>
+                      )}
                       {selectedModelName}
                       <ChevronDown className="h-3 w-3" />
                     </Button>
@@ -145,6 +160,19 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
                         key={model.value}
                         className={
                           selectedModel === model.value ? "text-violet-600" : ""
+                        }
+                        startContent={
+                          model.logo && (
+                            <div className="relative w-4 h-4 bg-white-300">
+                              <Image
+                                src={model.logo}
+                                alt={model.name}
+                                width={16}
+                                height={16}
+                                className="w-full h-full"
+                              />
+                            </div>
+                          )
                         }
                       >
                         {model.name}

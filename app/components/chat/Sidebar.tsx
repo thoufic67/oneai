@@ -160,8 +160,7 @@ export function Sidebar({
         <div className="px-3 py-2">
           <Button
             variant="flat"
-            radius="lg"
-            className="w-full justify-start gap-2"
+            className="w-full justify-start gap-2 rounded-lg"
             startContent={<Plus className="h-4 w-4" />}
             onPress={onNewChat}
           >
@@ -190,14 +189,18 @@ export function Sidebar({
                     variant={
                       currentChatId === conversation.id ? "flat" : "ghost"
                     }
-                    radius="lg"
-                    className="w-full justify-start text-sm text-left h-auto py-2 px-3"
+                    color={
+                      currentChatId === conversation.id ? "primary" : "default"
+                    }
+                    className="w-full justify-start text-xs text-left h-auto py-2 px-3 rounded-lg border-1"
                     startContent={
                       <MessageSquare className="h-4 w-4 shrink-0" />
                     }
                     onPress={() => onSelectChat(conversation.id)}
                   >
-                    <div className="truncate w-full">{conversation.title}</div>
+                    <div className="truncate w-full text-default-500">
+                      {conversation.title}
+                    </div>
                   </Button>
                 ))}
               </div>
