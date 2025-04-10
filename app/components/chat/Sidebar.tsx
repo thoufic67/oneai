@@ -99,10 +99,15 @@ export function Sidebar({
   return (
     <>
       {/* Backdrop overlay */}
-      <div
+      <Button
+        isIconOnly
+        variant="ghost"
+        radius="full"
         className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
-        onClick={onToggle}
-      />
+        onPress={onToggle}
+      >
+        <X className="h-4 w-4" />
+      </Button>
 
       {/* Sidebar */}
       <div className="flex flex-col h-full w-64 border-r border-gray-200 dark:border-gray-800 bg-background/95 backdrop-blur-md fixed left-0 top-0 bottom-0 z-40 shadow-xl">
