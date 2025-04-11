@@ -46,7 +46,7 @@ export default function RootLayout({
         <Providers>
           <BackgroundGradient />
           <div className="relative flex flex-col">
-            {/* <Navbar /> */}
+            <Navbar />
             <main className="container max-w-full flex-grow">{children}</main>
             <footer className="w-full flex items-center justify-center py-3"></footer>
           </div>

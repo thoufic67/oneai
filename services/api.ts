@@ -1,4 +1,6 @@
 import axios from "axios";
+import api from "./axiosSetup";
+import { authService } from "./authService";
 
 interface Message {
   role: "user" | "assistant" | "system";
@@ -52,7 +54,7 @@ class ChatService {
       if (request.stream) {
         return this.handleStreamingRequest(request, onChunk, onFinal);
       } else {
-        const response = await axios.post(
+        const response = await api.post(
           `${this.baseUrl}/v1/chat/stream`,
           request
         );
@@ -73,11 +75,19 @@ class ChatService {
     onChunk?: (chunk: string, conversationId: string) => void,
     onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
+    // Get the access token for authentication
+    const token = authService.getAccessToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(`${this.baseUrl}/v1/chat/stream`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(request),
     });
 
@@ -163,7 +173,7 @@ class ChatService {
 
   async getConversations(limit = 10): Promise<Conversation[]> {
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${this.baseUrl}/v1/conversations?limit=${limit}`
       );
       return response.data.conversations;
@@ -179,9 +189,7 @@ class ChatService {
 
   async getConversation(id: string): Promise<Conversation> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/v1/conversations/${id}`
-      );
+      const response = await api.get(`${this.baseUrl}/v1/conversations/${id}`);
       return response.data.conversation;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -197,7 +205,7 @@ class ChatService {
     conversationId: string
   ): Promise<ChatMessage[]> {
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${this.baseUrl}/v1/conversations/${conversationId}/messages`
       );
       return response.data.messages;
@@ -213,7 +221,7 @@ class ChatService {
 
   async createConversation(title: string): Promise<Conversation> {
     try {
-      const response = await axios.post(`${this.baseUrl}/v1/conversations`, {
+      const response = await api.post(`${this.baseUrl}/v1/conversations`, {
         title,
       });
       return response.data.conversation;
@@ -229,7 +237,7 @@ class ChatService {
 
   async updateConversation(id: string, title: string): Promise<Conversation> {
     try {
-      const response = await axios.patch(
+      const response = await api.patch(
         `${this.baseUrl}/v1/conversations/${id}`,
         { title }
       );
@@ -246,7 +254,7 @@ class ChatService {
 
   async deleteConversation(id: string): Promise<void> {
     try {
-      await axios.delete(`${this.baseUrl}/v1/conversations/${id}`);
+      await api.delete(`${this.baseUrl}/v1/conversations/${id}`);
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(

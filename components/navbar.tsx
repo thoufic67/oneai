@@ -17,6 +17,7 @@ import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/components/theme-switch";
+import UserProfile from "@/components/user-profile";
 import {
   TwitterIcon,
   GithubIcon,
@@ -63,7 +64,7 @@ export const Navbar = () => {
               <NextLink
                 className={clsx(
                   linkStyles({ color: "foreground" }),
-                  "data-[active=true]:text-primary data-[active=true]:font-medium",
+                  "data-[active=true]:text-primary data-[active=true]:font-medium"
                 )}
                 color="foreground"
                 href={item.href}
@@ -104,6 +105,9 @@ export const Navbar = () => {
             Sponsor
           </Button>
         </NavbarItem>
+        <NavbarItem>
+          <UserProfile />
+        </NavbarItem>
       </NavbarContent>
 
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
@@ -111,6 +115,7 @@ export const Navbar = () => {
           <GithubIcon className="text-default-500" />
         </Link>
         <ThemeSwitch />
+        <UserProfile />
         <NavbarMenuToggle />
       </NavbarContent>
 
