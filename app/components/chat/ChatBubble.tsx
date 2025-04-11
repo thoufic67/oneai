@@ -231,7 +231,7 @@ export function ChatBubble({
             />
           )}
           <div
-            className={`flex flex-col gap-2 rounded-lg whitespace-pre-wrap break-words text-sm w-full ${
+            className={`flex flex-col gap-2 rounded-lg whitespace-pre-wrap break-words text-sm  ${
               isAssistant
                 ? "max-w-[95%]"
                 : "items-end bg-primary text-white shadow-md px-4 py-2 max-w-[95%] ml-auto"

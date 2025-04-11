@@ -55,7 +55,9 @@ type ModelType =
   | "mistral/ministral-8b"
   | "grok/grok-3.5-sonnet"
   | "deepseek/deepseek-chat-v3-0324:free"
-  | "deepseek/deepseek-r1-zero:free";
+  | "deepseek/deepseek-r1-zero:free"
+  | "perplexity/llama-3.1-sonar-small-128k-online"
+  | "google/gemini-2.0-flash-001";
 
 interface Model {
   name: string;
@@ -64,6 +66,11 @@ interface Model {
 }
 
 const models: Model[] = [
+  {
+    name: "Gemini",
+    value: "google/gemini-2.0-flash-001",
+    logo: "/logos/gemini.svg",
+  },
   {
     name: "ChatGPT",
     value: "gpt-4o-mini",
@@ -83,6 +90,11 @@ const models: Model[] = [
     name: "Grok",
     value: "grok/grok-3.5-sonnet",
     logo: "/logos/grok.svg",
+  },
+  {
+    name: "Perplexity",
+    value: "perplexity/llama-3.1-sonar-small-128k-online",
+    logo: "/logos/perplexity.svg",
   },
   {
     name: "DeepSeek",
@@ -442,7 +454,7 @@ export function Chat() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </div>
-              <NavbarBrand className="hidden sm:flex">
+              <NavbarBrand className="flex">
                 <p className="text-lg font-bold text-center w-full">
                   {currentConversation?.title || "Conversation"}
                 </p>

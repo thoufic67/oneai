@@ -6,10 +6,11 @@ import {
   DropdownItem,
   Button,
   Chip,
+  Tooltip,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { forwardRef, useState } from "react";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, Globe } from "lucide-react";
 import Image from "next/image";
 
 interface ModelOption {
@@ -111,18 +112,20 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
 
             {/* Search and Model Options */}
             <div className="flex items-center justify-start gap-2 mt-2">
-              <button
-                onClick={toggleWebSearch}
-                className={`flex items-center space-x-1 rounded-full px-3 py-[7px] text-xs border border-default-300  ${
-                  isWebSearchEnabled
-                    ? "bg-primary text-white "
-                    : "text-default-500"
-                } transition-colors duration-300`}
-                type="button"
-              >
-                <Search className="h-3 w-3" />
-                <span>Web search</span>
-              </button>
+              <Tooltip content="Search">
+                <Button
+                  onPress={toggleWebSearch}
+                  isIconOnly
+                  size="sm"
+                  className={`flex rounded-full border border-default-300  ${
+                    isWebSearchEnabled
+                      ? "bg-primary text-white "
+                      : "text-default-500"
+                  } transition-colors duration-300`}
+                >
+                  <Globe className="h-4 w-4" />
+                </Button>
+              </Tooltip>
 
               {modelOptions.length > 0 && (
                 <Dropdown>
