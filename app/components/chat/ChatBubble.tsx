@@ -86,8 +86,8 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
 
   if (!inline && match) {
     return (
-      <div className="relative group max-w-[95%] overflow-x-auto">
-        <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto max-w-full">
+      <div className="relative group w-full max-w-full overflow-x-auto overflow-y-hidden">
+        <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto overflow-y-hidden w-full text-sm">
           <code className={className} {...props}>
             {children}
           </code>
@@ -116,8 +116,8 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
 // Custom table component for better markdown table formatting
 const TableComponent = ({ children }: any) => {
   return (
-    <div className="overflow-x-auto max-w-full my-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-      <table className="max-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <div className="overflow-x-auto overflow-y-hidden w-full my-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+      <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-auto">
         {children}
       </table>
     </div>
@@ -212,16 +212,16 @@ export function ChatBubble({
 
   return (
     <motion.div
-      className={`flex w-full max-w-full p-2 ${isAssistant ? "justify-start" : "justify-end"}`}
+      className="flex w-full p-2"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      <div className={`flex gap-2 max-w-full break-words text-wrap w-fit`}>
+      <div className="flex gap-2 w-full max-w-full">
         <motion.div
           className={`flex flex-col gap-2 w-full ${
             isAssistant ? "items-start" : "items-end"
-          } w-fit`}
+          }`}
         >
           {!isAssistant && (
             <Avatar
@@ -231,13 +231,13 @@ export function ChatBubble({
             />
           )}
           <div
-            className={`flex flex-col gap-2 rounded-lg whitespace-pre-wrap break-words text-sm ${
+            className={`flex flex-col gap-2 rounded-lg whitespace-pre-wrap break-words text-sm w-full ${
               isAssistant
-                ? ""
-                : "items-end bg-primary text-white shadow-md px-4 py-2"
-            } w-fit relative`}
+                ? "max-w-[95%]"
+                : "items-end bg-primary text-white shadow-md px-4 py-2 max-w-[95%] ml-auto"
+            }`}
           >
-            <div className="prose prose-sm dark:prose-invert max-w-full sm:max-w-3xl relative overflow-x-auto whitespace-pre-wrap markdown-content">
+            <div className="prose prose-sm dark:prose-invert w-full max-w-full overflow-x-auto overflow-y-hidden whitespace-pre-wrap markdown-content">
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={MarkdownComponents}
