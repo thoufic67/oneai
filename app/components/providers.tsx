@@ -4,6 +4,7 @@ import * as React from "react";
 import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider } from "./theme-provider";
 import { ShortcutKeyProvider } from "./search/ShortcutKeyProvider";
+import { AuthProvider } from "./auth-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +14,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <HeroUIProvider>
-        <ShortcutKeyProvider>{children}</ShortcutKeyProvider>
+        <AuthProvider>
+          <ShortcutKeyProvider>{children}</ShortcutKeyProvider>
+        </AuthProvider>
       </HeroUIProvider>
     </ThemeProvider>
   );

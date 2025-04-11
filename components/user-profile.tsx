@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "@/app/components/auth-provider";
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
@@ -11,16 +11,28 @@ import {
   DropdownItem,
 } from "@heroui/dropdown";
 import Link from "next/link";
+import { Spinner } from "@heroui/spinner";
 
 export default function UserProfile() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, error, logout } = useAuth();
 
+  // Add debugging to understand auth state
+  useEffect(() => {
+    if (error) {
+      console.error("Auth error in UserProfile:", error);
+    }
+  }, [error]);
+
+  // Show loading spinner while authentication state is being determined
   if (loading) {
     return (
-      <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+      <div className="flex items-center justify-center">
+        <Spinner size="sm" color="primary" />
+      </div>
     );
   }
 
+  // Not authenticated - show sign in button
   if (!user) {
     return (
       <Link href="/login">
@@ -31,6 +43,7 @@ export default function UserProfile() {
     );
   }
 
+  // User is authenticated - show profile dropdown
   return (
     <Dropdown>
       <DropdownTrigger>

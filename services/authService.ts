@@ -18,7 +18,7 @@ class AuthService {
 
   // Redirect to Google login page
   initiateGoogleLogin() {
-    window.location.href = `${this.baseUrl}/v1/auth/google`;
+    window.location.href = `${this.baseUrl}/auth/google`;
   }
 
   // Handle the Google OAuth callback
@@ -124,21 +124,29 @@ class AuthService {
 
   // Save tokens to storage
   saveTokens(accessToken: string, refreshToken: string) {
-    localStorage.setItem(
-      this.tokenKey,
-      JSON.stringify({ accessToken, refreshToken })
-    );
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        this.tokenKey,
+        JSON.stringify({ accessToken, refreshToken })
+      );
+    }
   }
 
   // Get tokens from storage
   private getTokens(): { accessToken: string; refreshToken: string } | null {
+    if (typeof window === "undefined") {
+      return null; // Return null when running on the server
+    }
+
     const tokensJson = localStorage.getItem(this.tokenKey);
     return tokensJson ? JSON.parse(tokensJson) : null;
   }
 
   // Clear tokens from storage
   private clearTokens() {
-    localStorage.removeItem(this.tokenKey);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(this.tokenKey);
+    }
   }
 }
 

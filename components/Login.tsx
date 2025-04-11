@@ -21,7 +21,7 @@ export default function Login() {
 
         <div className="mt-8 space-y-6">
           <Button
-            onClick={handleGoogleLogin}
+            onPress={handleGoogleLogin}
             className="w-full flex items-center justify-center space-x-2"
             variant="bordered"
           >
