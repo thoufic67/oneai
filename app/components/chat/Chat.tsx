@@ -56,7 +56,7 @@ type ModelType =
   | "grok/grok-3.5-sonnet"
   | "deepseek/deepseek-chat-v3-0324:free"
   | "deepseek/deepseek-r1-zero:free"
-  | "perplexity/llama-3.1-sonar-small-128k-online"
+  | "perplexity/sonar"
   | "google/gemini-2.0-flash-001";
 
 interface Model {
@@ -93,7 +93,7 @@ const models: Model[] = [
   },
   {
     name: "Perplexity",
-    value: "perplexity/llama-3.1-sonar-small-128k-online",
+    value: "perplexity/sonar",
     logo: "/logos/perplexity.svg",
   },
   {
