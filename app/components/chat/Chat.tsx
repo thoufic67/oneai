@@ -11,7 +11,7 @@ import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
 import { Sidebar } from "./Sidebar";
 import { Button, Navbar, NavbarBrand, NavbarContent } from "@heroui/react";
-import { AlertCircle, Send, Menu } from "lucide-react";
+import { AlertCircle, Send, Menu, PanelLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
@@ -451,11 +451,11 @@ export function Chat() {
                   radius="full"
                   onPress={toggleSidebar}
                 >
-                  <Menu className="h-5 w-5" />
+                  <PanelLeft className="h-5 w-5" />
                 </Button>
               </div>
               <NavbarBrand className="flex">
-                <p className="text-lg font-bold text-center w-full">
+                <p className="text-sm sm:text-lg font-bold text-center w-full">
                   {currentConversation?.title || "Conversation"}
                 </p>
               </NavbarBrand>
