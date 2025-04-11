@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Modal, ModalContent, Button, Input } from "@heroui/react";
 import { Search, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -31,19 +30,18 @@ export function CommandK({ isOpen, onClose }: CommandKProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} backdrop="blur" hideCloseButton>
+    <Modal backdrop="blur" hideCloseButton isOpen={isOpen} onClose={onClose}>
       <ModalContent className="max-w-md mx-auto p-0 overflow-hidden">
         <div className="p-2">
           <Input
             ref={inputRef}
             value={searchQuery}
-            onValueChange={setSearchQuery}
-            placeholder="Search for your tasks..."
-            startContent={<Search className="h-4 w-4 text-gray-400" />}
             className="w-full"
+            placeholder="Search for your tasks..."
             size="lg"
+            startContent={<Search className="h-4 w-4 text-gray-400" />}
             variant="bordered"
-            autoFocus
+            onValueChange={setSearchQuery}
             aria-label="Search"
           />
         </div>
