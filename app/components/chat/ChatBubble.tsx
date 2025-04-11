@@ -47,7 +47,7 @@ const Link = ({ href, children }: any) => {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-blue-600 dark:text-blue-400 hover:underline"
+      className="bg-default-300 p-1 rounded-lg text-blue-600 dark:text-blue-400 hover:underline"
     >
       {children}
     </a>
@@ -116,8 +116,8 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
 // Custom table component for better markdown table formatting
 const TableComponent = ({ children }: any) => {
   return (
-    <div className="overflow-x-auto my-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <div className="overflow-x-auto max-w-full my-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+      <table className="max-w-full divide-y divide-gray-200 dark:divide-gray-700">
         {children}
       </table>
     </div>
@@ -237,7 +237,7 @@ export function ChatBubble({
                 : "items-end bg-primary text-white shadow-md px-4 py-2"
             } w-fit relative`}
           >
-            <div className="prose prose-sm dark:prose-invert max-w-3xl relative overflow-x-auto whitespace-pre-wrap markdown-content">
+            <div className="prose prose-sm dark:prose-invert max-w-full sm:max-w-3xl relative overflow-x-auto whitespace-pre-wrap markdown-content">
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={MarkdownComponents}
