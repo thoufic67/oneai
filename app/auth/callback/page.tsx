@@ -11,7 +11,12 @@ function CallbackContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const code = searchParams.get("code");
+    const accessToken = searchParams.get("accessToken");
+    const refreshToken = searchParams.get("refreshToken");
+    const userId = searchParams.get("userId");
+    const email = searchParams.get("email");
+    const name = searchParams.get("name");
+    const pictureUrl = searchParams.get("pictureUrl");
     const queryError = searchParams.get("error");
 
     if (queryError) {
@@ -20,29 +25,40 @@ function CallbackContent() {
       return;
     }
 
-    if (!code) {
-      setError("No authorization code received");
+    // Check for tokens instead of authorization code
+    if (!accessToken || !refreshToken) {
+      setError("Authentication failed: No tokens received");
       setLoading(false);
       return;
     }
 
-    // Process the code
-    authService
-      .handleGoogleCallback(code)
-      .then(() => {
-        // Redirect to home page or dashboard after successful login
-        router.push("/");
-      })
-      .catch((err) => {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred");
-        }
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    try {
+      // Store tokens directly, no API call needed
+      authService.saveTokens(accessToken, refreshToken);
+
+      // Store user info if needed
+      if (userId && email) {
+        const user = {
+          id: userId,
+          email: email,
+          name: name || "",
+          picture_url: pictureUrl || "",
+        };
+
+        // Store user info if needed (optional)
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      // Redirect to home page or dashboard after successful login
+      router.push("/");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
+      setLoading(false);
+    }
   }, [router, searchParams]);
 
   if (loading) {

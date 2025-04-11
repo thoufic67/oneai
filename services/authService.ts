@@ -123,7 +123,7 @@ class AuthService {
   }
 
   // Save tokens to storage
-  private saveTokens(accessToken: string, refreshToken: string) {
+  saveTokens(accessToken: string, refreshToken: string) {
     localStorage.setItem(
       this.tokenKey,
       JSON.stringify({ accessToken, refreshToken })
