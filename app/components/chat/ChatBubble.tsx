@@ -154,20 +154,20 @@ const Paragraph = ({ children, className = "" }: any) => {
   ) {
     return null;
   }
-  return <p className={`my-1 ${className}`}>{children}</p>;
+  return <p className={` ${className}`}>{children}</p>;
 };
 
 // List components for more compact rendering
 const List = ({ ordered, children }: { ordered: boolean; children: any }) => {
   return ordered ? (
-    <ol className="pl-5 my-1 list-decimal">{children}</ol>
+    <ol className="pl-5 my-1 list-decimal list-outside">{children}</ol>
   ) : (
-    <ul className="pl-5 my-1 list-disc">{children}</ul>
+    <ul className="pl-5 my-1 list-disc list-outside ">{children}</ul>
   );
 };
 
 const ListItem = ({ children }: any) => {
-  return <li className="my-0.5">{children}</li>;
+  return <li className="">{children}</li>;
 };
 
 const MarkdownComponents = {
