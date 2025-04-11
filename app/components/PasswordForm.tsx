@@ -61,7 +61,7 @@ export function PasswordForm({ children }: PasswordFormProps) {
     return <>{children}</>;
   } else {
     return (
-      <div className="flex justify-center items-center min-h-[80vh]">
+      <div className="flex justify-center items-center min-h-[80vh] p-8">
         <Card className="w-full max-w-md">
           <CardHeader className="flex justify-center pb-2">
             <Lock className="h-8 w-8 text-primary" />
