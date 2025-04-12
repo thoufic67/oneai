@@ -6,7 +6,7 @@ export function BackgroundGradient() {
   return (
     <>
       {/* Fixed Background */}
-      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-purple-50 -z-10" />
+      <div className="fixed inset-0 bg-gradient-to-br from-primary-50 to-purple-50 -z-10" />
 
       {/* Animated Background Gradients - Fixed */}
       <div className="fixed inset-0 overflow-hidden -z-10">
@@ -15,7 +15,7 @@ export function BackgroundGradient() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 2 }}
-            className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-blue-400/10 rounded-full mix-blend-multiply filter blur-[80px] "
+            className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary-400/10 rounded-full mix-blend-multiply filter blur-[80px] "
           />
           <motion.div
             initial={{ opacity: 0 }}

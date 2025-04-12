@@ -135,13 +135,6 @@ export function Sidebar({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Image
-                  src="/one-ai-favicon.svg"
-                  alt="OneAI"
-                  width={24}
-                  height={24}
-                />
-                <span className="font-bold text-lg">OneAI</span>
               </div>
             </div>
 

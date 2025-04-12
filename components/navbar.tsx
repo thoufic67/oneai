@@ -54,9 +54,15 @@ export const Navbar = () => {
     <HeroUINavbar maxWidth="xl" position="sticky">
       <NavbarContent>
         <NavbarBrand>
-          <Image src="/one-ai-favicon.svg" alt="OneAI" width={24} height={24} />
-
-          <span className="font-bold text-lg"> OneAI</span>
+          <Link href="/" className="flex items-center gap-2">
+            <Image
+              src="/one-ai-favicon.svg"
+              alt="OneAI"
+              width={24}
+              height={24}
+            />
+            <span className="font-bold text-lg"> OneAI</span>
+          </Link>
         </NavbarBrand>
       </NavbarContent>
       <NavbarContent
