@@ -60,12 +60,13 @@ export const Navbar = () => {
         </NavbarBrand>
       </NavbarContent>
       <NavbarContent
-        className="hidden sm:flex basis-1/5 sm:basis-full"
+        className="hidden sm:flex basis-1/5 sm:basis-full items-center"
         justify="end"
       >
         <NavbarItem>
           <ThemeSwitch />
-
+        </NavbarItem>
+        <NavbarItem>
           <UserProfile />
         </NavbarItem>
       </NavbarContent>
