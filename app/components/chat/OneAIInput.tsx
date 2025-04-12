@@ -92,7 +92,7 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
               ref={ref}
               classNames={{
                 input:
-                  "bg-transparent focus:bg-transparent resize-none w-[95%] outline-none focus:outline-none text-base",
+                  "bg-transparent focus:bg-transparent resize-none w-[95%] outline-none focus:outline-none  text-sm",
                 inputWrapper:
                   "bg-transparent data-[hover=true]:bg-transparent focus:outline-none",
                 ...classNames,

@@ -162,12 +162,16 @@ const List = ({ ordered, children }: { ordered: boolean; children: any }) => {
   return ordered ? (
     <ol className="pl-5 my-1 list-decimal list-outside">{children}</ol>
   ) : (
-    <ul className="pl-5 my-1 list-disc list-outside ">{children}</ul>
+    <ul className="pl-5 my-1 list-disc list-outside">{children}</ul>
   );
 };
 
 const ListItem = ({ children }: any) => {
-  return <li className="">{children}</li>;
+  return (
+    <li className="">
+      <div className="-mt-4">{children}</div>
+    </li>
+  );
 };
 
 const MarkdownComponents = {
