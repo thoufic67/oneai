@@ -2,88 +2,88 @@
 
 ## Initial Setup
 
-- [ ] Create Supabase project
+- [x] Create Supabase project
   - [ ] Configure Google OAuth
   - [ ] Set up database tables
   - [ ] Configure RLS policies
 - [ ] Set up Razorpay account
   - [ ] Create subscription plans
   - [ ] Get API keys
-- [ ] Install dependencies
+- [x] Install dependencies
   ```bash
   npm install @supabase/supabase-js @supabase/auth-helpers-nextjs razorpay openrouter
   ```
-- [ ] Configure environment variables
-  - [ ] NEXT_PUBLIC_SUPABASE_URL
-  - [ ] NEXT_PUBLIC_SUPABASE_ANON_KEY
-  - [ ] RAZORPAY_KEY_ID
-  - [ ] RAZORPAY_KEY_SECRET
-  - [ ] OPENROUTER_API_KEY
+- [x] Configure environment variables
+  - [x] NEXT_PUBLIC_SUPABASE_URL
+  - [x] NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - [x] RAZORPAY_KEY_ID
+  - [x] RAZORPAY_KEY_SECRET
+  - [x] OPENROUTER_API_KEY
 
 ## Database Setup
 
 ### Create Tables
 
-- [ ] Users Table
-  - [ ] Create table with all fields
-  - [ ] Set up relationships
-  - [ ] Configure indexes
-- [ ] Subscriptions Table
-  - [ ] Create table structure
-  - [ ] Set up foreign keys
-  - [ ] Add indexes
-- [ ] Conversations Table
-  - [ ] Create table structure
-  - [ ] Set up relationships
-  - [ ] Configure indexes
-- [ ] Chat Messages Table
-  - [ ] Create table structure
-  - [ ] Set up foreign keys
-  - [ ] Add indexes
-- [ ] Usage Quotas Table
-  - [ ] Create table structure
-  - [ ] Set up relationships
-  - [ ] Configure indexes
+- [x] Users Table
+  - [x] Create table with all fields
+  - [x] Set up relationships
+  - [x] Configure indexes
+- [x] Subscriptions Table
+  - [x] Create table structure
+  - [x] Set up foreign keys
+  - [x] Add indexes
+- [x] Conversations Table
+  - [x] Create table structure
+  - [x] Set up relationships
+  - [x] Configure indexes
+- [x] Chat Messages Table
+  - [x] Create table structure
+  - [x] Set up foreign keys
+  - [x] Add indexes
+- [x] Usage Quotas Table
+  - [x] Create table structure
+  - [x] Set up relationships
+  - [x] Configure indexes
 
 ### Security
 
-- [ ] Set up Row Level Security (RLS)
-  - [ ] Users table policies
-  - [ ] Subscriptions table policies
-  - [ ] Conversations table policies
-  - [ ] Messages table policies
-  - [ ] Quotas table policies
+- [x] Set up Row Level Security (RLS)
+  - [x] Users table policies
+  - [x] Subscriptions table policies
+  - [x] Conversations table policies
+  - [x] Messages table policies
+  - [x] Quotas table policies
 
 ## OpenRouter Integration
 
 ### Setup & Configuration
 
-- [ ] Create OpenRouter account
-- [ ] Get API key
-- [ ] Configure environment variables
-  - [ ] OPENROUTER_API_KEY
-  - [ ] NEXT_PUBLIC_SITE_URL
-  - [ ] NEXT_PUBLIC_SITE_NAME
+- [x] Create OpenRouter account
+- [x] Get API key
+- [x] Configure environment variables
+  - [x] OPENROUTER_API_KEY
+  - [x] NEXT_PUBLIC_SITE_URL
+  - [x] NEXT_PUBLIC_SITE_NAME
 
 ### Client Implementation
 
-- [ ] Create OpenRouter client
-  - [ ] Implement streamChat method
-  - [ ] Implement getModels method
-  - [ ] Add error handling
-  - [ ] Add rate limit handling
-- [ ] Create model configuration
-  - [ ] Define supported models
-  - [ ] Set pricing information
-  - [ ] Configure context limits
+- [x] Create OpenRouter client
+  - [x] Implement streamChat method
+  - [x] Implement getModels method
+  - [x] Add error handling
+  - [x] Add rate limit handling
+- [x] Create model configuration
+  - [x] Define supported models
+  - [x] Set pricing information
+  - [x] Configure context limits
 
 ### API Routes
 
-- [ ] Chat streaming endpoint
-  - [ ] Implement SSE
-  - [ ] Add model selection
-  - [ ] Handle rate limits
-  - [ ] Implement error recovery
+- [x] Chat streaming endpoint
+  - [x] Implement SSE
+  - [x] Add model selection
+  - [x] Handle rate limits
+  - [x] Implement error recovery
 - [ ] Models endpoint
   - [ ] List available models
   - [ ] Get pricing info

@@ -2,6 +2,12 @@ import axios from "axios";
 import api from "./axiosSetup";
 import { authService } from "./authService";
 
+interface UsageData {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
@@ -37,12 +43,19 @@ interface ChatMessage {
   created_at: string;
 }
 
+interface StreamResponse {
+  content?: string;
+  conversationId?: string;
+  usage?: Partial<UsageData>;
+  error?: string;
+  done?: boolean;
+}
+
 class ChatService {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api/v1";
+    this.baseUrl = "/api";
   }
 
   async createChatCompletion(
@@ -72,7 +85,6 @@ class ChatService {
     onChunk?: (chunk: string, conversationId: string) => void,
     onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
-    // Get the access token for authentication
     const token = authService.getAccessToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -89,7 +101,10 @@ class ChatService {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     const reader = response.body?.getReader();
@@ -98,71 +113,70 @@ class ChatService {
     const decoder = new TextDecoder();
     let fullResponse = "";
     let currentConversationId = request.conversationId || "";
-    let conversationTitle = "";
+    let currentUsage: Partial<UsageData> | undefined;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((line) => line.trim() !== "");
 
-      for (const line of lines) {
-        if (line === "[DONE]") continue;
+        for (const line of lines) {
+          if (line === "[DONE]") continue;
 
-        try {
-          const jsonString = line.replace(/^data: /, "").trim();
-          if (!jsonString || !line.startsWith("data: ")) continue;
+          try {
+            const jsonString = line.replace(/^data: /, "").trim();
+            if (!jsonString || !line.startsWith("data: ")) continue;
 
-          // Handle [DONE] message
-          if (jsonString === "[DONE]") {
-            onFinal?.(fullResponse, currentConversationId, conversationTitle);
-            return {
-              text: fullResponse,
-              conversationId: currentConversationId,
-              title: conversationTitle || undefined,
-            };
-          }
+            const json = JSON.parse(jsonString) as StreamResponse;
 
-          const json = JSON.parse(jsonString);
+            // Handle error message
+            if (json.error) {
+              throw new Error(json.error);
+            }
 
-          // Check if this is the done message with a title
-          if (json.done) {
+            // Handle done message
+            if (json.done) {
+              if (json.conversationId) {
+                currentConversationId = json.conversationId;
+              }
+              onFinal?.(fullResponse, currentConversationId);
+              return {
+                text: fullResponse,
+                conversationId: currentConversationId,
+                usage: currentUsage,
+              };
+            }
+
+            // Handle content and usage
+            if (json.content) {
+              fullResponse += json.content;
+              onChunk?.(json.content, currentConversationId);
+            }
+
+            if (json.usage) {
+              currentUsage = json.usage;
+            }
+
             if (json.conversationId) {
               currentConversationId = json.conversationId;
             }
-            if (json.title) {
-              conversationTitle = json.title;
-            }
-            onFinal?.(fullResponse, currentConversationId, conversationTitle);
-            return {
-              text: fullResponse,
-              conversationId: currentConversationId,
-              title: conversationTitle || undefined,
-            };
+          } catch (error) {
+            console.error("Error parsing SSE chunk:", error);
+            throw error;
           }
-
-          const content = json.content ?? "";
-
-          // Extract conversationId if present
-          if (json.conversationId) {
-            currentConversationId = json.conversationId;
-          }
-
-          if (content) {
-            fullResponse += content;
-            onChunk?.(content, currentConversationId);
-          }
-        } catch (error) {
-          console.error("Error parsing SSE chunk:", error);
         }
       }
+    } finally {
+      reader.releaseLock();
     }
 
     return {
       text: fullResponse,
       conversationId: currentConversationId,
-      title: conversationTitle || undefined,
+      usage: currentUsage,
     };
   }
 
