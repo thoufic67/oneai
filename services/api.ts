@@ -44,6 +44,8 @@ interface ChatMessage {
   metadata?: Record<string, any>;
   created_at: string;
   sequence_number?: number;
+  attachment_url?: string;
+  attachment_type?: "image" | "video" | "audio" | "document" | "other";
 }
 
 interface PaginatedResponse<T> {
@@ -328,6 +330,8 @@ class ChatService {
       model_id?: string;
       parent_message_id?: string;
       metadata?: Record<string, any>;
+      attachment_url?: string;
+      attachment_type?: "image" | "video" | "audio" | "document" | "other";
     } = {}
   ): Promise<ChatMessage> {
     try {

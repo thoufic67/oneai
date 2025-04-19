@@ -85,32 +85,21 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!inline && match) {
-    return (
-      <div className="relative group w-full max-w-full overflow-x-auto overflow-y-hidden">
-        <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto overflow-y-hidden w-full text-sm">
-          <code className={className} {...props}>
-            {children}
-          </code>
-        </pre>
-        <button
-          onClick={copyToClipboard}
-          className="absolute top-2 right-2 p-1 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-all"
-          aria-label="Copy code"
-        >
-          {copied ? <Check size={16} /> : <Copy size={16} />}
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <code
-      className={`${className} px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded`}
-      {...props}
-    >
-      {children}
-    </code>
+    <div className="relative group w-full max-w-full overflow-x-auto overflow-y-hidden bg-gray-100 dark:bg-gray-100 dark:text-default-900 rounded-md">
+      <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto overflow-y-hidden w-full text-sm">
+        <code className={className} {...props}>
+          {children}
+        </code>
+      </pre>
+      <button
+        onClick={copyToClipboard}
+        className="absolute top-2 right-2 p-1 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-all"
+        aria-label="Copy code"
+      >
+        {copied ? <Check size={16} /> : <Copy size={16} />}
+      </button>
+    </div>
   );
 };
 

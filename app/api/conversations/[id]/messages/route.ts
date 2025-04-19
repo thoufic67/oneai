@@ -117,11 +117,26 @@ export async function POST(
       parent_message_id,
       sequence_number,
       metadata = {},
+      attachment_url,
+      attachment_type,
     } = body;
 
     if (!content) {
       return NextResponse.json(
         { error: "Content is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate attachment_type if attachment_url is provided
+    if (
+      attachment_url &&
+      !["image", "video", "audio", "document", "other"].includes(
+        attachment_type
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Invalid attachment type" },
         { status: 400 }
       );
     }
@@ -134,6 +149,8 @@ export async function POST(
       metadata,
       conversation_id: id,
       user_id: user.id,
+      attachment_url,
+      attachment_type,
       body,
     });
 
@@ -149,6 +166,8 @@ export async function POST(
         parent_message_id,
         metadata,
         sequence_number: sequence_number,
+        attachment_url,
+        attachment_type,
       })
       .select("*")
       .single();
