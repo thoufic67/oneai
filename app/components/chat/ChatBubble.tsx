@@ -2,9 +2,10 @@ import { Avatar } from "@heroui/react";
 import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Check, Copy, RefreshCcw } from "lucide-react";
 import React from "react";
+import { useAuth } from "@/app/components/auth-provider";
 
 interface ChatBubbleProps {
   isAssistant: boolean;
@@ -203,6 +204,7 @@ export function ChatBubble({
   onRegenerate,
 }: ChatBubbleProps) {
   const [messageCopied, setMessageCopied] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     console.log("messageCopied", content);
@@ -213,6 +215,16 @@ export function ChatBubble({
     setMessageCopied(true);
     setTimeout(() => setMessageCopied(false), 2000);
   };
+
+  // Get user's name initials or use default
+  const getUserInitials = useCallback(() => {
+    if (!user?.user_metadata?.full_name) return "U";
+    return user.user_metadata.full_name
+      .split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase();
+  }, [user]);
 
   return (
     <motion.div
@@ -229,9 +241,13 @@ export function ChatBubble({
         >
           {!isAssistant && (
             <Avatar
-              src="https://ui-avatars.com/api/?name=T"
+              src={
+                user?.user_metadata?.avatar_url ||
+                `https://ui-avatars.com/api/?name=${getUserInitials()}`
+              }
               size="sm"
               radius="full"
+              alt={user?.user_metadata?.full_name || "User"}
             />
           )}
           <div

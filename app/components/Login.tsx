@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@heroui/button";
-import { authService } from "../services/authService";
+import { authService } from "@/services/authService";
 
 export default function Login() {
   const handleGoogleLogin = async () => {

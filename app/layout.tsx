@@ -6,9 +6,9 @@ import { Inter } from "next/font/google";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
-import { Navbar } from "@/components/navbar";
+import { Navbar } from "@/app/components/navbar";
 import { Providers } from "./components/providers";
-import { BackgroundGradient } from "@/components/background-gradient";
+import { BackgroundGradient } from "@/app/components/background-gradient";
 
 const inter = Inter({ subsets: ["latin"] });
 

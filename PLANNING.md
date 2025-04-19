@@ -57,8 +57,8 @@ This document outlines the complete platform architecture using Supabase for aut
 
   /api
     /auth
-      /callback/route.ts # Auth callback API
-      /session/route.ts  # Session management
+      /callback
+        route.ts        # Handle auth callbacks
     /chat
       /stream/route.ts   # SSE streaming
       /models/route.ts   # Models list
@@ -151,10 +151,14 @@ CREATE TABLE users (
     picture_url TEXT,
     current_subscription TEXT,
     subscription_status TEXT,
-    google_id TEXT UNIQUE,
+    provider_type TEXT,
+    provider_id TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add unique constraint for provider combination
+CREATE UNIQUE INDEX idx_provider_unique ON users(provider_type, provider_id);
 ```
 
 ### Subscriptions Table
@@ -163,13 +167,17 @@ CREATE TABLE users (
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY,
     user_id UUID REFERENCES users(id),
-    razorpay_subscription_id TEXT UNIQUE,
+    payment_provider TEXT,
+    provider_subscription_id TEXT,
     plan_id TEXT,
     status TEXT,
     current_period_end TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     metadata JSONB
 );
+
+-- Add unique constraint for provider subscription
+CREATE UNIQUE INDEX idx_provider_subscription_unique ON subscriptions(payment_provider, provider_subscription_id);
 ```
 
 ### Conversations Table
@@ -231,18 +239,13 @@ CREATE INDEX idx_conversations_user_id ON conversations(user_id);
   /auth
     /callback
       route.ts        # Handle auth callbacks
-    /session
-      route.ts        # Session management
-    /verify
-      route.ts        # Token verification
-
-  /chat
-    /stream
-      route.ts        # SSE chat streaming with OpenRouter
-    /history
-      route.ts        # Chat history operations
-    /models
-      route.ts        # Available OpenRouter models info
+    /chat
+      /stream
+        route.ts        # SSE chat streaming with OpenRouter
+      /history
+        route.ts        # Chat history operations
+      /models
+        route.ts        # Available OpenRouter models info
 
   /conversations
     route.ts          # List/create conversations
@@ -373,13 +376,6 @@ export class OpenRouterClient {
   - Handle OAuth callbacks
   - Process token exchange
   - Create/update user profile
-- `GET /api/auth/session`
-  - Get current session
-  - Validate token
-  - Refresh if needed
-- `POST /api/auth/verify`
-  - Verify token validity
-  - Check permissions
 
 ### Chat API
 

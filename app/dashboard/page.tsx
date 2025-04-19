@@ -1,6 +1,6 @@
 "use client";
 
-import withAuth from "@/components/withAuth";
+import withAuth from "@/app/components/withAuth";
 import { Button } from "@heroui/button";
 import { authService } from "@/services/authService";
 import { useRouter } from "next/navigation";

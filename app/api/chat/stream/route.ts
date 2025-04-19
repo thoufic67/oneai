@@ -62,12 +62,14 @@ async function saveMessage(
   tokensUsed: number
 ) {
   try {
+    const cookieStore = await cookies();
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_SITE_URL}/conversations/${conversationId}/messages`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          cookie: cookieStore.toString(),
         },
         body: JSON.stringify({
           content,
