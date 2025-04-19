@@ -176,7 +176,7 @@ export function Chat() {
       setCurrentConversation(conversationDetails);
 
       // Convert API messages to component format
-      const formattedMessages: Message[] = messagesData.map((msg) => ({
+      const formattedMessages: Message[] = messagesData.data.map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
       }));
@@ -258,6 +258,7 @@ export function Chat() {
               user_id: "", // Will be filled by the backend
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
+              last_message_at: new Date().toISOString(),
             };
             setNewConversation(tempConversation);
           }

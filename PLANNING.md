@@ -4,6 +4,81 @@
 
 This document outlines the complete platform architecture using Supabase for authentication and database, NextJS API for chat services, and Razorpay for subscription management.
 
+## User Journey & Conversation Flow
+
+### Conversation Lifecycle
+
+1. **Starting a Conversation**
+
+   - User sends their first message
+   - System automatically creates a new conversation
+   - Message is stored with `sequence_number = 1`
+   - Assistant generates and stores response with `sequence_number = 2`
+
+2. **Message Flow**
+
+   - Each message in a conversation has a sequential number
+   - Messages alternate between user and assistant
+   - Each message can reference its parent message for threaded context
+
+3. **Message Revisions**
+
+   - Users can edit their previous messages
+     - Original message is marked as not latest (`is_latest = false`)
+     - New revision is created with incremented `revision_number`
+     - New revision maintains same `sequence_number` as original
+     - Latest revision is marked with `is_latest = true`
+   - Assistant responses can be regenerated
+     - Similar to user edits, but marked with `revision_type = 'regeneration'`
+     - Previous response marked as not latest
+     - New response gets next revision number
+     - Maintains conversation flow and sequence
+
+4. **Revision History**
+   - All message versions are preserved
+   - Each revision links to original message via `original_message_id`
+   - UI can show revision history when requested
+   - Easy to track changes and regenerations
+   - Token usage tracked per revision for billing
+
+### Data Model Example
+
+```
+Conversation Example:
+[User Message]    seq=1, rev=0 (original)
+[Assistant Reply] seq=2, rev=0 (original)
+[User Edit]       seq=1, rev=1 (revision of first message)
+[New Response]    seq=2, rev=1 (regenerated due to edit)
+[User Message]    seq=3, rev=0 (new message)
+[Assistant Reply] seq=4, rev=0 (new response)
+```
+
+### Key Features
+
+1. **Real-time Updates**
+
+   - Messages stream in real-time
+   - Edits and regenerations reflect immediately
+   - UI updates to show latest versions
+
+2. **Revision Tracking**
+
+   - Complete history preserved
+   - Clear indication of current versions
+   - Support for both user edits and regenerations
+
+3. **Performance Optimization**
+
+   - Efficient loading of latest message versions
+   - Single query to load current conversation state
+   - Revisions loaded only when viewing history
+
+4. **User Experience**
+   - Similar to ChatGPT interaction model
+   - Seamless editing and regeneration
+   - Clear indication of message versions
+   - Easy access to revision history
+
 ## Architecture
 
 - Frontend: Next.js with TypeScript
@@ -149,16 +224,13 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL,
     name TEXT,
     picture_url TEXT,
-    current_subscription TEXT,
-    subscription_status TEXT,
     provider_type TEXT,
     provider_id TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Add unique constraint for provider combination
+    CONSTRAINT unique_provider UNIQUE (provider_type, provider_id)
 );
-
--- Add unique constraint for provider combination
-CREATE UNIQUE INDEX idx_provider_unique ON users(provider_type, provider_id);
 ```
 
 ### Subscriptions Table
@@ -166,18 +238,31 @@ CREATE UNIQUE INDEX idx_provider_unique ON users(provider_type, provider_id);
 ```sql
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    payment_provider TEXT,
-    provider_subscription_id TEXT,
-    plan_id TEXT,
-    status TEXT,
-    current_period_end TIMESTAMP,
+    user_id UUID NOT NULL REFERENCES users(id),
+    plan_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('active', 'cancelled', 'past_due', 'unpaid', 'trial')),
+    payment_provider TEXT NOT NULL,
+    provider_subscription_id TEXT NOT NULL,
+    current_period_start TIMESTAMP NOT NULL,
+    current_period_end TIMESTAMP NOT NULL,
+    cancel_at_period_end BOOLEAN DEFAULT false,
+    trial_start TIMESTAMP,
+    trial_end TIMESTAMP,
+    canceled_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    metadata JSONB
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB,
+    -- Ensure unique provider subscription
+    CONSTRAINT unique_provider_subscription UNIQUE (payment_provider, provider_subscription_id)
 );
 
--- Add unique constraint for provider subscription
-CREATE UNIQUE INDEX idx_provider_subscription_unique ON subscriptions(payment_provider, provider_subscription_id);
+-- Index for quick user subscription lookup
+CREATE INDEX idx_subscriptions_user_active ON subscriptions(user_id)
+WHERE status = 'active';
+
+-- Index for subscription renewal checks
+CREATE INDEX idx_subscriptions_period_end ON subscriptions(current_period_end)
+WHERE status = 'active';
 ```
 
 ### Conversations Table
@@ -199,16 +284,47 @@ CREATE TABLE conversations (
 ```sql
 CREATE TABLE chat_messages (
     id UUID PRIMARY KEY,
-    conversation_id UUID REFERENCES conversations(id),
-    user_id UUID REFERENCES users(id),
+    conversation_id UUID NOT NULL REFERENCES conversations(id),
+    user_id UUID NOT NULL REFERENCES users(id),
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
     content TEXT NOT NULL,
     model_id TEXT NOT NULL,
     tokens_used INTEGER,
+    sequence_number INTEGER NOT NULL,
     parent_message_id UUID REFERENCES chat_messages(id),
+    original_message_id UUID REFERENCES chat_messages(id),  -- Links to the original message if this is a revision
+    revision_number INTEGER DEFAULT 0,                      -- 0 for original message, increments for each revision
+    revision_type TEXT CHECK (revision_type IN ('user_edit', 'regeneration')),
+    is_latest BOOLEAN DEFAULT true,                        -- Indicates if this is the latest version
     metadata JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Ensure unique sequence in conversation
+    CONSTRAINT unique_message_sequence UNIQUE (conversation_id, sequence_number),
+    -- Ensure proper revision ordering
+    CONSTRAINT unique_revision_sequence UNIQUE (original_message_id, revision_number)
 );
+
+-- Index for loading conversation messages efficiently
+CREATE INDEX idx_chat_messages_conv_latest ON chat_messages(conversation_id)
+WHERE is_latest = true;
+
+CREATE INDEX idx_chat_messages_conv_seq ON chat_messages(conversation_id, sequence_number, is_latest);
+
+-- Example queries:
+
+/*
+-- Load latest version of all messages in a conversation
+SELECT * FROM chat_messages
+WHERE conversation_id = :conversation_id
+  AND is_latest = true
+ORDER BY sequence_number;
+
+-- Load all revisions of a specific message
+SELECT * FROM chat_messages
+WHERE original_message_id = :message_id
+  OR id = :message_id
+ORDER BY revision_number;
+*/
 ```
 
 ### Usage Quotas Table
@@ -216,20 +332,39 @@ CREATE TABLE chat_messages (
 ```sql
 CREATE TABLE usage_quotas (
     id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
+    user_id UUID NOT NULL REFERENCES users(id),
     model_id TEXT NOT NULL,
-    tokens_used BIGINT DEFAULT 0,
-    reset_at TIMESTAMP,
-    quota_limit INTEGER,
+    messages_used INTEGER DEFAULT 0,        -- For MVP: Track number of messages
+    messages_limit INTEGER NOT NULL,        -- Monthly message limit based on plan
+    tokens_used BIGINT DEFAULT 0,          -- For future: Track token usage
+    tokens_limit BIGINT DEFAULT NULL,      -- For future: Token limits
+    reset_at TIMESTAMP NOT NULL,           -- Next quota reset date
+    last_message_at TIMESTAMP,             -- Timestamp of last message
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT positive_messages CHECK (messages_used >= 0 AND messages_limit > 0)
 );
 
--- Indexes
-CREATE INDEX idx_chat_messages_conversation_id ON chat_messages(conversation_id);
-CREATE INDEX idx_chat_messages_user_id ON chat_messages(user_id);
-CREATE INDEX idx_quota_usage_user_id ON usage_quotas(user_id);
-CREATE INDEX idx_conversations_user_id ON conversations(user_id);
+-- Index for checking user's quota
+CREATE INDEX idx_quota_usage_user ON usage_quotas(user_id, model_id)
+WHERE reset_at > CURRENT_TIMESTAMP;
+
+-- Index for quota reset processing
+CREATE INDEX idx_quota_reset ON usage_quotas(reset_at)
+WHERE messages_used > 0;
+
+-- Example quota check query
+/*
+SELECT
+    messages_used,
+    messages_limit,
+    messages_used >= messages_limit as limit_reached,
+    reset_at
+FROM usage_quotas
+WHERE user_id = :user_id
+    AND model_id = :model_id
+    AND reset_at > CURRENT_TIMESTAMP;
+*/
 ```
 
 ## API Routes Structure
@@ -359,246 +494,5 @@ export class OpenRouterClient {
   async getModels() {
     const response = await fetch(`${OPENROUTER_CONFIG.API_URL}/models`, {
       headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      },
-    });
-
-    return response.json();
-  }
-}
+        Authorization: `
 ```
-
-## API Endpoints Detail
-
-### Authentication API
-
-- `POST /api/auth/callback`
-  - Handle OAuth callbacks
-  - Process token exchange
-  - Create/update user profile
-
-### Chat API
-
-- `POST /api/chat/stream`
-  - Stream chat responses (SSE)
-  - OpenRouter model selection
-  - Token usage tracking
-  - Error handling with fallbacks
-  - Rate limit management
-- `GET /api/chat/history`
-  - Get chat history
-  - Filter by date/model
-  - Pagination support
-- `GET /api/chat/models`
-  - List available OpenRouter models
-  - Get pricing information
-  - Get model capabilities
-  - Get context limits
-
-### Conversations API
-
-- `GET /api/conversations`
-  - List conversations
-  - Filter and sort
-  - Pagination
-- `POST /api/conversations`
-  - Create new conversation
-  - Set initial context
-- `GET /api/conversations/[id]`
-  - Get conversation details
-  - Get messages
-  - Get metadata
-- `PATCH /api/conversations/[id]`
-  - Update conversation
-  - Update metadata
-- `DELETE /api/conversations/[id]`
-  - Delete conversation
-  - Cleanup resources
-- `GET /api/conversations/[id]/messages`
-  - Get conversation messages
-  - Filter and paginate
-- `POST /api/conversations/[id]/share`
-  - Generate share link
-  - Set permissions
-- `GET /api/conversations/[id]/export`
-  - Export conversation
-  - Multiple formats
-
-### Subscription API
-
-- `GET /api/subscription/plans`
-  - List available plans
-  - Get features
-  - Get pricing
-- `POST /api/subscription/create`
-  - Create subscription
-  - Process payment
-  - Set up webhooks
-- `POST /api/subscription/cancel`
-  - Cancel subscription
-  - Handle refunds
-  - Update quotas
-- `GET /api/subscription/invoice`
-  - Get invoice history
-  - Download invoices
-- `GET /api/subscription/portal`
-  - Get portal link
-  - Manage subscription
-
-### User API
-
-- `GET /api/user/profile`
-  - Get user details
-  - Get preferences
-- `PATCH /api/user/profile`
-  - Update profile
-  - Update preferences
-- `GET /api/user/quota`
-  - Get quota limits
-  - Get usage stats
-- `GET /api/user/usage`
-  - Get detailed usage
-  - Get cost analysis
-- `POST /api/user/api-keys`
-  - Create API key
-  - Manage permissions
-
-### Webhook Handlers
-
-- `POST /api/webhooks/razorpay`
-  - Handle payment events
-  - Update subscription
-  - Send notifications
-
-### Documentation API
-
-- `GET /api/docs/search`
-  - Search documentation
-  - Get relevant results
-- `POST /api/docs/feedback`
-  - Submit feedback
-  - Track improvements
-
-### Admin API
-
-- `GET /api/admin/users`
-  - Manage users
-  - View analytics
-- `GET /api/admin/quotas`
-  - Manage quotas
-  - Override limits
-- `GET /api/admin/subscriptions`
-  - Manage subscriptions
-  - Handle issues
-- `GET /api/admin/analytics`
-  - View platform stats
-  - Generate reports
-
-## API Security Measures
-
-1. **Authentication**
-
-   - JWT validation
-   - Role-based access
-   - API key validation
-   - Rate limiting
-
-2. **Data Protection**
-
-   - Input validation
-   - Output sanitization
-   - CORS policies
-   - Data encryption
-
-3. **Error Handling**
-   - Structured errors
-   - Logging
-   - Monitoring
-   - Rate limit tracking
-
-## Monitoring
-
-1. Subscription metrics
-2. Usage quota tracking
-3. API performance
-4. Error tracking
-5. Webhook reliability
-6. User activity auditing
-7. Token usage monitoring
-
-## Testing Strategy
-
-1. Unit Tests:
-
-   - Quota calculations
-   - Subscription logic
-   - API endpoints
-   - Streaming functionality
-
-2. Integration Tests:
-
-   - Subscription flow
-   - Quota management
-   - Supabase integration
-   - OpenRouter integration
-
-3. E2E Tests:
-   - Complete subscription flow
-   - Chat with quota limits
-   - Webhook handling
-   - Streaming reliability
-
-## Performance Optimization
-
-1. Database indexing
-2. Connection pooling
-3. Response streaming
-4. Caching strategy
-5. Token counting optimization
-6. Query optimization
-
-## Future Enhancements
-
-1. Additional subscription tiers
-2. Custom quota packages
-3. Usage analytics dashboard
-4. Bulk token purchases
-5. Team subscriptions
-6. Advanced conversation features
-7. Multi-model chat
-
-## Environment Variables
-
-```env
-# OpenRouter Configuration
-OPENROUTER_API_KEY=sk_...
-NEXT_PUBLIC_SITE_URL=https://oneai.yourdomain.com
-NEXT_PUBLIC_SITE_NAME=OneAI Platform
-
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Razorpay Configuration
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_secret
-```
-
-## Security Measures
-
-1. **API Key Management**
-
-   - Secure storage of OpenRouter API key
-   - Key rotation mechanism
-   - Usage monitoring
-
-2. **Rate Limiting**
-
-   - Per-user limits
-   - Global limits
-   - Quota enforcement
-
-3. **Error Handling**
-   - Model fallback strategy
-   - Stream recovery
-   - Token limit management

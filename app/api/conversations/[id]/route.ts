@@ -1,12 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
+    const params = await request.json();
+    const id = params.id;
     const {
       data: { session },
       error: sessionError,
@@ -19,7 +18,7 @@ export async function GET(
     const { data: conversation, error } = await supabase
       .from("conversations")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", session.user.id)
       .single();
 
@@ -43,11 +42,10 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request) {
   try {
+    const params = await request.json();
+    const id = params.id;
     const supabase = await createClient();
     const {
       data: { session },
@@ -76,7 +74,7 @@ export async function PATCH(
     const { data: conversation, error } = await supabase
       .from("conversations")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", session.user.id)
       .select("*")
       .single();
@@ -101,12 +99,11 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
+    const params = await request.json();
+    const id = params.id;
     const {
       data: { session },
       error: sessionError,
@@ -120,7 +117,7 @@ export async function DELETE(
     const { error: messagesError } = await supabase
       .from("chat_messages")
       .delete()
-      .eq("conversation_id", params.id);
+      .eq("conversation_id", id);
 
     if (messagesError) {
       return NextResponse.json(
@@ -133,7 +130,7 @@ export async function DELETE(
     const { error } = await supabase
       .from("conversations")
       .delete()
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("user_id", session.user.id);
 
     if (error) {
