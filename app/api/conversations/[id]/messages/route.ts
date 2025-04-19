@@ -64,7 +64,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      messages,
+      data: messages,
       total: count,
       limit,
       offset,

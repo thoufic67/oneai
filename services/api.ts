@@ -43,6 +43,7 @@ interface ChatMessage {
   parent_message_id?: string;
   metadata?: Record<string, any>;
   created_at: string;
+  sequence_number?: number;
 }
 
 interface PaginatedResponse<T> {
@@ -208,7 +209,7 @@ class ChatService {
         `${this.baseUrl}/conversations?${queryParams.toString()}`
       );
       console.log("Conversations response:", response.data);
-      return response.data.conversations;
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -250,7 +251,12 @@ class ChatService {
       const response = await api.get(
         `${this.baseUrl}/conversations/${conversationId}/messages?${queryParams.toString()}`
       );
-      return response.data.messages;
+      console.log(
+        "Conversation messages response:",
+        response.data,
+        response.data.data
+      );
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(

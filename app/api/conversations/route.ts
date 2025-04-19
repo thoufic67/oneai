@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      conversations,
+      data: conversations,
       total: count,
       limit,
       offset,

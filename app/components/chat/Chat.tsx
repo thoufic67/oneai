@@ -176,10 +176,12 @@ export function Chat() {
       setCurrentConversation(conversationDetails);
       console.log("messagesData", messagesData);
       // Convert API messages to component format
-      const formattedMessages: Message[] = messagesData?.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      }));
+      const formattedMessages: Message[] = messagesData?.data?.map(
+        (msg: ChatMessage) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })
+      );
 
       setMessages(formattedMessages || []);
 
