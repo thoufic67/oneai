@@ -13,6 +13,7 @@ import {
 import Image from "next/image";
 import { chatService, Conversation } from "@/services/api";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 interface SidebarProps {
   onNewChat: () => void;
@@ -167,6 +168,8 @@ export function Sidebar({
                   <div className="px-2 py-1 space-y-1">
                     {conversations.map((conversation) => (
                       <Button
+                        as={Link}
+                        href={`/c/${conversation.id}`}
                         key={conversation.id}
                         variant={
                           currentChatId === conversation.id ? "flat" : "ghost"
