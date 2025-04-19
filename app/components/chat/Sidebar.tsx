@@ -155,7 +155,7 @@ export function Sidebar({
               </div>
             ) : error ? (
               <div className="px-4 py-2 text-sm text-red-500">{error}</div>
-            ) : conversations.length > 0 ? (
+            ) : conversations?.length > 0 ? (
               <>
                 <Divider className="my-2" />
                 <div className="px-4 py-1">
