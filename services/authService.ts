@@ -13,9 +13,8 @@ class AuthService {
         options: {
           redirectTo: `${process.env.NEXT_PUBLIC_URL}/auth/callback`,
           queryParams: {
-            access_type: "offline",
-            prompt: "consent",
-            next: "/new",
+            // access_type: "offline",
+            // prompt: "consent",
           },
         },
       };
