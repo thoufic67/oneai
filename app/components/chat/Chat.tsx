@@ -174,14 +174,16 @@ export function Chat() {
       const conversationDetails =
         await chatService.getConversation(conversationId);
       setCurrentConversation(conversationDetails);
-
+      console.log("messagesData", messagesData);
       // Convert API messages to component format
-      const formattedMessages: Message[] = messagesData.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      }));
+      const formattedMessages: Message[] = messagesData?.data?.map(
+        (msg: ChatMessage) => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        })
+      );
 
-      setMessages(formattedMessages);
+      setMessages(formattedMessages || []);
 
       // Update model if present in message metadata
       // Note: This would need to be implemented on the backend to store model in message metadata
@@ -228,102 +230,72 @@ export function Chat() {
       setStreamingMessage({ role: "assistant", content: "" });
 
       // Get AI response with streaming
-      const { text, conversationId, title } =
-        await chatService.createChatCompletion(
-          {
-            messages: messageHistory,
-            stream: true,
-            model: selectedModel,
-            web: webSearchEnabled,
-            conversationId: currentChatId || undefined,
-          },
-          (chunk, convId) => {
-            // Immediately update UI with each chunk
-            setStreamingMessage((prev) =>
-              prev
-                ? { ...prev, content: prev.content + chunk }
-                : { role: "assistant", content: chunk }
-            );
-
-            // If we got a new conversation ID and we didn't have one before, update it
-            if (convId && !currentChatId) {
-              setCurrentChatId(convId);
-
-              // Create a temporary conversation with default title (will be updated later)
-              const tempTitle =
-                userMessage.content.slice(0, 30) +
-                (userMessage.content.length > 30 ? "..." : "");
-              const tempConversation: Conversation = {
-                id: convId,
-                title: tempTitle,
-                user_id: "", // Will be filled by the backend
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              };
-              setNewConversation(tempConversation);
-
-              // if (conversationId !== convId) {
-              //   // Update the URL to the new conversation ID
-              //   router.push(`/c/${convId}`);
-              // }
-            }
-          },
-          async (finalText, convId, generatedTitle) => {
-            if (convId && currentChatId !== convId) {
-              setCurrentChatId(convId);
-
-              // If we have a title from auto-generation, update the conversation object
-              if (generatedTitle) {
-                try {
-                  // First update the conversation in the backend
-                  const updatedConversation =
-                    await chatService.updateConversation(
-                      convId,
-                      generatedTitle
-                    );
-
-                  // Then update our local state to update the sidebar
-                  setNewConversation(updatedConversation);
-                } catch (error) {
-                  console.error("Error updating conversation title:", error);
-                }
-              }
-
-              // if (currentChatId !== convId) {
-              //   // Update URL to the conversation ID route
-              //   router.push(`/c/${convId}`);
-              // }
-            }
-
-            // Add the final streamed message to the messages array
-
-            setMessages((prevMessages) => [
-              ...prevMessages,
-              {
-                role: "assistant",
-                content: finalText || streamingMessage?.content || "",
-              },
-            ]);
-
-            setStreamingMessage(null);
-
-            // Focus the chat input after response is complete
-            inputRef.current?.focus();
-          }
-        );
-
-      // If this is a new conversation and we got a title immediately, update it
-      if (title && conversationId && !currentChatId) {
-        try {
-          const updatedConversation = await chatService.updateConversation(
-            conversationId,
-            title
+      const { text, conversationId } = await chatService.createChatCompletion(
+        {
+          messages: messageHistory,
+          stream: true,
+          model: selectedModel,
+          web: webSearchEnabled,
+          conversationId: currentChatId || undefined,
+        },
+        (chunk, convId) => {
+          // Immediately update UI with each chunk
+          setStreamingMessage((prev) =>
+            prev
+              ? { ...prev, content: prev.content + chunk }
+              : { role: "assistant", content: chunk }
           );
-          setNewConversation(updatedConversation);
-        } catch (error) {
-          console.error("Error updating conversation title:", error);
+
+          // If we got a new conversation ID and we didn't have one before, update it
+          if (convId && !currentChatId) {
+            setCurrentChatId(convId);
+
+            // Create a temporary conversation with default title
+            const tempTitle =
+              userMessage.content.slice(0, 30) +
+              (userMessage.content.length > 30 ? "..." : "");
+            const tempConversation: Conversation = {
+              id: convId,
+              title: tempTitle,
+              user_id: "", // Will be filled by the backend
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              last_message_at: new Date().toISOString(),
+            };
+            setNewConversation(tempConversation);
+          }
+        },
+        async (finalText, convId) => {
+          if (convId && currentChatId !== convId) {
+            setCurrentChatId(convId);
+          }
+
+          // Add the final streamed message to the messages array
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              role: "assistant",
+              content: finalText || streamingMessage?.content || "",
+            },
+          ]);
+
+          setStreamingMessage(null);
+
+          // Focus the chat input after response is complete
+          inputRef.current?.focus();
         }
-      }
+      );
+
+      // Update conversation if needed
+      // if (conversationId && !currentChatId) {
+      //   try {
+      //     const conversation =
+      //       await chatService.getConversation(conversationId);
+      //     setNewConversation(conversation);
+      //   } catch (error) {
+      //     console.error("Error fetching conversation:", error);
+      //   }
+      // }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       console.error("Chat error:", error);

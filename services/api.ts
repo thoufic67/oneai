@@ -2,6 +2,12 @@ import axios from "axios";
 import api from "./axiosSetup";
 import { authService } from "./authService";
 
+interface UsageData {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+}
+
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
@@ -22,6 +28,8 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
+  last_message_at: string;
+  metadata?: Record<string, any>;
 }
 
 interface ChatMessage {
@@ -35,14 +43,29 @@ interface ChatMessage {
   parent_message_id?: string;
   metadata?: Record<string, any>;
   created_at: string;
+  sequence_number?: number;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+interface StreamResponse {
+  content?: string;
+  conversationId?: string;
+  usage?: Partial<UsageData>;
+  error?: string;
+  done?: boolean;
 }
 
 class ChatService {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api/v1";
+    this.baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   }
 
   async createChatCompletion(
@@ -72,8 +95,7 @@ class ChatService {
     onChunk?: (chunk: string, conversationId: string) => void,
     onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
-    // Get the access token for authentication
-    const token = authService.getAccessToken();
+    const token = await authService.getCurrentUser();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -89,7 +111,10 @@ class ChatService {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`
+      );
     }
 
     const reader = response.body?.getReader();
@@ -98,82 +123,93 @@ class ChatService {
     const decoder = new TextDecoder();
     let fullResponse = "";
     let currentConversationId = request.conversationId || "";
-    let conversationTitle = "";
+    let currentUsage: Partial<UsageData> | undefined;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n").filter((line) => line.trim() !== "");
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n").filter((line) => line.trim() !== "");
 
-      for (const line of lines) {
-        if (line === "[DONE]") continue;
+        for (const line of lines) {
+          if (line === "[DONE]") continue;
 
-        try {
-          const jsonString = line.replace(/^data: /, "").trim();
-          if (!jsonString || !line.startsWith("data: ")) continue;
+          try {
+            const jsonString = line.replace(/^data: /, "").trim();
+            if (!jsonString || !line.startsWith("data: ")) continue;
 
-          // Handle [DONE] message
-          if (jsonString === "[DONE]") {
-            onFinal?.(fullResponse, currentConversationId, conversationTitle);
-            return {
-              text: fullResponse,
-              conversationId: currentConversationId,
-              title: conversationTitle || undefined,
-            };
-          }
+            const json = JSON.parse(jsonString) as StreamResponse;
 
-          const json = JSON.parse(jsonString);
+            // Handle error message
+            if (json.error) {
+              throw new Error(json.error);
+            }
 
-          // Check if this is the done message with a title
-          if (json.done) {
+            // Handle done message
+            if (json.done) {
+              if (json.conversationId) {
+                currentConversationId = json.conversationId;
+              }
+              onFinal?.(fullResponse, currentConversationId);
+              return {
+                text: fullResponse,
+                conversationId: currentConversationId,
+                usage: currentUsage,
+              };
+            }
+
+            // Handle content and usage
+            if (json.content) {
+              fullResponse += json.content;
+              onChunk?.(json.content, currentConversationId);
+            }
+
+            if (json.usage) {
+              currentUsage = json.usage;
+            }
+
             if (json.conversationId) {
               currentConversationId = json.conversationId;
             }
-            if (json.title) {
-              conversationTitle = json.title;
-            }
-            onFinal?.(fullResponse, currentConversationId, conversationTitle);
-            return {
-              text: fullResponse,
-              conversationId: currentConversationId,
-              title: conversationTitle || undefined,
-            };
+          } catch (error) {
+            console.error("Error parsing SSE chunk:", error);
+            throw error;
           }
-
-          const content = json.content ?? "";
-
-          // Extract conversationId if present
-          if (json.conversationId) {
-            currentConversationId = json.conversationId;
-          }
-
-          if (content) {
-            fullResponse += content;
-            onChunk?.(content, currentConversationId);
-          }
-        } catch (error) {
-          console.error("Error parsing SSE chunk:", error);
         }
       }
+    } finally {
+      reader.releaseLock();
     }
 
     return {
       text: fullResponse,
       conversationId: currentConversationId,
-      title: conversationTitle || undefined,
+      usage: currentUsage,
     };
   }
 
   // --- Conversation Management Methods ---
 
-  async getConversations(limit = 10): Promise<Conversation[]> {
+  async getConversations(
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+    } = {}
+  ): Promise<PaginatedResponse<Conversation>> {
     try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("limit", params.limit?.toString() || "10");
+      if (params.offset) queryParams.set("offset", params.offset.toString());
+      if (params.search) queryParams.set("search", params.search);
+
       const response = await api.get(
-        `${this.baseUrl}/conversations?limit=${limit}`
+        `${this.baseUrl}/conversations?${queryParams.toString()}`
       );
-      return response.data.conversations;
+      console.log("Conversations response:", response.data);
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -199,13 +235,28 @@ class ChatService {
   }
 
   async getConversationMessages(
-    conversationId: string
-  ): Promise<ChatMessage[]> {
+    conversationId: string,
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+    } = {}
+  ): Promise<PaginatedResponse<ChatMessage>> {
     try {
+      const queryParams = new URLSearchParams();
+      if (params.limit) queryParams.set("limit", params.limit.toString());
+      if (params.offset) queryParams.set("offset", params.offset.toString());
+      if (params.search) queryParams.set("search", params.search);
+
       const response = await api.get(
-        `${this.baseUrl}/conversations/${conversationId}/messages`
+        `${this.baseUrl}/conversations/${conversationId}/messages?${queryParams.toString()}`
       );
-      return response.data.messages;
+      console.log(
+        "Conversation messages response:",
+        response.data,
+        response.data.data
+      );
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -216,10 +267,14 @@ class ChatService {
     }
   }
 
-  async createConversation(title: string): Promise<Conversation> {
+  async createConversation(
+    title: string,
+    metadata?: Record<string, any>
+  ): Promise<Conversation> {
     try {
       const response = await api.post(`${this.baseUrl}/conversations`, {
         title,
+        metadata,
       });
       return response.data.conversation;
     } catch (error) {
@@ -232,11 +287,15 @@ class ChatService {
     }
   }
 
-  async updateConversation(id: string, title: string): Promise<Conversation> {
+  async updateConversation(
+    id: string,
+    updates: { title?: string; metadata?: Record<string, any> }
+  ): Promise<Conversation> {
     try {
-      const response = await api.patch(`${this.baseUrl}/conversations/${id}`, {
-        title,
-      });
+      const response = await api.patch(
+        `${this.baseUrl}/conversations/${id}`,
+        updates
+      );
       return response.data.conversation;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -260,7 +319,36 @@ class ChatService {
       throw error;
     }
   }
+
+  async addMessage(
+    conversationId: string,
+    content: string,
+    options: {
+      role?: "user" | "assistant" | "system";
+      model_id?: string;
+      parent_message_id?: string;
+      metadata?: Record<string, any>;
+    } = {}
+  ): Promise<ChatMessage> {
+    try {
+      const response = await api.post(
+        `${this.baseUrl}/conversations/${conversationId}/messages`,
+        {
+          content,
+          ...options,
+        }
+      );
+      return response.data.message;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error adding message: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
 }
 
 export const chatService = new ChatService();
-export type { Conversation, ChatMessage, Message };
+export type { Conversation, ChatMessage, Message, PaginatedResponse };

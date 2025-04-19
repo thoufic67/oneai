@@ -39,8 +39,9 @@ export function Sidebar({
   const fetchConversations = useCallback(async () => {
     try {
       setIsLoading(true);
-      const data = await chatService.getConversations(10); // Get the latest 10 conversations
-      setConversations(data);
+      const data = await chatService.getConversations({ limit: 10 }); // Get the latest 10 conversations
+      console.log("Conversations data fetched in Sidebar:", data);
+      setConversations(data.data);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load conversations";
@@ -155,7 +156,7 @@ export function Sidebar({
               </div>
             ) : error ? (
               <div className="px-4 py-2 text-sm text-red-500">{error}</div>
-            ) : conversations.length > 0 ? (
+            ) : conversations?.length > 0 ? (
               <>
                 <Divider className="my-2" />
                 <div className="px-4 py-1">

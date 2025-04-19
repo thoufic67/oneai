@@ -1,147 +1,364 @@
-# Authentication Migration Tasks
+# OneAI Platform Implementation Tasks
 
-## Setup Phase
+## Initial Setup
 
-- [ ] Create Supabase project
-- [ ] Configure Google OAuth in Supabase
-- [ ] Install required dependencies
+- [x] Create Supabase project
+  - [ ] Configure Google OAuth
+  - [ ] Set up database tables
+  - [ ] Configure RLS policies
+- [ ] Set up Razorpay account
+  - [ ] Create subscription plans
+  - [ ] Get API keys
+- [x] Install dependencies
   ```bash
-  npm install @supabase/supabase-js @supabase/auth-helpers-nextjs
+  npm install @supabase/supabase-js @supabase/auth-helpers-nextjs razorpay openrouter
   ```
-- [ ] Add environment variables
-  - [ ] NEXT_PUBLIC_SUPABASE_URL
-  - [ ] NEXT_PUBLIC_SUPABASE_ANON_KEY
+- [x] Configure environment variables
+  - [x] NEXT_PUBLIC_SUPABASE_URL
+  - [x] NEXT_PUBLIC_SUPABASE_ANON_KEY
+  - [x] RAZORPAY_KEY_ID
+  - [x] RAZORPAY_KEY_SECRET
+  - [x] OPENROUTER_API_KEY
 
-## Implementation Phase
+## Database Setup
 
-### Supabase Integration
+### Create Tables
 
-- [ ] Create `lib/supabase.ts`
-  - [ ] Initialize Supabase client
-  - [ ] Configure client options
+- [x] Users Table
+  - [x] Create table with all fields
+  - [x] Set up relationships
+  - [x] Configure indexes
+- [x] Subscriptions Table
+  - [x] Create table structure
+  - [x] Set up foreign keys
+  - [x] Add indexes
+- [x] Conversations Table
+  - [x] Create table structure
+  - [x] Set up relationships
+  - [x] Configure indexes
+- [x] Chat Messages Table
+  - [x] Create table structure
+  - [x] Set up foreign keys
+  - [x] Add indexes
+- [x] Usage Quotas Table
+  - [x] Create table structure
+  - [x] Set up relationships
+  - [x] Configure indexes
 
-### Authentication Service
+### Security
 
-- [ ] Create `services/supabaseAuthService.ts`
-  - [ ] Implement Google sign-in
-  - [ ] Implement getCurrentUser
-  - [ ] Implement logout
-  - [ ] Implement token management
-  - [ ] Add type definitions
+- [x] Set up Row Level Security (RLS)
+  - [x] Users table policies
+  - [x] Subscriptions table policies
+  - [x] Conversations table policies
+  - [x] Messages table policies
+  - [x] Quotas table policies
 
-### Component Updates
+## OpenRouter Integration
 
-- [ ] Update Auth Provider (`app/components/auth-provider.tsx`)
+### Setup & Configuration
 
-  - [ ] Integrate Supabase auth state
-  - [ ] Update context values
-  - [ ] Add Supabase auth listener
-  - [ ] Update session management
+- [x] Create OpenRouter account
+- [x] Get API key
+- [x] Configure environment variables
+  - [x] OPENROUTER_API_KEY
+  - [x] NEXT_PUBLIC_SITE_URL
+  - [x] NEXT_PUBLIC_SITE_NAME
 
-- [ ] Update Login Component (`components/Login.tsx`)
+### Client Implementation
 
-  - [ ] Replace Google OAuth with Supabase auth
-  - [ ] Update UI components
+- [x] Create OpenRouter client
+  - [x] Implement streamChat method
+  - [x] Implement getModels method
+  - [x] Add error handling
+  - [x] Add rate limit handling
+- [x] Create model configuration
+  - [x] Define supported models
+  - [x] Set pricing information
+  - [x] Configure context limits
+
+## API Implementation
+
+### Authentication API
+
+- [ ] Implement Supabase auth integration
+  - [x] Set up auth callback route
+  - [x] Sync user data to custom users table
+  - [ ] Add rate limiting for API endpoints
+- [x] Configure auth middleware
+  - [x] Set up protected routes
+  - [x] Handle auth state changes
+  - [x] Implement session cleanup for custom data
+
+### Chat API
+
+- [x] Implement streaming endpoint
+  - [x] SSE setup
+  - [x] Error handling
+  - [x] Token tracking
+  - [x] Context management
+- [ ] Create history endpoints
+  - [ ] Filtering
+  - [ ] Pagination
+  - [ ] Search
+- [ ] Add models endpoint
+  - [ ] Available models
+  - [ ] Capabilities
+  - [ ] Pricing
+
+### Conversations API
+
+- [x] Basic CRUD operations
+  - [x] List conversations
+  - [x] Create conversation
+  - [x] Update conversation
+  - [x] Delete conversation
+- [x] Message management
+  - [x] Get messages
+  - [x] Pagination
+  - [x] Search
+- [ ] Advanced features
+  - [ ] Conversation sharing
+  - [ ] Export functionality
+  - [x] Title management
+
+### Subscription API
+
+- [ ] Plan management
+  - [ ] List plans
+  - [ ] Plan details
+  - [ ] Feature comparison
+- [ ] Subscription operations
+  - [ ] Create subscription
+  - [ ] Cancel subscription
+  - [ ] Update subscription
+- [ ] Billing features
+  - [ ] Invoice management
+  - [ ] Payment processing
+  - [ ] Portal integration
+
+### User API
+
+- [ ] Profile management
+  - [ ] Get profile
+  - [ ] Update profile
+  - [ ] Preferences
+- [ ] Usage tracking
+  - [ ] Quota management
+  - [ ] Usage statistics
+  - [ ] Cost analysis
+- [ ] API key system
+  - [ ] Key generation
+  - [ ] Permission management
+  - [ ] Usage tracking
+
+### Documentation API
+
+- [ ] Search functionality
+  - [ ] Content indexing
+  - [ ] Search implementation
+  - [ ] Result ranking
+- [ ] Feedback system
+  - [ ] Submit feedback
+  - [ ] Track improvements
+  - [ ] Analytics
+
+### Admin API
+
+- [ ] User management
+  - [ ] List users
+  - [ ] User details
+  - [ ] Actions (suspend, delete)
+- [ ] Quota management
+  - [ ] View quotas
+  - [ ] Modify limits
+  - [ ] Override settings
+- [ ] Platform analytics
+  - [ ] Usage statistics
+  - [ ] Revenue tracking
+  - [ ] Performance metrics
+
+### Webhook Handlers
+
+- [ ] Razorpay integration
+  - [ ] Event handling
+  - [ ] Payment processing
+  - [ ] Error handling
+
+## Security Implementation
+
+### API Protection
+
+- [ ] Authentication
+  - [ ] JWT implementation
+  - [ ] Role-based access
+  - [ ] API key validation
+- [ ] OpenRouter Security
+  - [ ] Secure key storage
+  - [ ] Key rotation
+  - [ ] Usage monitoring
+- [ ] Rate Limiting
+  - [ ] Per-user limits
+  - [ ] Global limits
+  - [ ] Burst handling
+- [ ] Data Protection
+  - [ ] Input validation
+  - [ ] Output sanitization
+  - [ ] Data encryption
+
+### Monitoring Setup
+
+- [ ] Error tracking
+  - [ ] Error logging
+  - [ ] Alert system
+  - [ ] Error recovery
+- [ ] Performance monitoring
+  - [ ] Response times
+  - [ ] Resource usage
+  - [ ] Bottleneck detection
+- [ ] Usage analytics
+  - [ ] User activity
+  - [ ] API usage
+  - [ ] Cost tracking
+
+## Frontend Implementation
+
+### Authentication Components
+
+- [ ] Update Auth Provider
+  - [ ] Integrate Supabase auth
+  - [ ] Handle session management
+  - [ ] Add auth state listeners
+- [ ] Create Login Component
+  - [ ] Implement sign-in flow
   - [ ] Add loading states
-  - [ ] Implement error handling
+  - [ ] Handle errors
+- [ ] Implement Auth Callback
+  - [ ] Handle redirect
+  - [ ] Store session
+  - [ ] Error handling
 
-- [ ] Update Callback Page (`app/auth/callback/page.tsx`)
-  - [ ] Handle Supabase auth callback
-  - [ ] Implement session storage
-  - [ ] Add error handling
-  - [ ] Update loading states
+### Chat Components
 
-### API Integration
+- [ ] Create Chat Stream Component
+  - [ ] Implement SSE client
+  - [ ] Handle streaming
+  - [ ] Add error recovery
+  - [ ] Show loading states
+- [ ] Create Conversation Component
+  - [ ] Display messages
+  - [ ] Handle user input
+  - [ ] Show typing indicators
+  - [ ] Implement retry logic
 
-- [ ] Update Chat Service (`services/api.ts`)
-  - [ ] Integrate Supabase auth tokens
-  - [ ] Update API request headers
-  - [ ] Update error handling
-  - [ ] Test streaming functionality
+### Subscription Components
 
-## Testing Phase
+- [ ] Create Pricing Component
+  - [ ] Display plans
+  - [ ] Show features
+  - [ ] Handle selection
+- [ ] Implement Checkout
+  - [ ] Integrate Razorpay
+  - [ ] Handle success/failure
+  - [ ] Show confirmation
 
-- [ ] Unit Tests
+## Integration Testing
 
-  - [ ] Auth service functions
-  - [ ] Protected routes
-  - [ ] Component rendering
-  - [ ] Error scenarios
+### Authentication
 
-- [ ] Integration Tests
-
-  - [ ] Complete auth flow
-  - [ ] API communication
+- [ ] Test auth flow
+  - [ ] Sign-in process
   - [ ] Session management
   - [ ] Token refresh
+  - [ ] Error scenarios
 
-- [ ] E2E Tests
-  - [ ] Sign-in flow
-  - [ ] Protected routes
-  - [ ] Chat functionality
-  - [ ] Error handling
+### Chat Functionality
+
+- [ ] Test streaming
+  - [ ] Connection handling
+  - [ ] Error recovery
+  - [ ] Message ordering
+  - [ ] Quota limits
+
+### Subscription
+
+- [ ] Test payment flow
+  - [ ] Plan selection
+  - [ ] Payment process
+  - [ ] Webhook handling
+  - [ ] Status updates
+
+### Quota Management
+
+- [ ] Test usage tracking
+  - [ ] Token counting
+  - [ ] Limit enforcement
+  - [ ] Reset mechanism
+  - [ ] Overage handling
 
 ## Documentation
 
-- [ ] Update README.md
+### Technical Documentation
 
-  - [ ] Add Supabase setup instructions
-  - [ ] Update environment variables
-  - [ ] Document auth flow
+- [ ] API Documentation
+  - [ ] Endpoint specifications
+  - [ ] Request/response formats
+  - [ ] Error codes
+- [ ] Database Schema
+  - [ ] Table relationships
+  - [ ] Indexes
+  - [ ] RLS policies
 
-- [ ] Create Migration Guide
-  - [ ] Document breaking changes
-  - [ ] Add troubleshooting section
-  - [ ] Include rollback instructions
+### User Documentation
+
+- [ ] Setup Guide
+  - [ ] Environment configuration
+  - [ ] Installation steps
+  - [ ] Deployment process
+- [ ] Usage Guide
+  - [ ] Features overview
+  - [ ] Subscription management
+  - [ ] Quota understanding
 
 ## Deployment
 
-- [ ] Backend Updates
+### Infrastructure Setup
 
-  - [ ] Deploy JWT validation changes
-  - [ ] Update user management
-  - [ ] Configure error handling
+- [ ] Configure production environment
+  - [ ] Set up secrets
+  - [ ] Configure CORS
+  - [ ] Set up monitoring
 
-- [ ] Frontend Deployment
-  - [ ] Set environment variables
-  - [ ] Deploy Supabase changes
-  - [ ] Monitor error rates
+### Deployment Process
 
-## Cleanup
+- [ ] Database migration
+- [ ] API deployment
+- [ ] Frontend deployment
+- [ ] Webhook configuration
 
-- [ ] Remove old Google OAuth code
-- [ ] Clean up unused dependencies
-- [ ] Remove deprecated environment variables
-- [ ] Archive old documentation
+## Monitoring & Maintenance
 
-## Monitoring
+### Setup Monitoring
 
-- [ ] Set up auth monitoring
-  - [ ] Success/failure metrics
-  - [ ] Token refresh tracking
-  - [ ] Error logging
-  - [ ] Performance metrics
+- [ ] Error tracking
+- [ ] Performance metrics
+- [ ] Usage statistics
+- [ ] Quota alerts
 
-## Post-Launch
+### Regular Maintenance
 
-- [ ] Monitor error rates
-- [ ] Collect user feedback
-- [ ] Address bug reports
-- [ ] Document lessons learned
-
-## Future Improvements
-
-- [ ] Additional auth providers
-- [ ] Enhanced security features
-- [ ] Improved error handling
-- [ ] Performance optimizations
+- [ ] Database backups
+- [ ] Log rotation
+- [ ] Security updates
+- [ ] Performance optimization
 
 ## Status
 
 - 🟡 Planning Phase: Complete
-- ⚪ Implementation Phase: Not Started
-- ⚪ Testing Phase: Not Started
+- ⚪ Database Setup: Not Started
+- ⚪ API Implementation: Not Started
+- ⚪ Frontend Implementation: Not Started
+- ⚪ Integration Testing: Not Started
 - ⚪ Documentation: Not Started
 - ⚪ Deployment: Not Started
-- ⚪ Cleanup: Not Started
-- ⚪ Post-Launch: Not Started
+- ⚪ Monitoring Setup: Not Started

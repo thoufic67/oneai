@@ -3,13 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/services/authService";
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  picture_url?: string;
-}
+import { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
@@ -71,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setLoading(true);
         const currentUser = await authService.getCurrentUser();
+        console.log("checkAuth Current user:", currentUser);
         setUser(currentUser);
 
         // If not authenticated and trying to access a protected route
@@ -92,28 +87,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   // Set up token refresh interval
-  useEffect(() => {
-    // Refresh token periodically (e.g., every 15 minutes)
-    const refreshInterval = setInterval(
-      async () => {
-        if (authService.isAuthenticated()) {
-          try {
-            await authService.refreshToken();
-            // Refresh user data after token refresh
-            await refreshUser();
-          } catch (err) {
-            console.error("Token refresh error:", err);
-            // If token refresh fails, user might need to re-authenticate
-            setError("Session expired. Please log in again.");
-            await logout();
-          }
-        }
-      },
-      15 * 60 * 1000
-    ); // 15 minutes
+  // useEffect(() => {
+  //   // Refresh token periodically (e.g., every 30 days)
+  //   const refreshInterval = setInterval(
+  //     async () => {
+  //       if (await authService.isAuthenticated()) {
+  //         try {
+  //           await authService.refreshToken();
+  //           // Refresh user data after token refresh
+  //           await refreshUser();
+  //         } catch (err) {
+  //           console.error("Token refresh error:", err);
+  //           // If token refresh fails, user might need to re-authenticate
+  //           setError("Session expired. Please log in again.");
+  //           await logout();
+  //         }
+  //       }
+  //     },
+  //     30 * 60 * 60 * 1000
+  //   ); // 30 days
 
-    return () => clearInterval(refreshInterval);
-  }, []);
+  //   return () => clearInterval(refreshInterval);
+  // }, []);
 
   const logout = async () => {
     try {
