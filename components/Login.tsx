@@ -3,8 +3,12 @@ import { Button } from "@heroui/button";
 import { authService } from "../services/authService";
 
 export default function Login() {
-  const handleGoogleLogin = () => {
-    authService.initiateGoogleLogin();
+  const handleGoogleLogin = async () => {
+    try {
+      await authService.initiateGoogleLogin();
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
 
   return (

@@ -49,8 +49,8 @@ export default function UserProfile() {
       <DropdownTrigger>
         <button className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80">
           <Avatar
-            src={user.picture_url || undefined}
-            name={user.name || user.email}
+            src={user.user_metadata.avatar_url || undefined}
+            name={user.user_metadata.name || user.email}
             size="sm"
             className="cursor-pointer"
           />
@@ -59,7 +59,7 @@ export default function UserProfile() {
       <DropdownMenu aria-label="User menu">
         <DropdownItem key="profile" className="font-medium">
           <div className="flex flex-col">
-            <span>{user.name}</span>
+            <span>{user.user_metadata.name}</span>
             <span className="text-xs text-gray-500">{user.email}</span>
           </div>
         </DropdownItem>

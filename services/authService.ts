@@ -1,46 +1,31 @@
-import axios from "axios";
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  picture_url?: string;
-}
+import type { User } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 
 class AuthService {
-  private readonly baseUrl: string;
-  private tokenKey = "auth_tokens";
-
-  constructor() {
-    this.baseUrl =
-      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api/v1";
-  }
+  private supabase = createClient();
 
   // Redirect to Google login page
-  initiateGoogleLogin() {
-    window.location.href = `${this.baseUrl}/auth/google`;
-  }
-
-  // Handle the Google OAuth callback
-  async handleGoogleCallback(code: string) {
+  async initiateGoogleLogin() {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/auth/google/callback?code=${code}`
-      );
-      const { user, accessToken, refreshToken } = response.data;
+      const { error } = await this.supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+            next: "/new",
+          },
+        },
+      });
 
-      // Store tokens in local storage or in secure HTTP-only cookies
-      this.saveTokens(accessToken, refreshToken);
+      console.log("Google login error:", error);
 
-      return user;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(
-          `Authentication error: ${
-            error.response?.data?.error || error.message
-          }`
-        );
+      if (error) {
+        throw error;
       }
+    } catch (error) {
+      console.error("Error logging in with Google:", error);
       throw error;
     }
   }
@@ -48,105 +33,35 @@ class AuthService {
   // Get the current user profile
   async getCurrentUser(): Promise<User | null> {
     try {
-      const token = this.getAccessToken();
-      if (!token) return null;
-
-      const response = await axios.get(`${this.baseUrl}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      return response.data;
+      const {
+        data: { user },
+      } = await this.supabase.auth.getUser();
+      console.log("Current user:", user);
+      return user;
     } catch (error) {
       console.error("Error fetching user:", error);
       return null;
     }
   }
 
-  // Refresh the access token
-  async refreshToken() {
+  // Logout the user
+  async logout() {
     try {
-      const refreshToken = this.getRefreshToken();
-      if (!refreshToken) throw new Error("No refresh token available");
-
-      const response = await axios.post(`${this.baseUrl}/auth/refresh`, {
-        refreshToken,
-      });
-      const { accessToken, refreshToken: newRefreshToken } = response.data;
-
-      this.saveTokens(accessToken, newRefreshToken);
-      return accessToken;
+      const { error } = await this.supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
-      this.logout(); // Clear tokens if refresh fails
+      console.error("Logout error:", error);
       throw error;
     }
   }
 
-  // Logout the user
-  async logout() {
-    try {
-      const token = this.getAccessToken();
-      if (token) {
-        await axios.post(
-          `${this.baseUrl}/auth/logout`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      this.clearTokens();
-    }
-  }
-
   // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!this.getAccessToken();
-  }
-
-  // Get access token from storage
-  getAccessToken(): string | null {
-    const tokens = this.getTokens();
-    return tokens ? tokens.accessToken : null;
-  }
-
-  // Get refresh token from storage
-  private getRefreshToken(): string | null {
-    const tokens = this.getTokens();
-    return tokens ? tokens.refreshToken : null;
-  }
-
-  // Save tokens to storage
-  saveTokens(accessToken: string, refreshToken: string) {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(
-        this.tokenKey,
-        JSON.stringify({ accessToken, refreshToken })
-      );
-    }
-  }
-
-  // Get tokens from storage
-  private getTokens(): { accessToken: string; refreshToken: string } | null {
-    if (typeof window === "undefined") {
-      return null; // Return null when running on the server
-    }
-
-    const tokensJson = localStorage.getItem(this.tokenKey);
-    return tokensJson ? JSON.parse(tokensJson) : null;
-  }
-
-  // Clear tokens from storage
-  private clearTokens() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(this.tokenKey);
-    }
+  async isAuthenticated(): Promise<boolean> {
+    const {
+      data: { session },
+    } = await this.supabase.auth.getSession();
+    console.log("Session:", session);
+    return !!session;
   }
 }
 

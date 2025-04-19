@@ -18,6 +18,10 @@ export function PasswordForm({ children }: PasswordFormProps) {
   // Check for existing auth on mount
   useEffect(() => {
     const authData = sessionStorage.getItem("authData");
+    if (process.env.NODE_ENV === "development") {
+      setIsAuthenticated(true);
+      return;
+    }
 
     if (authData) {
       try {
@@ -39,7 +43,10 @@ export function PasswordForm({ children }: PasswordFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Verify against environment variable
-    if (password === process.env.NEXT_PUBLIC_APP_PASSWORD) {
+    if (
+      password === process.env.NEXT_PUBLIC_APP_PASSWORD ||
+      process.env.NODE_ENV === "development"
+    ) {
       // Set auth state with expiration (1 day from now)
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 1);

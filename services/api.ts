@@ -28,6 +28,8 @@ interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
+  last_message_at: string;
+  metadata?: Record<string, any>;
 }
 
 interface ChatMessage {
@@ -43,6 +45,13 @@ interface ChatMessage {
   created_at: string;
 }
 
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 interface StreamResponse {
   content?: string;
   conversationId?: string;
@@ -55,7 +64,7 @@ class ChatService {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl = "/api";
+    this.baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   }
 
   async createChatCompletion(
@@ -85,7 +94,7 @@ class ChatService {
     onChunk?: (chunk: string, conversationId: string) => void,
     onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
-    const token = authService.getAccessToken();
+    const token = await authService.getCurrentUser();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -182,12 +191,23 @@ class ChatService {
 
   // --- Conversation Management Methods ---
 
-  async getConversations(limit = 10): Promise<Conversation[]> {
+  async getConversations(
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+    } = {}
+  ): Promise<PaginatedResponse<Conversation>> {
     try {
+      const queryParams = new URLSearchParams();
+      queryParams.set("limit", params.limit?.toString() || "10");
+      if (params.offset) queryParams.set("offset", params.offset.toString());
+      if (params.search) queryParams.set("search", params.search);
+
       const response = await api.get(
-        `${this.baseUrl}/conversations?limit=${limit}`
+        `${this.baseUrl}/conversations?${queryParams.toString()}`
       );
-      return response.data.conversations;
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -213,13 +233,23 @@ class ChatService {
   }
 
   async getConversationMessages(
-    conversationId: string
-  ): Promise<ChatMessage[]> {
+    conversationId: string,
+    params: {
+      limit?: number;
+      offset?: number;
+      search?: string;
+    } = {}
+  ): Promise<PaginatedResponse<ChatMessage>> {
     try {
+      const queryParams = new URLSearchParams();
+      if (params.limit) queryParams.set("limit", params.limit.toString());
+      if (params.offset) queryParams.set("offset", params.offset.toString());
+      if (params.search) queryParams.set("search", params.search);
+
       const response = await api.get(
-        `${this.baseUrl}/conversations/${conversationId}/messages`
+        `${this.baseUrl}/conversations/${conversationId}/messages?${queryParams.toString()}`
       );
-      return response.data.messages;
+      return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -230,10 +260,14 @@ class ChatService {
     }
   }
 
-  async createConversation(title: string): Promise<Conversation> {
+  async createConversation(
+    title: string,
+    metadata?: Record<string, any>
+  ): Promise<Conversation> {
     try {
       const response = await api.post(`${this.baseUrl}/conversations`, {
         title,
+        metadata,
       });
       return response.data.conversation;
     } catch (error) {
@@ -246,11 +280,15 @@ class ChatService {
     }
   }
 
-  async updateConversation(id: string, title: string): Promise<Conversation> {
+  async updateConversation(
+    id: string,
+    updates: { title?: string; metadata?: Record<string, any> }
+  ): Promise<Conversation> {
     try {
-      const response = await api.patch(`${this.baseUrl}/conversations/${id}`, {
-        title,
-      });
+      const response = await api.patch(
+        `${this.baseUrl}/conversations/${id}`,
+        updates
+      );
       return response.data.conversation;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -274,7 +312,36 @@ class ChatService {
       throw error;
     }
   }
+
+  async addMessage(
+    conversationId: string,
+    content: string,
+    options: {
+      role?: "user" | "assistant" | "system";
+      model_id?: string;
+      parent_message_id?: string;
+      metadata?: Record<string, any>;
+    } = {}
+  ): Promise<ChatMessage> {
+    try {
+      const response = await api.post(
+        `${this.baseUrl}/conversations/${conversationId}/messages`,
+        {
+          content,
+          ...options,
+        }
+      );
+      return response.data.message;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(
+          `Error adding message: ${error.response?.data?.error || error.message}`
+        );
+      }
+      throw error;
+    }
+  }
 }
 
 export const chatService = new ChatService();
-export type { Conversation, ChatMessage, Message };
+export type { Conversation, ChatMessage, Message, PaginatedResponse };

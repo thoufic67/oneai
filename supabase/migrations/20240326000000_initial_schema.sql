@@ -37,7 +37,8 @@ create table public.conversations (
   model text not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  
+  last_message_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  metadata jsonb default '{}'::jsonb not null,
   constraint title_length check (char_length(title) >= 1)
 );
 
@@ -49,7 +50,7 @@ create table public.chat_messages (
   content text not null,
   tokens_used integer not null default 0,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  
+  model text not null,
   constraint role_check check (role in ('user', 'assistant', 'system')),
   constraint content_length check (char_length(content) >= 1)
 );

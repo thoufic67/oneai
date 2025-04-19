@@ -77,43 +77,26 @@
   - [x] Set pricing information
   - [x] Configure context limits
 
-### API Routes
-
-- [x] Chat streaming endpoint
-  - [x] Implement SSE
-  - [x] Add model selection
-  - [x] Handle rate limits
-  - [x] Implement error recovery
-- [ ] Models endpoint
-  - [ ] List available models
-  - [ ] Get pricing info
-  - [ ] Get capabilities
-  - [ ] Get context limits
-
 ## API Implementation
 
 ### Authentication API
 
-- [ ] Implement auth callback handler
-  - [ ] OAuth flow
-  - [ ] Token exchange
-  - [ ] User creation/update
-- [ ] Create session management
-  - [ ] Session validation
-  - [ ] Token refresh
-  - [ ] Session cleanup
-- [ ] Add token verification
-  - [ ] JWT validation
-  - [ ] Permission checks
-  - [ ] Rate limiting
+- [ ] Implement Supabase auth integration
+  - [ ] Set up auth callback route
+  - [ ] Sync user data to custom users table
+  - [ ] Add rate limiting for API endpoints
+- [ ] Configure auth middleware
+  - [ ] Set up protected routes
+  - [ ] Handle auth state changes
+  - [ ] Implement session cleanup for custom data
 
 ### Chat API
 
 - [ ] Implement streaming endpoint
-  - [ ] SSE setup
-  - [ ] Error handling
-  - [ ] Token tracking
-  - [ ] Context management
+  - [x] SSE setup
+  - [x] Error handling
+  - [x] Token tracking
+  - [x] Context management
 - [ ] Create history endpoints
   - [ ] Filtering
   - [ ] Pagination
@@ -125,19 +108,19 @@
 
 ### Conversations API
 
-- [ ] Basic CRUD operations
-  - [ ] List conversations
-  - [ ] Create conversation
-  - [ ] Update conversation
-  - [ ] Delete conversation
-- [ ] Message management
-  - [ ] Get messages
-  - [ ] Pagination
-  - [ ] Search
+- [x] Basic CRUD operations
+  - [x] List conversations
+  - [x] Create conversation
+  - [x] Update conversation
+  - [x] Delete conversation
+- [x] Message management
+  - [x] Get messages
+  - [x] Pagination
+  - [x] Search
 - [ ] Advanced features
   - [ ] Conversation sharing
   - [ ] Export functionality
-  - [ ] Title management
+  - [x] Title management
 
 ### Subscription API
 

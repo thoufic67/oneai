@@ -17,28 +17,97 @@ interface StreamResponse {
   usage?: Partial<UsageData>;
   error?: string;
   done?: boolean;
+  failures?: {
+    conversationCreation?: boolean;
+    messageSaving?: boolean;
+  };
+}
+
+async function createConversation(title: string) {
+  try {
+    const cookieStore = await cookies();
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/conversations`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          cookie: cookieStore.toString(),
+        },
+        body: JSON.stringify({ title }),
+      }
+    );
+    console.log(
+      "Creating conversation response",
+      response.status,
+      response.statusText
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    return data.conversation;
+  } catch (error) {
+    console.error("Error creating conversation:", error);
+    return null;
+  }
+}
+
+async function saveMessage(
+  conversationId: string,
+  content: string,
+  role: string,
+  tokensUsed: number
+) {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL}/conversations/${conversationId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content,
+          role,
+          metadata: { tokens_used: tokensUsed },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error saving message:", error);
+    return false;
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await createClient();
 
     // Get session to verify authentication
-    // const {
-    //   data: { session },
-    // } = await supabase.auth.getSession();
-    // if (!session) {
-    //   return new Response(JSON.stringify({ error: "Unauthorized" }), {
-    //     status: 401,
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //   });
-    // }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
 
     const body = await req.json();
-    const { messages, model, web, conversationId } = body;
+    let { messages, model, web, conversationId } = body;
 
     // Validate request
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -80,6 +149,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let conversationCreationFailed = false;
+
+    // Create a new conversation if no conversationId is provided
+    if (!conversationId) {
+      const userMessage = messages.find((msg: Message) => msg.role === "user");
+      if (!userMessage) {
+        return new Response(
+          JSON.stringify({
+            error: "No user message found to create conversation",
+          }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      const conversation = await createConversation(
+        userMessage.content.slice(0, 100)
+      );
+
+      if (conversation) {
+        conversationId = conversation.id;
+      } else {
+        conversationCreationFailed = true;
+      }
+    }
+
     // Create response stream
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
@@ -93,6 +192,7 @@ export async function POST(req: NextRequest) {
     // Start streaming response
     let fullResponse = "";
     let responseUsage: Partial<UsageData> | undefined;
+    let messageSavingFailed = false;
 
     // Process the chat completion with streaming
     openRouterService
@@ -109,6 +209,9 @@ export async function POST(req: NextRequest) {
             content: chunk,
             conversationId,
             usage: responseUsage,
+            failures: conversationCreationFailed
+              ? { conversationCreation: true }
+              : undefined,
           });
         }
       )
@@ -118,41 +221,29 @@ export async function POST(req: NextRequest) {
           responseUsage = response.usage;
         }
 
-        // Save messages to database if we have a conversation ID
         if (conversationId) {
-          try {
-            // Save the conversation and messages to Supabase
-            const { data: conversation, error: convError } = await supabase
-              .from("conversations")
-              .select()
-              .eq("id", conversationId)
-              .single();
-
-            if (!convError && conversation) {
-              // Save user message
-              const userMessage = messages.find(
-                (msg: Message) => msg.role === "user"
-              );
-              if (userMessage) {
-                await supabase.from("chat_messages").insert({
-                  conversation_id: conversationId,
-                  role: "user",
-                  content: userMessage.content,
-                  tokens_used: responseUsage?.prompt_tokens || 0,
-                });
-              }
-
-              // Save assistant response
-              await supabase.from("chat_messages").insert({
-                conversation_id: conversationId,
-                role: "assistant",
-                content: fullResponse,
-                tokens_used: responseUsage?.completion_tokens || 0,
-              });
-            }
-          } catch (error) {
-            console.error("Error saving messages:", error);
+          // Save user message
+          const userMessage = messages.find(
+            (msg: Message) => msg.role === "user"
+          );
+          if (userMessage) {
+            const userMessageSaved = await saveMessage(
+              conversationId,
+              userMessage.content,
+              "user",
+              responseUsage?.prompt_tokens || 0
+            );
+            if (!userMessageSaved) messageSavingFailed = true;
           }
+
+          // Save assistant response
+          const assistantMessageSaved = await saveMessage(
+            conversationId,
+            fullResponse,
+            "assistant",
+            responseUsage?.completion_tokens || 0
+          );
+          if (!assistantMessageSaved) messageSavingFailed = true;
         }
 
         // Send final message
@@ -160,6 +251,10 @@ export async function POST(req: NextRequest) {
           done: true,
           conversationId,
           usage: responseUsage,
+          failures: {
+            conversationCreation: conversationCreationFailed,
+            messageSaving: messageSavingFailed,
+          },
         });
 
         await writer.close();
@@ -172,6 +267,10 @@ export async function POST(req: NextRequest) {
         await sendSSE({
           error: errorMessage,
           conversationId,
+          failures: {
+            conversationCreation: conversationCreationFailed,
+            messageSaving: messageSavingFailed,
+          },
         });
         await writer.close();
       });
