@@ -11,7 +11,7 @@ class AuthService {
       const options: SignInWithOAuthCredentials = {
         provider: "google",
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_URL}/auth/callback`,
+          redirectTo: `${process.env.NEXT_PUBLIC_URL}/new`,
           queryParams: {
             // access_type: "offline",
             // prompt: "consent",
