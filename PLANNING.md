@@ -459,7 +459,7 @@ export const OPENROUTER_CONFIG = {
     // Add other models
   },
   HEADERS: {
-    "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL,
+    "HTTP-Referer": process.env.NEXT_PUBLIC_API_URL,
     "X-Title": "OneAI Platform",
   },
 };

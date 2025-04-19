@@ -60,38 +60,24 @@ export async function GET(request: Request) {
         // Sync user data to our database
         await syncUserData(supabase, user);
 
-        // Get the protocol from the request
-        const protocol = request.headers.get("x-forwarded-proto") || "http";
-        const host =
-          request.headers.get("x-forwarded-host") ||
-          request.headers.get("host") ||
-          "";
-        const baseUrl = `${protocol}://${host}`;
+        const forwardedHost = request.headers.get("x-forwarded-host");
+        const isLocalEnv = process.env.NODE_ENV === "development";
 
-        console.log("Redirecting to:", `${baseUrl}${next}`);
-
-        // Redirect to the appropriate URL
-        return NextResponse.redirect(`${baseUrl}${next}`);
+        if (isLocalEnv) {
+          return NextResponse.redirect(`${origin}${next}`);
+        } else if (forwardedHost) {
+          return NextResponse.redirect(`https://${forwardedHost}${next}`);
+        } else {
+          return NextResponse.redirect(`${origin}${next}`);
+        }
       } catch (syncError) {
         console.error("Error during user sync:", syncError);
         // Even if sync fails, we'll redirect the user but log the error
-        const protocol = request.headers.get("x-forwarded-proto") || "http";
-        const host =
-          request.headers.get("x-forwarded-host") ||
-          request.headers.get("host") ||
-          "";
-        const baseUrl = `${protocol}://${host}`;
-        return NextResponse.redirect(`${baseUrl}${next}`);
+        return NextResponse.redirect(`${origin}${next}`);
       }
     }
   }
 
   // return the user to an error page with instructions
-  const protocol = request.headers.get("x-forwarded-proto") || "http";
-  const host =
-    request.headers.get("x-forwarded-host") ||
-    request.headers.get("host") ||
-    "";
-  const baseUrl = `${protocol}://${host}`;
-  return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`);
+  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
 }

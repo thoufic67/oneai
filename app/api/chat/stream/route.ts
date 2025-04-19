@@ -31,7 +31,7 @@ async function createConversation(title: string) {
   try {
     const cookieStore = await cookies();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/conversations`,
+      `${process.env.NEXT_PUBLIC_API_URL}/conversations`,
       {
         method: "POST",
         headers: {
@@ -70,7 +70,7 @@ async function saveMessage(
   try {
     const cookieStore = await cookies();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/conversations/${conversationId}/messages`,
+      `${process.env.NEXT_PUBLIC_API_URL}/conversations/${conversationId}/messages`,
       {
         method: "POST",
         headers: {

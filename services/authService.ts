@@ -1,5 +1,6 @@
 import type { User } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@/lib/supabase/client";
+import { SignInWithOAuthCredentials } from "@supabase/supabase-js";
 
 class AuthService {
   private supabase = createClient();
@@ -7,21 +8,24 @@ class AuthService {
   // Redirect to Google login page
   async initiateGoogleLogin() {
     try {
-      const { error } = await this.supabase.auth.signInWithOAuth({
+      const options: SignInWithOAuthCredentials = {
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${process.env.NEXT_PUBLIC_URL}/auth/callback`,
           queryParams: {
             access_type: "offline",
             prompt: "consent",
             next: "/new",
           },
         },
-      });
-
-      console.log("Google login error:", error);
-
+      };
+      console.log(
+        "Initiating Google login with options:",
+        JSON.stringify(options)
+      );
+      const { error } = await this.supabase.auth.signInWithOAuth(options);
       if (error) {
+        console.log("Google login error:", error);
         throw error;
       }
     } catch (error) {

@@ -58,8 +58,8 @@ export class OpenRouterService {
       };
 
       // Only add headers if they are defined
-      if (process.env.NEXT_PUBLIC_SITE_URL) {
-        headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_SITE_URL;
+      if (process.env.NEXT_PUBLIC_API_URL) {
+        headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_API_URL;
       }
       if (process.env.NEXT_PUBLIC_SITE_NAME) {
         headers["X-Title"] = process.env.NEXT_PUBLIC_SITE_NAME;

@@ -62,7 +62,7 @@
 - [x] Get API key
 - [x] Configure environment variables
   - [x] OPENROUTER_API_KEY
-  - [x] NEXT_PUBLIC_SITE_URL
+  - [x] NEXT_PUBLIC_API_URL
   - [x] NEXT_PUBLIC_SITE_NAME
 
 ### Client Implementation

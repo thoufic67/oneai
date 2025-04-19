@@ -65,7 +65,7 @@ class ChatService {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
   }
 
   async createChatCompletion(
