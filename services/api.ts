@@ -207,7 +207,8 @@ class ChatService {
       const response = await api.get(
         `${this.baseUrl}/conversations?${queryParams.toString()}`
       );
-      return response.data;
+      console.log("Conversations response:", response.data);
+      return response.data.conversations;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
@@ -249,7 +250,7 @@ class ChatService {
       const response = await api.get(
         `${this.baseUrl}/conversations/${conversationId}/messages?${queryParams.toString()}`
       );
-      return response.data;
+      return response.data.messages;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(

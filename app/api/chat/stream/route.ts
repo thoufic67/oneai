@@ -1,11 +1,15 @@
 import { NextRequest } from "next/server";
 import {
   OpenRouterService,
-  Message,
+  Message as OpenRouterMessage,
   UsageData,
 } from "@/lib/services/openrouter";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+
+interface Message extends OpenRouterMessage {
+  sequence_number?: number;
+}
 
 const openRouterService = new OpenRouterService();
 
@@ -59,7 +63,9 @@ async function saveMessage(
   conversationId: string,
   content: string,
   role: string,
-  tokensUsed: number
+  tokensUsed: number,
+  model_id: string,
+  sequence_number: number
 ) {
   try {
     const cookieStore = await cookies();
@@ -75,6 +81,8 @@ async function saveMessage(
           content,
           role,
           metadata: { tokens_used: tokensUsed },
+          model_id,
+          sequence_number,
         }),
       }
     );
@@ -195,6 +203,8 @@ export async function POST(req: NextRequest) {
     let fullResponse = "";
     let responseUsage: Partial<UsageData> | undefined;
     let messageSavingFailed = false;
+    // Base sequence number for new messages
+    let sequence_number = messages.length + 1;
 
     // Process the chat completion with streaming
     openRouterService
@@ -222,18 +232,24 @@ export async function POST(req: NextRequest) {
         if (response.usage && !responseUsage) {
           responseUsage = response.usage;
         }
-
+        console.log("response", response);
         if (conversationId) {
-          // Save user message
-          const userMessage = messages.find(
-            (msg: Message) => msg.role === "user"
+          console.log(
+            "conversationId exists so saving messages with conversationId: ",
+            conversationId
           );
+          // Save user message - get the last user message
+          const userMessage = [...messages]
+            .reverse()
+            .find((msg: Message) => msg.role === "user");
           if (userMessage) {
             const userMessageSaved = await saveMessage(
               conversationId,
               userMessage.content,
               "user",
-              responseUsage?.prompt_tokens || 0
+              responseUsage?.prompt_tokens || 0,
+              model,
+              sequence_number
             );
             if (!userMessageSaved) messageSavingFailed = true;
           }
@@ -243,7 +259,9 @@ export async function POST(req: NextRequest) {
             conversationId,
             fullResponse,
             "assistant",
-            responseUsage?.completion_tokens || 0
+            responseUsage?.completion_tokens || 0,
+            model,
+            sequence_number + 1
           );
           if (!assistantMessageSaved) messageSavingFailed = true;
         }

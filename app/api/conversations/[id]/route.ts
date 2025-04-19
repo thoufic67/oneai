@@ -1,17 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const supabase = await createClient();
-    const params = await request.json();
-    const id = params.id;
+    const id = (await params).id;
     const {
-      data: { session },
+      data: { user },
       error: sessionError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (sessionError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -19,7 +21,7 @@ export async function GET(request: Request) {
       .from("conversations")
       .select("*")
       .eq("id", id)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .single();
 
     if (error) {
@@ -35,6 +37,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ conversation });
   } catch (error) {
+    console.error("Error fetching conversation:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -42,17 +45,19 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PATCH(request: Request) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const params = await request.json();
-    const id = params.id;
     const supabase = await createClient();
+    const id = (await params).id;
     const {
-      data: { session },
+      data: { user },
       error: sessionError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (sessionError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -75,7 +80,7 @@ export async function PATCH(request: Request) {
       .from("conversations")
       .update(updates)
       .eq("id", id)
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .select("*")
       .single();
 
@@ -92,6 +97,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ conversation });
   } catch (error) {
+    console.error("Error updating conversation:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -99,17 +105,19 @@ export async function PATCH(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const supabase = await createClient();
-    const params = await request.json();
-    const id = params.id;
+    const id = (await params).id;
     const {
-      data: { session },
+      data: { user },
       error: sessionError,
-    } = await supabase.auth.getSession();
+    } = await supabase.auth.getUser();
 
-    if (sessionError || !session) {
+    if (sessionError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -131,7 +139,7 @@ export async function DELETE(request: Request) {
       .from("conversations")
       .delete()
       .eq("id", id)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -139,6 +147,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("Error deleting conversation:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

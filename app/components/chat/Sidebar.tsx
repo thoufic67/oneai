@@ -40,7 +40,7 @@ export function Sidebar({
     try {
       setIsLoading(true);
       const data = await chatService.getConversations({ limit: 10 }); // Get the latest 10 conversations
-      setConversations(data.data);
+      setConversations(data);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to load conversations";

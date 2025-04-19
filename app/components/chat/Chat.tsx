@@ -174,14 +174,14 @@ export function Chat() {
       const conversationDetails =
         await chatService.getConversation(conversationId);
       setCurrentConversation(conversationDetails);
-
+      console.log("messagesData", messagesData);
       // Convert API messages to component format
-      const formattedMessages: Message[] = messagesData.data.map((msg) => ({
+      const formattedMessages: Message[] = messagesData?.map((msg) => ({
         role: msg.role as "user" | "assistant",
         content: msg.content,
       }));
 
-      setMessages(formattedMessages);
+      setMessages(formattedMessages || []);
 
       // Update model if present in message metadata
       // Note: This would need to be implemented on the backend to store model in message metadata
@@ -285,15 +285,15 @@ export function Chat() {
       );
 
       // Update conversation if needed
-      if (conversationId && !currentChatId) {
-        try {
-          const conversation =
-            await chatService.getConversation(conversationId);
-          setNewConversation(conversation);
-        } catch (error) {
-          console.error("Error fetching conversation:", error);
-        }
-      }
+      // if (conversationId && !currentChatId) {
+      //   try {
+      //     const conversation =
+      //       await chatService.getConversation(conversationId);
+      //     setNewConversation(conversation);
+      //   } catch (error) {
+      //     console.error("Error fetching conversation:", error);
+      //   }
+      // }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       console.error("Chat error:", error);

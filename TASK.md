@@ -82,17 +82,17 @@
 ### Authentication API
 
 - [ ] Implement Supabase auth integration
-  - [ ] Set up auth callback route
-  - [ ] Sync user data to custom users table
+  - [x] Set up auth callback route
+  - [x] Sync user data to custom users table
   - [ ] Add rate limiting for API endpoints
-- [ ] Configure auth middleware
-  - [ ] Set up protected routes
-  - [ ] Handle auth state changes
-  - [ ] Implement session cleanup for custom data
+- [x] Configure auth middleware
+  - [x] Set up protected routes
+  - [x] Handle auth state changes
+  - [x] Implement session cleanup for custom data
 
 ### Chat API
 
-- [ ] Implement streaming endpoint
+- [x] Implement streaming endpoint
   - [x] SSE setup
   - [x] Error handling
   - [x] Token tracking
