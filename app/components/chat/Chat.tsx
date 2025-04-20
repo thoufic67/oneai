@@ -162,7 +162,12 @@ export function Chat() {
         animateVideoRef.current?.pause();
       }
     }
-  }, [isLoading]);
+    return () => {
+      if (animateVideoRef.current) {
+        animateVideoRef.current.pause();
+      }
+    };
+  }, [isLoading, animateVideoRef.current]);
 
   // Load conversation when path contains a conversation ID
   useEffect(() => {

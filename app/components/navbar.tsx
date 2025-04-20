@@ -51,7 +51,7 @@ export const Navbar = () => {
   // );
 
   return (
-    <HeroUINavbar maxWidth="xl" position="sticky">
+    <HeroUINavbar position="sticky" isBlurred className="bg-transparent w-full">
       <NavbarContent>
         <NavbarBrand>
           <Link href="/" className="flex items-center gap-2">

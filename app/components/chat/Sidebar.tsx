@@ -198,15 +198,6 @@ export function Sidebar({
                 No conversations yet
               </div>
             )}
-
-            <div className="mt-auto p-3">
-              <div className="flex items-center gap-2 py-2 px-3 text-sm rounded-lg">
-                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-                  {/* User initials or avatar could go here */}T
-                </div>
-                <span className="truncate">Free plan</span>
-              </div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
