@@ -117,7 +117,7 @@ export function Chat() {
 
   // State for current messages display
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(
     null
@@ -426,8 +426,8 @@ export function Chat() {
                   <PanelLeft className="h-5 w-5" />
                 </Button>
               </div>
-              <NavbarBrand className="flex">
-                <p className="text-sm sm:text-lg font-bold text-center w-full">
+              <NavbarBrand className="flex justify-center">
+                <p className="text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden text-center">
                   {currentConversation?.title || "Conversation"}
                 </p>
               </NavbarBrand>
@@ -504,13 +504,40 @@ export function Chat() {
                     isLoading={true}
                   />
                 )}
-                <Image
+                {/* <Image
                   src="/loading-animation.svg"
                   alt="logo"
                   width={100}
                   height={100}
-                  className={`w-8 h-8 ${isLoading ? "animate-spin" : ""}`}
-                />
+                  className={`w-8 h-8 ${isLoading ? "animate-spin" : ""} border border-100 border-gray-900`}
+                /> */}
+                <div
+                  className={`relative w-8 h-8 blur-sm rounded-full overflow-hidden ${isLoading ? "animate-spin" : ""}`}
+                >
+                  <div
+                    className={`absolute rounded-full w-8 h-8 bg-gradient-to-r from-primary-400/50 to-primary-600/50 ${isLoading ? "animate-pulse" : ""}`}
+                  ></div>
+                  <div
+                    className={`absolute rounded-full w-8 h-8 bg-gradient-to-r from-default-400/40 to-default-600/40 ${isLoading ? "animate-pulse" : ""}`}
+                  ></div>
+                  <div
+                    className={`absolute top-2 left-2 rounded-full w-5 h-5 bg-gradient-to-r from-green-400/80 to-green-600/80 blur-lg ${isLoading ? "animate-pulse" : ""}`}
+                  ></div>
+                  <div
+                    className={`absolute top-2 left-2 rounded-full w-5 h-5 bg-gradient-to-r from-red-400/50 to-red-600/50 blur-lg ${isLoading ? "animate-pulse" : ""}`}
+                  ></div>
+                  <div
+                    className={`absolute bottom-2 right-2 rounded-full w-5 h-5 bg-gradient-to-r from-default-400/40 to-primary-600/40 blur-sm ${isLoading ? "animate-pulse" : ""}`}
+                  ></div>
+                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                    {/* <Image
+                      src="/logos/oneai.svg"
+                      alt="logo"
+                      width={100}
+                      height={100}
+                    /> */}
+                  </div>
+                </div>
               </div>
 
               {error && (
