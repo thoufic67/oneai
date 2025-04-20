@@ -78,7 +78,13 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
     const selectedModelLogo = selectedModelData?.logo;
 
     return (
-      <div className="relative group cursor-pointer bg-transparent">
+      <div
+        className={`relative group  bg-transparent transition-opacity duration-300 ${
+          disabled
+            ? "opacity-50 cursor-not-allowed"
+            : "opacity-100 cursor-pointer"
+        }`}
+      >
         <div
           className={`rounded-lg absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 backdrop-blur-xl ${
             theme === "dark"
@@ -91,10 +97,12 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
             <Textarea
               ref={ref}
               classNames={{
-                input:
-                  "bg-transparent focus:bg-transparent resize-none w-[95%] outline-none focus:outline-none  text-sm",
-                inputWrapper:
-                  "bg-transparent data-[hover=true]:bg-transparent focus:outline-none",
+                input: `bg-transparent focus:bg-transparent resize-none w-[95%] outline-none focus:outline-none  text-sm ${
+                  disabled ? " cursor-not-allowed" : "opacity-100"
+                }`,
+                inputWrapper: `bg-transparent data-[hover=true]:bg-transparent focus:outline-none ${
+                  disabled ? " cursor-not-allowed" : "opacity-100"
+                }`,
                 ...classNames,
               }}
               value={value}
