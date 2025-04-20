@@ -144,7 +144,7 @@ export function Chat() {
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
+  const animateVideoRef = useRef<HTMLVideoElement>(null);
   // Persist preferences to session storage when they change
   useEffect(() => {
     storeWithExpiry("oneai_selected_model", selectedModel);
@@ -153,6 +153,16 @@ export function Chat() {
   useEffect(() => {
     storeWithExpiry("oneai_web_search_enabled", webSearchEnabled);
   }, [webSearchEnabled]);
+
+  useEffect(() => {
+    if (animateVideoRef.current) {
+      if (isLoading) {
+        animateVideoRef.current?.play();
+      } else {
+        animateVideoRef.current?.pause();
+      }
+    }
+  }, [isLoading]);
 
   // Load conversation when path contains a conversation ID
   useEffect(() => {
@@ -511,10 +521,8 @@ export function Chat() {
                   height={100}
                   className={`w-8 h-8 ${isLoading ? "animate-spin" : ""} border border-100 border-gray-900`}
                 /> */}
-                <div
-                  className={`relative w-8 h-8 blur-sm rounded-full overflow-hidden ${isLoading ? "animate-spin" : ""}`}
-                >
-                  <div
+                <div className={`relative w-10 h-10 rounded-full overflow-`}>
+                  {/* <div
                     className={`absolute rounded-full w-8 h-8 bg-gradient-to-r from-primary-400/50 to-primary-600/50 ${isLoading ? "animate-pulse" : ""}`}
                   ></div>
                   <div
@@ -528,15 +536,26 @@ export function Chat() {
                   ></div>
                   <div
                     className={`absolute bottom-2 right-2 rounded-full w-5 h-5 bg-gradient-to-r from-default-400/40 to-primary-600/40 blur-sm ${isLoading ? "animate-pulse" : ""}`}
-                  ></div>
+                  ></div> */}
+                  {/*
                   <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                    {/* <Image
+                     <Image
                       src="/logos/oneai.svg"
                       alt="logo"
                       width={100}
                       height={100}
-                    /> */}
+                    /> 
                   </div>
+                    */}
+                  <video
+                    ref={animateVideoRef}
+                    src="/loading animation.mp4"
+                    // autoPlay
+                    playsInline
+                    muted
+                    loop
+                    className="w-10 h-10 object-cover object-center transform scale-150 rounded-full"
+                  />
                 </div>
               </div>
 
