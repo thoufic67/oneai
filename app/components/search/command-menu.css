@@ -1,0 +1,39 @@
+.command-dialog {
+  @apply fixed top-[50%] left-[50%] max-h-[85vh] w-full max-w-[750px] translate-x-[-50%] translate-y-[-50%] overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900 dark:ring-1 dark:ring-gray-800;
+}
+
+.command-dialog-content {
+  @apply overflow-hidden p-0;
+}
+
+.command-input {
+  @apply flex h-12 w-full items-center border-b border-gray-200 px-4 dark:border-gray-800;
+}
+
+.command-input input {
+  @apply flex h-full w-full rounded-md bg-transparent px-2 py-2 text-sm outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-white;
+}
+
+.command-list {
+  @apply max-h-[300px] overflow-y-auto overflow-x-hidden p-2;
+}
+
+.command-empty {
+  @apply py-6 text-center text-sm text-gray-500;
+}
+
+.command-group {
+  @apply overflow-hidden p-1 text-gray-950 dark:text-white [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-gray-500 dark:[&_[cmdk-group-heading]]:text-gray-400;
+}
+
+.command-item {
+  @apply relative flex cursor-default select-none items-center rounded-md px-2 py-2 text-sm outline-none aria-selected:bg-gray-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:aria-selected:bg-gray-800;
+}
+
+.command-separator {
+  @apply -mx-1 h-px bg-gray-200 dark:bg-gray-800;
+}
+
+.command-shortcut {
+  @apply ml-auto text-xs tracking-widest text-gray-500 dark:text-gray-400;
+}

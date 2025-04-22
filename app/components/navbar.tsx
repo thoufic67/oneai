@@ -18,19 +18,19 @@ import NextLink from "next/link";
 import clsx from "clsx";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { History as HistoryIcon, Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/app/components/theme-switch";
 import UserProfile from "@/app/components/user-profile";
-import { History } from "@/app/components/chat/History";
+import { useShortcutKey } from "@/app/components/search/ShortcutKeyProvider";
 import Image from "next/image";
 
 export const Navbar = () => {
   const router = useRouter();
   const params = useParams();
   const currentChatId = params?.id as string | null;
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const { openCommandK } = useShortcutKey();
 
   const handleNewChat = () => {
     router.push("/new");
@@ -63,26 +63,24 @@ export const Navbar = () => {
           <NavbarItem className="flex gap-2">
             <Button
               size="sm"
+              radius="full"
+              isIconOnly
+              variant="ghost"
+              aria-label="Search"
+              onPress={openCommandK}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              radius="full"
               isIconOnly
               variant="ghost"
               aria-label="New Chat"
-              radius="full"
               onPress={handleNewChat}
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <Button
-              size="sm"
-              isIconOnly
-              variant="ghost"
-              aria-label="History"
-              radius="full"
-              onPress={() => setIsHistoryOpen(true)}
-            >
-              <HistoryIcon className="h-4 w-4" />
-            </Button>
-          </NavbarItem>
-          <NavbarItem>
             <ThemeSwitch />
           </NavbarItem>
           <NavbarItem>
@@ -92,24 +90,24 @@ export const Navbar = () => {
 
         <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
           <Button
+            size="sm"
+            radius="full"
             isIconOnly
             variant="ghost"
+            aria-label="Search"
+            onPress={openCommandK}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          <Button
             size="sm"
-            aria-label="New Chat"
             radius="full"
+            isIconOnly
+            variant="ghost"
+            aria-label="New Chat"
             onPress={handleNewChat}
           >
             <Plus className="h-5 w-5" />
-          </Button>
-          <Button
-            isIconOnly
-            variant="ghost"
-            size="sm"
-            aria-label="History"
-            radius="full"
-            onPress={() => setIsHistoryOpen(true)}
-          >
-            <HistoryIcon className="h-5 w-5" />
           </Button>
           <ThemeSwitch />
           <UserProfile />
@@ -137,11 +135,6 @@ export const Navbar = () => {
           </div>
         </NavbarMenu>
       </HeroUINavbar>
-      <History
-        isOpen={isHistoryOpen}
-        onOpenChange={setIsHistoryOpen}
-        currentChatId={currentChatId}
-      />
     </>
   );
 };

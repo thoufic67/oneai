@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CommandK } from "./CommandK";
+import { useParams } from "next/navigation";
 
 interface ShortcutKeyContextType {
   openCommandK: () => void;
@@ -23,6 +24,8 @@ export function ShortcutKeyProvider({
   children: React.ReactNode;
 }) {
   const [isCommandKOpen, setIsCommandKOpen] = useState(false);
+  const params = useParams();
+  const currentChatId = params?.id as string | undefined;
 
   const openCommandK = () => setIsCommandKOpen(true);
   const closeCommandK = () => setIsCommandKOpen(false);
@@ -45,7 +48,11 @@ export function ShortcutKeyProvider({
       value={{ openCommandK, closeCommandK, isCommandKOpen }}
     >
       {children}
-      <CommandK isOpen={isCommandKOpen} onClose={closeCommandK} />
+      <CommandK
+        isOpen={isCommandKOpen}
+        onOpenChange={setIsCommandKOpen}
+        currentChatId={currentChatId}
+      />
     </ShortcutKeyContext.Provider>
   );
 }

@@ -402,7 +402,7 @@ export function Chat() {
     <div className="flex h-[calc(100dvh-1rem)] md:h-[calc(100dvh-4rem)]">
       <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full">
         {currentChatId && messages.length > 0 && (
-          <Navbar className="bg-transparent" isBlurred>
+          <Navbar className="bg-transparent w-fit mx-auto" isBlurred>
             <NavbarContent className="flex justify-center">
               <NavbarBrand className="flex justify-center flex-grow">
                 <p className="text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
@@ -504,7 +504,7 @@ export function Chat() {
                   <video
                     ref={animateVideoRef}
                     src="/loading animation.mp4"
-                    // autoPlay
+                    autoPlay
                     playsInline
                     muted
                     loop
