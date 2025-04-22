@@ -73,7 +73,7 @@ type ModelType =
   | "gpt-4o-mini"
   | "anthropic/claude-3.7-sonnet"
   | "mistral/ministral-8b"
-  | "grok/grok-3.5-sonnet"
+  | "x-ai/grok-3-mini-beta"
   | "deepseek/deepseek-chat-v3-0324:free"
   | "deepseek/deepseek-r1-zero:free"
   | "perplexity/sonar"
@@ -108,7 +108,7 @@ const models: Model[] = [
   },
   {
     name: "Grok",
-    value: "grok/grok-3.5-sonnet",
+    value: "x-ai/grok-3-mini-beta",
     logo: "/logos/grok.svg",
   },
   {
