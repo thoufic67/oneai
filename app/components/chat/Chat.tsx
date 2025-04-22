@@ -9,9 +9,8 @@ import {
 } from "@/services/api";
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
-import { Sidebar } from "./Sidebar";
 import { Button, Navbar, NavbarBrand, NavbarContent } from "@heroui/react";
-import { AlertCircle, Send, Menu, PanelLeft } from "lucide-react";
+import { AlertCircle, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
@@ -133,11 +132,7 @@ export function Chat() {
   );
 
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [loadingConversation, setLoadingConversation] = useState(false);
-  const [newConversation, setNewConversation] = useState<
-    Conversation | undefined
-  >(undefined);
   const [currentConversation, setCurrentConversation] = useState<
     Conversation | undefined
   >(undefined);
@@ -221,10 +216,6 @@ export function Chat() {
     }
   };
 
-  const toggleSidebar = () => {
-    setSidebarExpanded(!sidebarExpanded);
-  };
-
   const handleSubmit = async () => {
     if (inputMessage.trim().length === 0) return;
 
@@ -277,7 +268,7 @@ export function Chat() {
               updated_at: new Date().toISOString(),
               last_message_at: new Date().toISOString(),
             };
-            setNewConversation(tempConversation);
+            setCurrentConversation(tempConversation);
           }
         },
         async (finalText, convId) => {
@@ -327,7 +318,6 @@ export function Chat() {
     setInputMessage("");
     setCurrentChatId(null);
     // Don't reset model and web search preferences to preserve user's choices
-    setSidebarExpanded(false);
     setCurrentConversation(undefined);
 
     // Navigate to /new if needed
@@ -345,7 +335,6 @@ export function Chat() {
       setStreamingMessage(null);
       setError(null);
       setInputMessage("");
-      setSidebarExpanded(false);
 
       // Navigate to the selected conversation route if needed
       if (navigate) {
@@ -409,59 +398,19 @@ export function Chat() {
     </div>
   );
 
-  // Update current conversation when a new one is created
-  useEffect(() => {
-    if (newConversation) {
-      setCurrentConversation(newConversation);
-    }
-  }, [newConversation]);
-
   return (
     <div className="flex h-[calc(100dvh-1rem)] md:h-[calc(100dvh-4rem)]">
-      <Sidebar
-        onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
-        currentChatId={currentChatId}
-        expanded={sidebarExpanded}
-        onToggle={toggleSidebar}
-        newConversation={newConversation}
-      />
-
-      <div className="flex flex-col flex-1 max-w-3xl mx-auto w-full">
+      <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full">
         {currentChatId && messages.length > 0 && (
           <Navbar className="bg-transparent" isBlurred>
-            <NavbarContent className="flex sm:justify-center">
-              <div className="sm:hidden">
-                <Button
-                  isIconOnly
-                  variant="ghost"
-                  radius="full"
-                  onPress={toggleSidebar}
-                >
-                  <PanelLeft className="h-5 w-5" />
-                </Button>
-              </div>
-              <NavbarBrand className="flex justify-center">
-                <p className="text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden text-center">
-                  {currentConversation?.title || "Conversation"}
+            <NavbarContent className="flex justify-center">
+              <NavbarBrand className="flex justify-center flex-grow">
+                <p className="text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
+                  {currentConversation?.title || "..."}
                 </p>
               </NavbarBrand>
             </NavbarContent>
           </Navbar>
-        )}
-
-        {/* Show menu button for mobile when no navbar */}
-        {(!currentChatId || messages.length === 0) && (
-          <div className="sm:hidden absolute top-4 left-4 z-10">
-            <Button
-              isIconOnly
-              variant="ghost"
-              radius="full"
-              onPress={toggleSidebar}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
         )}
 
         <AnimatePresence mode="wait">
