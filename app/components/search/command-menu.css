@@ -1,5 +1,5 @@
 .command-dialog {
-  @apply fixed top-[50%] left-[50%] max-h-[85vh] w-full max-w-[750px] translate-x-[-50%] translate-y-[-50%] overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900 dark:ring-1 dark:ring-gray-800;
+  /* @apply fixed top-[50%] left-[50%] max-h-[85vh] w-full max-w-[750px] translate-x-[-50%] translate-y-[-50%] overflow-hidden rounded-xl bg-white shadow-lg dark:bg-gray-900 dark:ring-1 dark:ring-gray-800; */
 }
 
 .command-dialog-content {
