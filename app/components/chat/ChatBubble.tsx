@@ -79,27 +79,42 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   const match = /language-(\w+)/.exec(className || "");
   const code = String(children).replace(/\n$/, "");
 
+  useEffect(() => {
+    console.log("code", { code, inline, match, children });
+  }, [code, inline, match, children]);
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  if (!inline && !match) {
+    return (
+      <div className="relative group w-full max-w-full overflow-x-auto overflow-y-hidden">
+        <pre className="p-4 rounded-md bg-default-800 backdrop-blur-md text-default-900 overflow-x-auto overflow-y-hidden w-full text-sm text-default-100">
+          <code className={className} {...props}>
+            {children}
+          </code>
+        </pre>
+        <button
+          onClick={copyToClipboard}
+          className="absolute top-2 right-2 p-1 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-all"
+          aria-label="Copy code"
+        >
+          {copied ? <Check size={16} /> : <Copy size={16} />}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative group w-full max-w-full overflow-x-auto overflow-y-hidden bg-gray-100 dark:bg-gray-100 dark:text-default-900 rounded-md">
-      <pre className="p-4 rounded-md bg-black/80 backdrop-blur-md text-white overflow-x-auto overflow-y-hidden w-full text-sm">
-        <code className={className} {...props}>
-          {children}
-        </code>
-      </pre>
-      <button
-        onClick={copyToClipboard}
-        className="absolute top-2 right-2 p-1 rounded-md bg-gray-800 hover:bg-gray-700 text-white transition-all"
-        aria-label="Copy code"
-      >
-        {copied ? <Check size={16} /> : <Copy size={16} />}
-      </button>
-    </div>
+    <code
+      className={`${className} px-1 py-0.5 bg-default-800 text-default-100 dark:bg-default-900 rounded`}
+      {...props}
+    >
+      {children}
+    </code>
   );
 };
 
@@ -176,7 +191,8 @@ const MarkdownComponents = {
   a: Link,
   img: ImageComponent,
   hr: HorizontalRule,
-  code: CodeBlock,
+  pre: ({ children }: any) => CodeBlock({ children, inline: false }),
+  code: ({ children }: any) => CodeBlock({ children, inline: true }),
   table: TableComponent,
   tr: TableRow,
   td: ({ children }: any) => <TableCell>{children}</TableCell>,
