@@ -102,7 +102,7 @@ export const Navbar = () => {
             aria-label="Search"
             onPress={openCommandK}
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
@@ -112,7 +112,7 @@ export const Navbar = () => {
             aria-label="New Chat"
             onPress={handleNewChat}
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
           </Button>
           <ThemeSwitch />
           <UserProfile />
