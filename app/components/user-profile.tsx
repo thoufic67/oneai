@@ -12,6 +12,7 @@ import {
 } from "@heroui/dropdown";
 import Link from "next/link";
 import { Spinner } from "@heroui/spinner";
+import { Tooltip } from "@heroui/react";
 
 export default function UserProfile() {
   const { user, loading, error, logout } = useAuth();
@@ -47,14 +48,12 @@ export default function UserProfile() {
   return (
     <Dropdown>
       <DropdownTrigger>
-        <button className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80">
-          <Avatar
-            src={user.user_metadata.avatar_url || undefined}
-            name={user.user_metadata.name || user.email}
-            size="sm"
-            className="cursor-pointer"
-          />
-        </button>
+        <Avatar
+          src={user.user_metadata.avatar_url || undefined}
+          name={user.user_metadata.name || user.email}
+          size="sm"
+          className="cursor-pointer"
+        />
       </DropdownTrigger>
       <DropdownMenu aria-label="User menu">
         <DropdownItem key="profile" className="font-medium">

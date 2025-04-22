@@ -25,6 +25,7 @@ import { ThemeSwitch } from "@/app/components/theme-switch";
 import UserProfile from "@/app/components/user-profile";
 import { useShortcutKey } from "@/app/components/search/ShortcutKeyProvider";
 import Image from "next/image";
+import { Tooltip } from "@heroui/react";
 
 export const Navbar = () => {
   const router = useRouter();
@@ -61,26 +62,30 @@ export const Navbar = () => {
           justify="end"
         >
           <NavbarItem className="flex gap-2">
-            <Button
-              size="sm"
-              radius="full"
-              isIconOnly
-              variant="ghost"
-              aria-label="Search"
-              onPress={openCommandK}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              radius="full"
-              isIconOnly
-              variant="ghost"
-              aria-label="New Chat"
-              onPress={handleNewChat}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Tooltip content="Search">
+              <Button
+                size="sm"
+                radius="full"
+                isIconOnly
+                variant="ghost"
+                aria-label="Search"
+                onPress={openCommandK}
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip content="New Chat">
+              <Button
+                size="sm"
+                radius="full"
+                isIconOnly
+                variant="ghost"
+                aria-label="New Chat"
+                onPress={handleNewChat}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </Tooltip>
             <ThemeSwitch />
           </NavbarItem>
           <NavbarItem>
