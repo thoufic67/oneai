@@ -1,16 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
 import {
   chatService,
   Message,
   Conversation,
   ChatMessage,
 } from "@/services/api";
+import { authService } from "@/services/authService";
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
-import { Button, Navbar, NavbarBrand, NavbarContent } from "@heroui/react";
-import { AlertCircle, Send } from "lucide-react";
+import {
+  Button,
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Input,
+} from "@heroui/react";
+import { AlertCircle, Send, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
@@ -25,6 +38,14 @@ const storeWithExpiry = (key: string, value: any) => {
     expiry: new Date().getTime() + 24 * 60 * 60 * 1000, // 1 day expiry
   };
   sessionStorage.setItem(key, JSON.stringify(item));
+};
+
+// Add greeting utility function
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 };
 
 const getWithExpiry = (key: string, defaultValue: any) => {
@@ -140,6 +161,12 @@ export function Chat() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const animateVideoRef = useRef<HTMLVideoElement>(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [tempUserName, setTempUserName] = useState("");
+
+  // Add user state
+  const [user, setUser] = useState<any>(null);
+
   // Persist preferences to session storage when they change
   useEffect(() => {
     storeWithExpiry("oneai_selected_model", selectedModel);
@@ -149,7 +176,20 @@ export function Chat() {
     storeWithExpiry("oneai_web_search_enabled", webSearchEnabled);
   }, [webSearchEnabled]);
 
+  // Load user data on component mount
   useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Error loading user:", error);
+      }
+    };
+    loadUser();
+  }, []);
+
+  useLayoutEffect(() => {
     if (animateVideoRef.current) {
       if (isLoading) {
         animateVideoRef.current?.play();
@@ -398,6 +438,11 @@ export function Chat() {
     </div>
   );
 
+  const handleSaveSettings = () => {
+    setTempUserName(tempUserName);
+    onClose();
+  };
+
   return (
     <div className="flex h-[calc(100dvh-1rem)] md:h-[calc(100dvh-4rem)]">
       <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full">
@@ -424,10 +469,15 @@ export function Chat() {
               className="flex flex-col h-full justify-center items-center -mt-24"
             >
               <motion.div className="flex flex-col justify-center items-center gap-4 mb-8">
-                <p className="text-left text-xl font-normal delay-100 sm:text-2xl md:text-3xl leading-9">
+                <p className="text-left text-xl font-normal delay-100 sm:text-2xl  leading-9">
                   <span className="drop-shadow-2xl relative mb-5 duration-700 transition-[opacity,filter] text-transparent bg-clip-text bg-gradient-to-r to-purple-400 from-pink-600">
-                    Hello!
-                  </span>{" "}
+                    {`${getGreeting()}`}
+                  </span>
+                  {user?.user_metadata?.full_name
+                    ? `, ${user.user_metadata.full_name.split(" ")[0]}`
+                    : ""}
+                  !
+                  <br />
                   <span className="drop-shadow-2xl text-gray-500">
                     How can I help you today?
                   </span>
@@ -504,7 +554,7 @@ export function Chat() {
                   <video
                     ref={animateVideoRef}
                     src="/loading animation.mp4"
-                    autoPlay
+                    // autoPlay
                     playsInline
                     muted
                     loop
