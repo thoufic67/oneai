@@ -30,7 +30,6 @@ import { Tooltip } from "@heroui/react";
 export const Navbar = () => {
   const router = useRouter();
   const params = useParams();
-  const currentChatId = params?.id as string | null;
   const { openCommandK } = useShortcutKey();
 
   const handleNewChat = () => {
@@ -39,11 +38,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <HeroUINavbar
-        position="sticky"
-        isBlurred
-        className="bg-transparent w-full"
-      >
+      <HeroUINavbar isBlurred maxWidth="full" className="bg-transparent">
         <NavbarContent>
           <NavbarBrand>
             <Link href="/" className="flex items-center gap-2">
@@ -58,7 +53,7 @@ export const Navbar = () => {
           </NavbarBrand>
         </NavbarContent>
         <NavbarContent
-          className="hidden sm:flex basis-1/5 sm:basis-full items-center"
+          className="hidden sm:flex basis-1/5 sm:basis-full items-center w-full"
           justify="end"
         >
           <NavbarItem className="flex gap-2">
@@ -93,7 +88,7 @@ export const Navbar = () => {
           </NavbarItem>
         </NavbarContent>
 
-        <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
+        <NavbarContent className="sm:hidden basis-1 pl-4 w-full" justify="end">
           <Button
             size="sm"
             radius="full"
