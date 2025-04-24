@@ -130,8 +130,22 @@
   - [ ] Feature comparison
 - [ ] Subscription operations
   - [ ] Create subscription
+    - [ ] Handle Razorpay payment flow
+    - [ ] Process subscription.activated webhook
+    - [ ] Implement QuotaAssignmentManager
+    - [ ] Set up quota reset scheduling
   - [ ] Cancel subscription
+    - [ ] Handle subscription cancellation
+    - [ ] Update quota limits
+    - [ ] Record in subscription history
   - [ ] Update subscription
+    - [ ] Handle tier upgrades/downgrades
+    - [ ] Recalculate quota limits
+    - [ ] Reset quotas on upgrade
+  - [ ] Handle failed payments
+    - [ ] Implement grace period
+    - [ ] Send payment reminders
+    - [ ] Adjust quota limits
 - [ ] Billing features
   - [ ] Invoice management
   - [ ] Payment processing

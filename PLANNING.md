@@ -610,6 +610,202 @@ export const UsageDisplay = () => {
 };
 ```
 
+## Subscription and Quota Assignment Flow
+
+```typescript
+// lib/subscription/quota-assignment.ts
+
+interface QuotaAssignment {
+  userId: string;
+  subscriptionTier: string;
+  previousTier?: string;
+}
+
+export class QuotaAssignmentManager {
+  /**
+   * Called after successful payment and subscription creation
+   */
+  async assignQuotasForNewSubscription({
+    userId,
+    subscriptionTier,
+    previousTier,
+  }: QuotaAssignment): Promise<void> {
+    const tierQuotas = SUBSCRIPTION_TIERS[subscriptionTier].quotas;
+
+    // Start a transaction to ensure all quotas are assigned atomically
+    await db.$transaction(async (tx) => {
+      // 1. Update user's subscription tier
+      await tx.users.update({
+        where: { id: userId },
+        data: {
+          subscription_tier: subscriptionTier,
+          subscription_status: "active",
+        },
+      });
+
+      // 2. Record subscription change in history
+      await tx.subscription_history.create({
+        data: {
+          user_id: userId,
+          old_tier: previousTier || "none",
+          new_tier: subscriptionTier,
+          change_reason: previousTier ? "upgrade" : "new_subscription",
+          metadata: {
+            payment_successful: true,
+            changed_at: new Date().toISOString(),
+          },
+        },
+      });
+
+      // 3. Create or update quota entries for each quota type
+      for (const [quotaKey, quota] of Object.entries(tierQuotas)) {
+        const nextReset = calculateNextReset(quota.resetFrequency);
+
+        await tx.usage_quotas.upsert({
+          where: {
+            user_id_quota_key: {
+              user_id: userId,
+              quota_key: quotaKey,
+            },
+          },
+          create: {
+            user_id: userId,
+            quota_key: quotaKey,
+            subscription_tier: subscriptionTier,
+            quota_limit: quota.limit,
+            reset_frequency: quota.resetFrequency,
+            used_count: 0,
+            last_reset_at: new Date(),
+            next_reset_at: nextReset,
+          },
+          update: {
+            subscription_tier: subscriptionTier,
+            quota_limit: quota.limit,
+            reset_frequency: quota.resetFrequency,
+            // Only reset usage if upgrading to a new tier
+            ...(previousTier && {
+              used_count: 0,
+              last_reset_at: new Date(),
+              next_reset_at: nextReset,
+            }),
+          },
+        });
+      }
+    });
+  }
+
+  /**
+   * Calculate next reset timestamp based on frequency
+   */
+  private calculateNextReset(frequency: ResetFrequency): Date {
+    const now = new Date();
+
+    switch (frequency) {
+      case "3hour":
+        return new Date(now.getTime() + 3 * 60 * 60 * 1000);
+
+      case "daily":
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        return tomorrow;
+
+      case "monthly":
+        const nextMonth = new Date(now);
+        nextMonth.setMonth(nextMonth.getMonth() + 1);
+        nextMonth.setDate(1);
+        nextMonth.setHours(0, 0, 0, 0);
+        return nextMonth;
+
+      default:
+        throw new Error(`Unknown reset frequency: ${frequency}`);
+    }
+  }
+}
+
+// Usage in Razorpay webhook handler
+// app/api/webhooks/razorpay/route.ts
+
+export async function POST(req: Request) {
+  const payload = await req.json();
+
+  // Verify Razorpay signature
+  if (!verifyRazorpaySignature(payload)) {
+    return new Response("Invalid signature", { status: 400 });
+  }
+
+  if (payload.event === "subscription.activated") {
+    const { subscription_id, user_id, plan_id } = payload;
+
+    try {
+      const quotaAssigner = new QuotaAssignmentManager();
+
+      // Get subscription details from your database
+      const subscription = await db.subscriptions.findUnique({
+        where: { provider_subscription_id: subscription_id },
+        include: { user: true },
+      });
+
+      // Assign quotas for the new subscription
+      await quotaAssigner.assignQuotasForNewSubscription({
+        userId: user_id,
+        subscriptionTier: getPlanTier(plan_id),
+        previousTier: subscription?.user.subscription_tier,
+      });
+
+      return new Response("OK", { status: 200 });
+    } catch (error) {
+      console.error("Failed to assign quotas:", error);
+      return new Response("Failed to assign quotas", { status: 500 });
+    }
+  }
+}
+```
+
+### Quota Assignment Process
+
+1. **Payment Success**
+
+   - User completes payment through Razorpay
+   - Razorpay sends webhook event `subscription.activated`
+   - System verifies webhook signature
+
+2. **Subscription Update**
+
+   - Update user's subscription tier and status
+   - Record change in subscription history
+   - Previous tier is preserved for tracking
+
+3. **Quota Assignment**
+
+   - System assigns quotas based on new subscription tier
+   - All quota types are created/updated in a single transaction
+   - Quota limits are set according to tier configuration
+   - Reset schedules are established based on frequency
+
+4. **Reset Behavior**
+
+   - New subscriptions start with fresh quotas
+   - Upgrades reset all quotas to start fresh
+   - Quota reset times are calculated based on frequency
+   - 3-hour quotas reset on rolling basis
+   - Daily quotas reset at midnight UTC
+   - Monthly quotas reset on 1st of each month
+
+5. **Error Handling**
+   - Failed assignments are rolled back via transactions
+   - Webhook retries handle temporary failures
+   - Error notifications sent to monitoring system
+
+This implementation ensures:
+
+- Atomic quota assignments
+- Clear subscription history
+- Proper quota reset scheduling
+- Handling of upgrades/downgrades
+- Transaction safety
+- Audit trail of changes
+
 ## API Routes Structure
 
 ```
