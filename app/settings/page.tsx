@@ -41,8 +41,8 @@ function SettingsPage() {
             </CardHeader>
             <CardBody className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Name</label>
                 <Input
+                  label="Name"
                   isDisabled
                   defaultValue={user?.user_metadata?.name || ""}
                   placeholder="Your name"
@@ -50,8 +50,8 @@ function SettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
                 <Input
+                  label="Email"
                   defaultValue={user?.email || ""}
                   isDisabled
                   placeholder="Your email"
@@ -112,10 +112,12 @@ function SettingsPage() {
                       />
                     </div>
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>You've hit your limit of 500 fast requests</span>
                       <span>
-                        You've used 4 fast requests of this model. You have no
-                        monthly quota.
+                        You&apos;ve hit your limit of 500 fast requests
+                      </span>
+                      <span>
+                        You&apos;ve used 4 fast requests of this model. You have
+                        no monthly quota.
                       </span>
                     </div>
                   </div>

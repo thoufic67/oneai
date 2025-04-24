@@ -16,8 +16,8 @@ import { Input } from "@heroui/input";
 import { link as linkStyles } from "@heroui/theme";
 import NextLink from "next/link";
 import clsx from "clsx";
-import { useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { History, Plus, Search } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
@@ -29,12 +29,19 @@ import { Tooltip } from "@heroui/react";
 
 export const Navbar = () => {
   const router = useRouter();
-  const params = useParams();
   const { openCommandK } = useShortcutKey();
+  const [shouldShowSimpleNavbar, setShouldShowSimpleNavbar] = useState(false);
 
   const handleNewChat = () => {
     router.push("/new");
   };
+
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    if (currentPath === "/") {
+      setShouldShowSimpleNavbar(true);
+    }
+  }, []);
 
   return (
     <>
@@ -53,34 +60,38 @@ export const Navbar = () => {
           </NavbarBrand>
         </NavbarContent>
         <NavbarContent
-          className="hidden sm:flex basis-1/5 sm:basis-full items-center w-full"
+          className=" flex basis-1/5 sm:basis-full items-center w-full"
           justify="end"
         >
           <NavbarItem className="flex gap-2">
-            <Tooltip content="History">
-              <Button
-                size="sm"
-                radius="full"
-                isIconOnly
-                variant="ghost"
-                aria-label="History"
-                onPress={openCommandK}
-              >
-                <History className="h-4 w-4" />
-              </Button>
-            </Tooltip>
-            <Tooltip content="New Chat">
-              <Button
-                size="sm"
-                radius="full"
-                isIconOnly
-                variant="ghost"
-                aria-label="New Chat"
-                onPress={handleNewChat}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </Tooltip>
+            {!shouldShowSimpleNavbar && (
+              <>
+                <Tooltip content="History">
+                  <Button
+                    size="sm"
+                    radius="full"
+                    isIconOnly
+                    variant="ghost"
+                    aria-label="History"
+                    onPress={openCommandK}
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
+                </Tooltip>
+                <Tooltip content="New Chat">
+                  <Button
+                    size="sm"
+                    radius="full"
+                    isIconOnly
+                    variant="ghost"
+                    aria-label="New Chat"
+                    onPress={handleNewChat}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </Tooltip>
+              </>
+            )}
             <ThemeSwitch />
           </NavbarItem>
           <NavbarItem>
@@ -88,7 +99,7 @@ export const Navbar = () => {
           </NavbarItem>
         </NavbarContent>
 
-        <NavbarContent className="sm:hidden basis-1 pl-4 w-full" justify="end">
+        {/* <NavbarContent className="sm:hidden basis-1 pl-4 w-full" justify="end">
           <Button
             size="sm"
             radius="full"
@@ -111,7 +122,7 @@ export const Navbar = () => {
           </Button>
           <ThemeSwitch />
           <UserProfile />
-        </NavbarContent>
+        </NavbarContent> */}
 
         <NavbarMenu>
           <div className="mx-4 mt-2 flex flex-col gap-2">

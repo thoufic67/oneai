@@ -42,12 +42,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
-      <body className={`${inter.className} font-sans antialiased`}>
+      <body className={`${inter.className} font-sans antialiased `}>
         <Providers>
           <BackgroundGradient />
-          <div className="relative flex flex-col">
+          <div className="relative flex flex-col w-dvw h-dvh">
             <Navbar />
-            <main className="container max-w-full flex-grow">{children}</main>
+            <main className="container w-full h-full flex-grow">
+              {children}
+            </main>
             <footer className="w-full flex items-center justify-center py-3"></footer>
           </div>
         </Providers>
