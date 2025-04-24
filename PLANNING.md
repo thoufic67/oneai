@@ -367,6 +367,249 @@ WHERE user_id = :user_id
 */
 ```
 
+## Quota Tracking and Subscription Management
+
+### Enhanced Database Schema
+
+```sql
+-- Update Users Table with Subscription Info
+ALTER TABLE users
+ADD COLUMN subscription_tier TEXT NOT NULL DEFAULT 'free',
+ADD COLUMN subscription_status TEXT NOT NULL DEFAULT 'active';
+
+-- Create Index for Subscription Lookups
+CREATE INDEX idx_users_subscription ON users(subscription_tier)
+WHERE subscription_status = 'active';
+
+-- Subscription History Table
+CREATE TABLE subscription_history (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id),
+    old_tier TEXT,
+    new_tier TEXT NOT NULL,
+    change_reason TEXT NOT NULL, -- 'upgrade', 'downgrade', 'system', 'payment_failure'
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB -- Store additional context about the change
+);
+
+CREATE INDEX idx_subscription_history_user ON subscription_history(user_id, changed_at);
+
+-- Usage Quotas Table
+CREATE TABLE usage_quotas (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id),
+    subscription_tier TEXT NOT NULL,  -- Track which tier this quota belongs to
+    quota_key TEXT NOT NULL,  -- 'small_messages', 'large_messages', 'image_generation'
+    used_count INTEGER DEFAULT 0,
+    quota_limit INTEGER NOT NULL,
+    reset_frequency TEXT NOT NULL, -- '3hour', 'daily', 'monthly'
+    last_reset_at TIMESTAMP NOT NULL,
+    next_reset_at TIMESTAMP NOT NULL,
+    last_usage_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_quota UNIQUE (user_id, quota_key)
+);
+```
+
+### Subscription Tiers Configuration
+
+```typescript
+// config/subscription.ts
+
+export const SUBSCRIPTION_TIERS = {
+  free: {
+    name: "Free",
+    price: 0,
+    quotas: {
+      small_messages: { limit: 100, resetFrequency: "monthly" },
+      large_messages: { limit: 20, resetFrequency: "monthly" },
+      image_generation: { limit: 5, resetFrequency: "3hour" },
+    },
+  },
+  pro: {
+    name: "Pro",
+    price: 999, // $9.99
+    quotas: {
+      small_messages: { limit: 500, resetFrequency: "monthly" },
+      large_messages: { limit: 100, resetFrequency: "monthly" },
+      image_generation: { limit: 10, resetFrequency: "3hour" },
+    },
+  },
+  enterprise: {
+    name: "Enterprise",
+    price: null, // Custom pricing
+    quotas: {
+      small_messages: { limit: 5000, resetFrequency: "monthly" },
+      large_messages: { limit: 1000, resetFrequency: "monthly" },
+      image_generation: { limit: 100, resetFrequency: "3hour" },
+    },
+  },
+};
+
+export type QuotaKey = "small_messages" | "large_messages" | "image_generation";
+export type ResetFrequency = "3hour" | "daily" | "monthly";
+```
+
+### Quota Management Implementation
+
+```typescript
+// lib/quota.ts
+
+export class QuotaManager {
+  // Check if user has sufficient quota
+  async checkQuota(
+    userId: string,
+    quotaKey: QuotaKey,
+    units: number = 1
+  ): Promise<boolean> {
+    const user = await this.getUser(userId);
+    const quota = await this.getCurrentQuota(userId, quotaKey);
+
+    // Check if quota needs reset
+    if (new Date() >= new Date(quota.next_reset_at)) {
+      await this.resetQuota(quota);
+    }
+
+    // Check against limit
+    if (quota.used_count + units > quota.quota_limit) {
+      throw new QuotaExceededError(quotaKey, quota);
+    }
+
+    return true;
+  }
+
+  // Increment quota usage
+  async incrementQuota(
+    userId: string,
+    quotaKey: QuotaKey,
+    units: number = 1
+  ): Promise<void> {
+    await this.db.usage_quotas.update({
+      where: { user_id: userId, quota_key: quotaKey },
+      data: {
+        used_count: { increment: units },
+        last_usage_at: new Date(),
+      },
+    });
+  }
+
+  // Reset quota based on frequency
+  private async resetQuota(quota: UsageQuota): Promise<void> {
+    const nextReset = this.calculateNextReset(quota.reset_frequency);
+
+    await this.db.usage_quotas.update({
+      where: { id: quota.id },
+      data: {
+        used_count: 0,
+        last_reset_at: new Date(),
+        next_reset_at: nextReset,
+      },
+    });
+  }
+}
+```
+
+### API Implementation
+
+```typescript
+// app/api/quota/check/route.ts
+export async function POST(req: Request) {
+  const { quotaKey, units = 1 } = await req.json();
+  const userId = await getUserId(req);
+
+  try {
+    await quotaManager.checkQuota(userId, quotaKey, units);
+    return NextResponse.json({ allowed: true });
+  } catch (error) {
+    if (error instanceof QuotaExceededError) {
+      return NextResponse.json(
+        {
+          allowed: false,
+          error: "QUOTA_EXCEEDED",
+          details: error.details,
+        },
+        { status: 429 }
+      );
+    }
+    throw error;
+  }
+}
+
+// app/api/quota/status/route.ts
+export async function GET(req: Request) {
+  const userId = await getUserId(req);
+  const user = await getUser(userId);
+  const quotas = await getAllQuotas(userId);
+
+  return NextResponse.json({
+    subscription: {
+      tier: user.subscription_tier,
+      status: user.subscription_status,
+    },
+    quotas: quotas.reduce(
+      (acc, quota) => ({
+        ...acc,
+        [quota.quota_key]: {
+          used: quota.used_count,
+          limit: quota.quota_limit,
+          resetsAt: quota.next_reset_at,
+          remaining: quota.quota_limit - quota.used_count,
+          percentageUsed: (quota.used_count / quota.quota_limit) * 100,
+        },
+      }),
+      {}
+    ),
+  });
+}
+```
+
+### Usage in Chat Components
+
+```typescript
+// components/chat/input.tsx
+export const ChatInput = () => {
+  const sendMessage = async (content: string) => {
+    // Check quota before sending
+    try {
+      await checkQuota("small_messages");
+      // Send message logic
+      await incrementQuota("small_messages");
+    } catch (error) {
+      if (error.code === "QUOTA_EXCEEDED") {
+        toast.error("Message quota exceeded. Please upgrade your plan.");
+        return;
+      }
+      throw error;
+    }
+  };
+};
+```
+
+### Subscription Management UI
+
+```typescript
+// components/subscription/usage-display.tsx
+export const UsageDisplay = () => {
+  const { data: quotaStatus } = useQuotaStatus();
+
+  return (
+    <div className="grid gap-4">
+      {Object.entries(quotaStatus.quotas).map(([key, quota]) => (
+        <QuotaCard
+          key={key}
+          name={formatQuotaName(key)}
+          used={quota.used}
+          limit={quota.limit}
+          resetsAt={quota.resetsAt}
+          percentageUsed={quota.percentageUsed}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
 ## API Routes Structure
 
 ```

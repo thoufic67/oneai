@@ -3,9 +3,9 @@
 ## Initial Setup
 
 - [x] Create Supabase project
-  - [ ] Configure Google OAuth
-  - [ ] Set up database tables
-  - [ ] Configure RLS policies
+  - [x] Configure Google OAuth
+  - [x] Set up database tables
+  - [x] Configure RLS policies
 - [ ] Set up Razorpay account
   - [ ] Create subscription plans
   - [ ] Get API keys
@@ -145,8 +145,37 @@
   - [ ] Preferences
 - [ ] Usage tracking
   - [ ] Quota management
-  - [ ] Usage statistics
+    - [ ] Implement enhanced users table with subscription fields
+    - [ ] Create subscription_history table
+    - [ ] Create usage_quotas table
+    - [ ] Set up database indexes for performance
+    - [ ] Implement QuotaManager class in lib/quota.ts
+    - [ ] Add quota check middleware for protected routes
+  - [ ] Subscription tiers
+    - [ ] Define tier configurations in config/subscription.ts
+    - [ ] Implement tier change logic
+    - [ ] Add subscription history tracking
+    - [ ] Create tier upgrade/downgrade workflows
+  - [ ] API endpoints
+    - [ ] Implement /api/quota/check route
+    - [ ] Implement /api/quota/status route
+    - [ ] Add quota reset scheduling
+    - [ ] Implement quota usage analytics
+  - [ ] UI Components
+    - [ ] Create UsageDisplay component
+    - [ ] Add QuotaCard component
+    - [ ] Implement usage charts and graphs
+    - [ ] Add upgrade prompts for quota limits
   - [ ] Cost analysis
+    - [ ] Track token usage per model
+    - [ ] Calculate costs per subscription tier
+    - [ ] Implement cost forecasting
+    - [ ] Create cost analysis dashboard
+  - [ ] Monitoring
+    - [ ] Set up quota usage alerts
+    - [ ] Monitor reset frequencies
+    - [ ] Track quota exceeded events
+    - [ ] Analyze usage patterns
 - [ ] API key system
   - [ ] Key generation
   - [ ] Permission management
@@ -189,10 +218,6 @@
 
 ### API Protection
 
-- [ ] Authentication
-  - [ ] JWT implementation
-  - [ ] Role-based access
-  - [ ] API key validation
 - [ ] OpenRouter Security
   - [ ] Secure key storage
   - [ ] Key rotation
@@ -354,11 +379,11 @@
 
 ## Status
 
-- 🟡 Planning Phase: Complete
-- ⚪ Database Setup: Not Started
-- ⚪ API Implementation: Not Started
+- [x] Planning Phase: Complete
+- [x] Database Setup: Complete
+- 🟡 API Implementation: In Progress
 - ⚪ Frontend Implementation: Not Started
 - ⚪ Integration Testing: Not Started
-- ⚪ Documentation: Not Started
+- 🟡 Documentation: In Progress
 - ⚪ Deployment: Not Started
 - ⚪ Monitoring Setup: Not Started
