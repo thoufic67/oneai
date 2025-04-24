@@ -11,10 +11,11 @@ Always use the following
 - NextJs
 - Framer motion for animation
 - Lucide for any icons
+- Follow next app 
 
 Important: 
 * Never try to use a different component library
-* Don't use the older next ui components always use heroui
+* Don't use the older next ui components always use heroui components
 * Whenever you are creating new file add a file comment describing what the file does, whenever file changes update the description of the file
 
 
