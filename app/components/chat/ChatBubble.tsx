@@ -77,13 +77,22 @@ const HorizontalRule = () => {
 const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   const [copied, setCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || "");
-  const code = String(children).replace(/\n$/, "");
+  const [code, setCode] = useState("");
 
   useEffect(() => {
-    console.log("code", { code, inline, match, children });
+    if (children?.props?.children) {
+      setCode(String(children.props.children).replace(/\n$/, ""));
+    }
   }, [code, inline, match, children]);
 
   const copyToClipboard = () => {
+    console.log("copyToClipboard", {
+      code,
+      inline,
+      match,
+      children: children,
+      text: children.props.children,
+    });
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);

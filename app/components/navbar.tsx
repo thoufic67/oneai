@@ -18,7 +18,7 @@ import NextLink from "next/link";
 import clsx from "clsx";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { History, Plus, Search } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
 import { ThemeSwitch } from "@/app/components/theme-switch";
@@ -62,16 +62,16 @@ export const Navbar = () => {
           justify="end"
         >
           <NavbarItem className="flex gap-2">
-            <Tooltip content="Search">
+            <Tooltip content="History">
               <Button
                 size="sm"
                 radius="full"
                 isIconOnly
                 variant="ghost"
-                aria-label="Search"
+                aria-label="History"
                 onPress={openCommandK}
               >
-                <Search className="h-4 w-4" />
+                <History className="h-4 w-4" />
               </Button>
             </Tooltip>
             <Tooltip content="New Chat">
