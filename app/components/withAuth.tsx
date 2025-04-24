@@ -29,7 +29,7 @@ const withAuth = ({ WrappedComponent, allowedRoles }: WithAuthProps) => {
 
     if (loading) {
       return (
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <p className="mt-4 text-lg text-gray-600">Loading...</p>

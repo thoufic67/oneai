@@ -47,7 +47,7 @@ export function ProtectedRoute({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <Spinner size="lg" className="text-primary" />
           <p className="mt-4 text-lg text-gray-600">Loading...</p>

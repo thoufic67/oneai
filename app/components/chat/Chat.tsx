@@ -444,10 +444,14 @@ export function Chat() {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-1rem)] md:h-[calc(100dvh-4rem)]">
-      <div className="flex flex-col flex-1 max-w-4xl mx-auto w-full">
+    <div className="flex h-full w-full max-h-full justify-center items-center">
+      <div className="flex flex-col  flex-1 max-w-4xl w-full h-full">
         {currentChatId && messages.length > 0 && (
-          <Navbar className="bg-transparent w-fit mx-auto" isBlurred>
+          <Navbar
+            className="bg-transparent w-fit mx-auto top-0"
+            position="sticky"
+            isBlurred
+          >
             <NavbarContent className="flex justify-center">
               <NavbarBrand className="flex justify-center flex-grow">
                 <p className="text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
@@ -494,13 +498,13 @@ export function Chat() {
           ) : (
             <motion.div
               key="chat-view"
-              className="flex flex-col h-full w-full"
+              className="flex flex-col h-full w-full pb-16"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
               <div
-                className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
+                className="flex-1 flex flex-col max-h-full overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
                 ref={chatContainerRef}
               >
                 {displayMessages.map((message, index) => (
@@ -562,21 +566,24 @@ export function Chat() {
                   />
                 </div>
               </div>
+              <div className="sticky w-full bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
+                {error && (
+                  <div className="p-4 text-red-500 bg-red-100 rounded mb-4 mx-auto flex items-center gap-2 rounded-lg">
+                    <AlertCircle className="w-4 h-4" />
+                    {error || "An error occurred"}
+                  </div>
+                )}
 
-              {error && (
-                <div className="p-4 text-red-500 bg-red-100 rounded mb-4 mx-auto flex items-center gap-2 rounded-lg">
-                  <AlertCircle className="w-4 h-4" />
-                  {error || "An error occurred"}
-                </div>
-              )}
-
-              <motion.div
-                className="sticky bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800"
-                layout
-                layoutId="chat-input-container"
-              >
-                <div className="max-w-3xl mx-auto p-4">{renderChatInput()}</div>
-              </motion.div>
+                <motion.div
+                  className="w-full"
+                  layout
+                  layoutId="chat-input-container"
+                >
+                  <div className="max-w-3xl mx-auto p-4">
+                    {renderChatInput()}
+                  </div>
+                </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

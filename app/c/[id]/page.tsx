@@ -3,7 +3,7 @@ import { PasswordForm } from "@/app/components/PasswordForm";
 
 export default function ConversationPage() {
   return (
-    <div className="w-full mx-auto space-y-8">
+    <div className="w-full mx-auto h-full">
       <PasswordForm>
         <LazyChat />
       </PasswordForm>
