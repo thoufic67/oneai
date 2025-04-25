@@ -5,8 +5,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@heroui/button";
+import { SnackbarProvider, enqueueSnackbar } from "notistack";
 import { useRouter } from "next/navigation";
 import { initializeRazorpayCheckout } from "@/lib/razorpay";
 
@@ -27,7 +27,6 @@ export const RazorpayCheckoutButton = ({
   className,
 }: RazorpayCheckoutButtonProps) => {
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
 
   const handleCheckout = async () => {
@@ -69,27 +68,22 @@ export const RazorpayCheckoutButton = ({
 
       // 3. Handle payment events
       razorpay.on("payment.success", (response: any) => {
-        toast({
-          title: "Payment successful!",
-          description: "Your subscription has been activated.",
+        enqueueSnackbar("Payment successful!", {
+          variant: "success",
         });
         router.push("/dashboard");
       });
 
       razorpay.on("payment.error", (error: any) => {
-        toast({
-          variant: "destructive",
-          title: "Payment failed",
-          description: error.error.description || "Please try again.",
+        enqueueSnackbar("Payment failed. Please try again.", {
+          variant: "error",
         });
       });
 
       razorpay.open();
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to initialize checkout. Please try again.",
+      enqueueSnackbar("Failed to initialize checkout. Please try again.", {
+        variant: "error",
       });
       console.error("Checkout error:", error);
     } finally {
@@ -98,8 +92,11 @@ export const RazorpayCheckoutButton = ({
   };
 
   return (
-    <Button onClick={handleCheckout} disabled={loading} className={className}>
-      {loading ? "Processing..." : `Subscribe to ${plan.name}`}
-    </Button>
+    <>
+      <SnackbarProvider />
+      <Button onPress={handleCheckout} disabled={loading} className={className}>
+        {loading ? "Processing..." : `Subscribe to ${plan.name}`}
+      </Button>
+    </>
   );
 };
