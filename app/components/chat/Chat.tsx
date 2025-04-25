@@ -7,7 +7,7 @@ import {
   Conversation,
   ChatMessage,
 } from "@/services/api";
-import { authService } from "@/services/authService";
+import { useAuth } from "../auth-provider";
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
 import {
@@ -134,6 +134,7 @@ export function Chat() {
   const params = useParams();
   const conversationId = params?.id as string;
   const isNewChat = pathname === "/new";
+  const { user } = useAuth();
 
   // State for current messages display
   const [messages, setMessages] = useState<Message[]>([]);
@@ -164,9 +165,6 @@ export function Chat() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [tempUserName, setTempUserName] = useState("");
 
-  // Add user state
-  const [user, setUser] = useState<any>(null);
-
   // Persist preferences to session storage when they change
   useEffect(() => {
     storeWithExpiry("oneai_selected_model", selectedModel);
@@ -175,19 +173,6 @@ export function Chat() {
   useEffect(() => {
     storeWithExpiry("oneai_web_search_enabled", webSearchEnabled);
   }, [webSearchEnabled]);
-
-  // Load user data on component mount
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Error loading user:", error);
-      }
-    };
-    loadUser();
-  }, []);
 
   useLayoutEffect(() => {
     if (animateVideoRef.current) {
