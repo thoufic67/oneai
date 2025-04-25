@@ -5,6 +5,7 @@ import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider } from "./theme-provider";
 import { ShortcutKeyProvider } from "./search/ShortcutKeyProvider";
 import { AuthProvider } from "./auth-provider";
+import { PostHogProvider } from "./PostHogProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,11 +14,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       defaultTheme="light"
       disableTransitionOnChange
     >
-      <HeroUIProvider>
-        <AuthProvider>
-          <ShortcutKeyProvider>{children}</ShortcutKeyProvider>
-        </AuthProvider>
-      </HeroUIProvider>
+      <PostHogProvider>
+        <HeroUIProvider>
+          <AuthProvider>
+            <ShortcutKeyProvider>{children}</ShortcutKeyProvider>
+          </AuthProvider>
+        </HeroUIProvider>
+      </PostHogProvider>
     </ThemeProvider>
   );
 }
