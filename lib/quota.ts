@@ -13,11 +13,7 @@ import {
 import { SupabaseClient } from "@supabase/supabase-js";
 
 export class QuotaManager {
-  private supabase: SupabaseClient;
-
-  constructor(supabase: SupabaseClient) {
-    this.supabase = supabase;
-  }
+  constructor(private supabase: SupabaseClient) {}
 
   /**
    * Check if user has sufficient quota
@@ -79,18 +75,25 @@ export class QuotaManager {
     quotaKey: QuotaKey,
     units: number = 1
   ): Promise<void> {
-    const { error } = await this.supabase
+    const { data: currentQuota, error: fetchError } = await this.supabase
+      .from("usage_quotas")
+      .select("used_count")
+      .eq("user_id", userId)
+      .eq("quota_key", quotaKey)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const { error: updateError } = await this.supabase
       .from("usage_quotas")
       .update({
-        used_count: this.supabase.rpc("increment_quota", {
-          increment_by: units,
-        }),
+        used_count: (currentQuota?.used_count || 0) + units,
         last_usage_at: new Date().toISOString(),
       })
       .eq("user_id", userId)
       .eq("quota_key", quotaKey);
 
-    if (error) throw error;
+    if (updateError) throw updateError;
   }
 
   /**

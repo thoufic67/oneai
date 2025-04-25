@@ -6,6 +6,8 @@ import {
 } from "@/lib/services/openrouter";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { QuotaManager } from "@/lib/quota";
+import { QuotaExceededError } from "@/config/quota";
 
 interface Message extends OpenRouterMessage {
   sequence_number?: number;
@@ -24,6 +26,7 @@ interface StreamResponse {
   failures?: {
     conversationCreation?: boolean;
     messageSaving?: boolean;
+    quotaExceeded?: boolean;
   };
 }
 
@@ -101,6 +104,7 @@ async function saveMessage(
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
+    const quotaManager = new QuotaManager(supabase);
 
     // Get session to verify authentication
     const {
@@ -132,6 +136,27 @@ export async function POST(req: NextRequest) {
           },
         }
       );
+    }
+
+    // Check quota before processing
+    try {
+      await quotaManager.checkQuota(session.user.id, "small_messages", 1);
+    } catch (error) {
+      if (error instanceof QuotaExceededError) {
+        return new Response(
+          JSON.stringify({
+            error: "Quota exceeded for small messages",
+            details: error.message,
+          }),
+          {
+            status: 429,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+      throw error;
     }
 
     const isValidMessage = (msg: any): msg is Message => {
@@ -203,6 +228,7 @@ export async function POST(req: NextRequest) {
     let fullResponse = "";
     let responseUsage: Partial<UsageData> | undefined;
     let messageSavingFailed = false;
+    let quotaIncrementFailed = false;
     // Base sequence number for new messages
     let sequence_number = messages.length + 1;
 
@@ -221,9 +247,12 @@ export async function POST(req: NextRequest) {
             content: chunk,
             conversationId,
             usage: responseUsage,
-            failures: conversationCreationFailed
-              ? { conversationCreation: true }
-              : undefined,
+            failures: {
+              ...(conversationCreationFailed
+                ? { conversationCreation: true }
+                : {}),
+              ...(quotaIncrementFailed ? { quotaExceeded: true } : {}),
+            },
           });
         }
       )
@@ -232,16 +261,13 @@ export async function POST(req: NextRequest) {
         if (response.usage && !responseUsage) {
           responseUsage = response.usage;
         }
-        console.log("response", response);
+
         if (conversationId) {
-          console.log(
-            "conversationId exists so saving messages with conversationId: ",
-            conversationId
-          );
           // Save user message - get the last user message
           const userMessage = [...messages]
             .reverse()
             .find((msg: Message) => msg.role === "user");
+
           if (userMessage) {
             const userMessageSaved = await saveMessage(
               conversationId,
@@ -249,9 +275,12 @@ export async function POST(req: NextRequest) {
               "user",
               responseUsage?.prompt_tokens || 0,
               model,
-              sequence_number
+              sequence_number - 1
             );
-            if (!userMessageSaved) messageSavingFailed = true;
+
+            if (!userMessageSaved) {
+              messageSavingFailed = true;
+            }
           }
 
           // Save assistant response
@@ -261,36 +290,48 @@ export async function POST(req: NextRequest) {
             "assistant",
             responseUsage?.completion_tokens || 0,
             model,
-            sequence_number + 1
+            sequence_number
           );
-          if (!assistantMessageSaved) messageSavingFailed = true;
+
+          if (!assistantMessageSaved) {
+            messageSavingFailed = true;
+          }
         }
 
-        // Send final message
+        // Increment quota after successful message processing
+        try {
+          await quotaManager.incrementQuota(
+            session.user.id,
+            "small_messages",
+            1
+          );
+        } catch (error) {
+          console.error("Failed to increment quota:", error);
+          quotaIncrementFailed = true;
+        }
+
+        // Send final SSE with completion status
         await sendSSE({
-          done: true,
+          content: "",
           conversationId,
           usage: responseUsage,
+          done: true,
           failures: {
-            conversationCreation: conversationCreationFailed,
-            messageSaving: messageSavingFailed,
+            ...(conversationCreationFailed
+              ? { conversationCreation: true }
+              : {}),
+            ...(messageSavingFailed ? { messageSaving: true } : {}),
+            ...(quotaIncrementFailed ? { quotaExceeded: true } : {}),
           },
         });
 
         await writer.close();
       })
       .catch(async (error) => {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred";
+        console.error("Error in chat completion:", error);
         await sendSSE({
-          error: errorMessage,
-          conversationId,
-          failures: {
-            conversationCreation: conversationCreationFailed,
-            messageSaving: messageSavingFailed,
-          },
+          error: error.message || "An error occurred during chat completion",
+          done: true,
         });
         await writer.close();
       });
@@ -298,21 +339,17 @@ export async function POST(req: NextRequest) {
     return new Response(stream.readable, {
       headers: {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
         Connection: "keep-alive",
+        "Cache-Control": "no-cache, no-transform",
       },
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        error: "Internal server error",
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    console.error("Error in stream route:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   }
 }
