@@ -42,12 +42,12 @@ function SettingsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto p-6 space-y-6 h-full overflow-y-auto">
       <h1 className="text-4xl font-bold mb-2">Settings</h1>
       <p className="text-gray-600 dark:text-gray-400 mb-8">
         You can manage your account, billing, and team settings here.
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-fit overflow-y-auto p-4 md:p-2 mx-auto">
         <div className="flex flex-col gap-6">
           {/* Basic Information Section */}
           <Card className="w-full">
@@ -113,7 +113,7 @@ function SettingsPage() {
           </Card>
         </div>
         {/* Usage Section */}
-        <div className="col-span-2">
+        <div className="col-span-1 md:col-span-2">
           <Card className="w-full">
             <CardHeader>
               <h2 className="text-xl font-semibold">Usage</h2>
