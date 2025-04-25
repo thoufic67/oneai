@@ -11,8 +11,8 @@ import {
 } from "@heroui/navbar";
 import { Button } from "@heroui/button";
 import { Link } from "@heroui/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { History, Plus, Search } from "lucide-react";
 
 import { ThemeSwitch } from "@/app/components/theme-switch";
@@ -26,13 +26,15 @@ const PATHS_TO_HIDE_NAVBAR = ["/", "/login", "/register"];
 
 export const Navbar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { openCommandK } = useShortcutKey();
-  const [showSimpleNavbar, setShowSimpleNavbar] = useState(
-    PATHS_TO_HIDE_NAVBAR.includes(
-      typeof window !== "undefined" ? window?.location?.pathname || "/" : "/"
-    )
-  );
+  const [showSimpleNavbar, setShowSimpleNavbar] = useState(true); // Default to true for server-side render
   const { user } = useAuth();
+
+  useEffect(() => {
+    // Update navbar state based on current path
+    setShowSimpleNavbar(PATHS_TO_HIDE_NAVBAR.includes(pathname));
+  }, [pathname]);
 
   const handleNewChat = () => {
     router.push("/new");
@@ -51,7 +53,7 @@ export const Navbar = () => {
         position="sticky"
       >
         {showSimpleNavbar ? (
-          <NavbarContent className="w-fit text-sm -px-4" justify="center">
+          <NavbarContent className="w-fit text-sm -px-4" justify="start">
             <NavbarBrand>
               <Link href="/" className="flex items-center gap-2">
                 <Image
@@ -93,7 +95,7 @@ export const Navbar = () => {
                 color="primary"
                 href={user ? "/new" : "/login"}
                 size="sm"
-                className="text-sm  rounded-full"
+                className="text-sm rounded-full"
               >
                 {user ? "Launch App" : "Login"}
               </Button>
@@ -110,12 +112,12 @@ export const Navbar = () => {
                     width={24}
                     height={24}
                   />
-                  <span className="font-bold text-lg"> OneAI</span>
+                  <span className="font-bold text-lg">OneAI</span>
                 </Link>
               </NavbarBrand>
             </NavbarContent>
             <NavbarContent
-              className=" flex basis-1/5 sm:basis-full items-center w-full"
+              className="flex basis-1/5 sm:basis-full items-center w-full"
               justify="end"
             >
               <NavbarItem className="flex gap-2">
@@ -153,53 +155,6 @@ export const Navbar = () => {
             </NavbarContent>
           </>
         )}
-
-        {/* <NavbarContent className="sm:hidden basis-1 pl-4 w-full" justify="end">
-          <Button
-            size="sm"
-            radius="full"
-            isIconOnly
-            variant="ghost"
-            aria-label="Search"
-            onPress={openCommandK}
-          >
-            <Search className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            radius="full"
-            isIconOnly
-            variant="ghost"
-            aria-label="New Chat"
-            onPress={handleNewChat}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <ThemeSwitch />
-          <UserProfile />
-        </NavbarContent> */}
-
-        {/* <NavbarMenu>
-          <div className="mx-4 mt-2 flex flex-col gap-2">
-            {siteConfig.navMenuItems.map((item, index) => (
-              <NavbarMenuItem key={`${item}-${index}`}>
-                <Link
-                  color={
-                    index === 2
-                      ? "primary"
-                      : index === siteConfig.navMenuItems.length - 1
-                        ? "danger"
-                        : "foreground"
-                  }
-                  href="#"
-                  size="lg"
-                >
-                  {item.label}
-                </Link>
-              </NavbarMenuItem>
-            ))}
-          </div>
-        </NavbarMenu> */}
       </HeroUINavbar>
     </>
   );

@@ -479,7 +479,7 @@ export function Chat() {
               transition={{ duration: 0.3 }}
             >
               <div
-                className="flex-1 flex flex-col max-h-full overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar pb-4"
+                className="flex-1 flex flex-col max-h-full overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
                 ref={chatContainerRef}
               >
                 {displayMessages.map((message, index) => (
