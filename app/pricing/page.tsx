@@ -1,10 +1,18 @@
 "use client";
 
 import { title } from "@/app/components/primitives";
+import PostHogClient from "@/posthog";
 import { Button, Card, CardBody, CardHeader } from "@heroui/react";
 import { Check } from "lucide-react";
+import { useAuth } from "../components/auth-provider";
 
-const PRICING_PLANS = [
+type PricingPlan = {
+  name: string;
+  price: number;
+  features: { heading: string; subheading?: string }[];
+};
+
+const PRICING_PLANS: PricingPlan[] = [
   {
     name: "Pro",
     price: 10,
@@ -37,6 +45,19 @@ const PRICING_PLANS = [
 ];
 
 export default function PricingPage() {
+  const { user } = useAuth();
+  const posthog = PostHogClient();
+  const handleSubscribe = (plan: PricingPlan) => {
+    console.log("Subscribing to plan:", plan);
+    posthog.capture({
+      distinctId: user?.id || "anonymous",
+      event: "pricing_page_subscribe",
+      properties: {
+        plan: plan.name,
+        price: plan.price,
+      },
+    });
+  };
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 min-h-full">
       <div className="text-center space-y-4 mb-12 animate-blur-in-up">
@@ -69,6 +90,7 @@ export default function PricingPage() {
                 radius="lg"
                 className="w-full mb-6"
                 variant="solid"
+                onPress={() => handleSubscribe(plan)}
               >
                 Subscribe
               </Button>
