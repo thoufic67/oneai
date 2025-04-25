@@ -62,16 +62,15 @@ export default function UserProfile() {
             <span className="text-xs text-gray-500">{user.email}</span>
           </div>
         </DropdownItem>
-        <DropdownItem key="dashboard" href="/dashboard" className="w-full">
-          Dashboard
-        </DropdownItem>
-        <DropdownItem
-          as={Link}
-          key="settings"
-          href="/settings"
-          className="w-full"
-        >
-          Settings
+        {/* <DropdownItem key="dashboard" className="w-full">
+          <Link href="/dashboard" className="w-full">
+            Dashboard
+          </Link>
+        </DropdownItem> */}
+        <DropdownItem key="settings" className="w-full">
+          <Link href="/settings" className="w-full">
+            Settings
+          </Link>
         </DropdownItem>
 
         <DropdownItem key="logout" color="danger" onClick={logout}>

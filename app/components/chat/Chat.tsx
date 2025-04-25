@@ -74,10 +74,11 @@ type ModelType =
   | "anthropic/claude-3.7-sonnet"
   | "mistral/ministral-8b"
   | "x-ai/grok-3-mini-beta"
-  | "deepseek/deepseek-chat-v3-0324:free"
+  | "deepseek/deepseek-chat-v3-0324"
   | "deepseek/deepseek-r1-zero:free"
   | "perplexity/sonar"
-  | "google/gemini-2.0-flash-001";
+  | "google/gemini-2.0-flash-001"
+  | "meta-llama/llama-4-maverick";
 
 interface Model {
   name: string;
@@ -118,8 +119,13 @@ const models: Model[] = [
   },
   {
     name: "DeepSeek",
-    value: "deepseek/deepseek-chat-v3-0324:free",
+    value: "deepseek/deepseek-chat-v3-0324",
     logo: "/logos/deepseek.svg",
+  },
+  {
+    name: "Llama",
+    value: "meta-llama/llama-4-maverick",
+    logo: "/logos/llama.svg",
   },
   // {
   //   name: "DeepSeek-R1-Zero",

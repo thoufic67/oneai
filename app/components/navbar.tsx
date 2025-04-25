@@ -10,7 +10,7 @@ import {
   NavbarMenuItem,
 } from "@heroui/navbar";
 import { Button } from "@heroui/button";
-import { Link } from "@heroui/link";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { History, Plus, Search } from "lucide-react";
@@ -22,7 +22,7 @@ import Image from "next/image";
 import { Tooltip } from "@heroui/react";
 import { useAuth } from "@/app/components/auth-provider";
 
-const PATHS_TO_HIDE_NAVBAR = ["/", "/login", "/register"];
+const PATHS_TO_HIDE_NAVBAR = ["/", "/login", "/pricing", "/about", "/register"];
 
 export const Navbar = () => {
   const router = useRouter();
@@ -62,6 +62,9 @@ export const Navbar = () => {
                   width={24}
                   height={24}
                 />
+                <span className="font-bold text-lg text-primary-500">
+                  OneAI
+                </span>
               </Link>
             </NavbarBrand>
             <NavbarItem>
@@ -70,14 +73,6 @@ export const Navbar = () => {
                 href="/pricing"
               >
                 Pricing
-              </Link>
-            </NavbarItem>
-            <NavbarItem>
-              <Link
-                className="text-sm text-default-800 font-medium"
-                href="/about"
-              >
-                About
               </Link>
             </NavbarItem>
             <NavbarItem>

@@ -7,7 +7,7 @@ export function BackgroundGradient() {
   const { theme } = useTheme();
 
   return (
-    <div className="fixed inset-0 -z-10 h-full w-full">
+    <div className="fixed inset-0 -z-10 h-full w-full blur-3xl">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -17,8 +17,8 @@ export function BackgroundGradient() {
         <div
           className={`absolute inset-0 bg-gradient-to-br ${
             theme === "dark"
-              ? "from-violet-500/30 via-transparent to-cyan-500/30"
-              : "from-violet-200/30 via-transparent to-cyan-200/30"
+              ? "from-primary-500/60 via-transparent to-cyan-500/60"
+              : "from-primary-200/60 via-transparent to-cyan-200/60"
           }`}
         />
         <div className="absolute inset-0 bg-grid-white/[0.02]" />

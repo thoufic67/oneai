@@ -5,17 +5,19 @@
  * account details, and usage statistics
  */
 
+import Link from "next/link";
 import { useAuth } from "@/app/components/auth-provider";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Switch } from "@heroui/switch";
+import { Progress } from "@heroui/progress";
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { ProtectedRoute } from "@/app/components/protected-route";
 import { Avatar } from "@heroui/avatar";
 import { useQuota } from "@/app/hooks/useQuota";
-import { Spinner } from "@heroui/spinner";
+import { Skeleton } from "@heroui/skeleton";
 
 function SettingsPage() {
   const { user } = useAuth();
@@ -85,12 +87,19 @@ function SettingsPage() {
               <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
                 {quotaData?.subscription.tier.toUpperCase() || "FREE"}
               </span>
-              <Button className="ml-auto" variant="ghost">
-                UPGRADE TO BUSINESS
-              </Button>
             </CardHeader>
             <CardBody>
-              <Button variant="bordered">MANAGE SUBSCRIPTION</Button>
+              <Button
+                as={Link}
+                href="/pricing"
+                variant="bordered"
+                size="md"
+                radius="lg"
+              >
+                {quotaData?.subscription.tier === "pro"
+                  ? "MANAGE SUBSCRIPTION"
+                  : "UPGRADE TO PRO"}
+              </Button>
               <div className="mt-4">
                 <Button
                   className="text-sm text-default-500"
@@ -111,8 +120,20 @@ function SettingsPage() {
             </CardHeader>
             <CardBody className="space-y-6">
               {quotaLoading ? (
-                <div className="flex justify-center py-8">
-                  <Spinner size="lg" />
+                <div className="space-y-6">
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Skeleton className="h-4 w-24 rounded-lg" />
+                        <Skeleton className="h-4 w-20 rounded-lg" />
+                      </div>
+                      <Skeleton className="h-4 w-full rounded-lg" />
+                      <div className="flex justify-between items-center">
+                        <Skeleton className="h-3 w-32 rounded-lg" />
+                        <Skeleton className="h-3 w-24 rounded-lg" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : quotaError ? (
                 <div className="text-danger text-center py-8">
@@ -135,14 +156,11 @@ function SettingsPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                            <div
-                              className="bg-primary h-2.5 rounded-full"
-                              style={{
-                                width: `${Math.min(100, quota.percentageUsed)}%`,
-                              }}
-                            />
-                          </div>
+                          <Progress
+                            value={Math.min(100, quota.percentageUsed)}
+                            className="w-full"
+                            size="md"
+                          />
                           <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>
                               {quota.used >= quota.limit
