@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 // The client you created from the Server-Side Auth instructions
 import { createClient } from "@/lib/supabase/server";
+import { SUBSCRIPTION_TIERS, QuotaKey } from "@/config/quota";
+import { calculateNextReset } from "@/lib/quota-utils";
 
 async function syncUserData(supabase: any, user: any) {
   try {
@@ -12,7 +14,7 @@ async function syncUserData(supabase: any, user: any) {
       .single();
 
     if (!existingUser) {
-      // Insert new user
+      // Insert new user with free tier
       const { error: insertError } = await supabase.from("users").insert({
         id: user.id,
         email: user.email,
@@ -20,17 +22,43 @@ async function syncUserData(supabase: any, user: any) {
         picture_url: user.user_metadata?.avatar_url,
         provider_type: user.app_metadata?.provider,
         provider_id: user.app_metadata?.provider_id,
+        subscription_tier: "free", // Default to free tier
       });
 
       if (insertError) throw insertError;
 
-      // Create initial usage quota for the user
-      const { error: quotaError } = await supabase.from("usage_quotas").insert({
-        user_id: user.id,
-        model_id: "claude-3-opus-20240229", // Default model
-        messages_limit: 100, // Free tier limit
-        reset_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      console.log("inserted user", user);
+
+      // Create initial usage quotas for the user
+      const quotaKeys: QuotaKey[] = [
+        "small_messages",
+        "large_messages",
+        "image_generation",
+      ];
+      const now = new Date();
+
+      const quotaInserts = quotaKeys.map((quotaKey) => {
+        const quotaConfig = SUBSCRIPTION_TIERS.free.quotas[quotaKey];
+        return {
+          user_id: user.id,
+          quota_key: quotaKey,
+          used_count: 0,
+          subscription_tier: SUBSCRIPTION_TIERS.free.name,
+          quota_limit: quotaConfig.limit,
+          reset_frequency: quotaConfig.resetFrequency,
+          last_reset_at: now.toISOString(),
+          next_reset_at: calculateNextReset(
+            quotaConfig.resetFrequency,
+            now
+          ).toISOString(),
+        };
       });
+
+      const { error: quotaError } = await supabase
+        .from("usage_quotas")
+        .insert(quotaInserts);
+
+      console.log("quotaInserts", quotaInserts);
 
       if (quotaError) throw quotaError;
     }

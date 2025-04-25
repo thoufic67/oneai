@@ -252,6 +252,10 @@ create policy "Users can update their own usage quotas"
   on public.usage_quotas for update
   using (auth.uid() = user_id);
 
+create policy "System can create initial usage quotas"
+  on public.usage_quotas for insert
+  with check (auth.uid() = user_id);
+
 -- Enable realtime for relevant tables
 alter publication supabase_realtime add table conversations;
 alter publication supabase_realtime add table chat_messages;

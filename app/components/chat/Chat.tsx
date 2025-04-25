@@ -432,19 +432,9 @@ export function Chat() {
     <div className="flex h-full w-full max-h-full justify-center items-center">
       <div className="flex flex-col  flex-1 max-w-4xl w-full h-full">
         {currentChatId && messages.length > 0 && (
-          <Navbar
-            className="bg-transparent w-fit mx-auto top-0"
-            position="sticky"
-            isBlurred
-          >
-            <NavbarContent className="flex justify-center">
-              <NavbarBrand className="flex justify-center flex-grow">
-                <p className="text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
-                  {currentConversation?.title || "..."}
-                </p>
-              </NavbarBrand>
-            </NavbarContent>
-          </Navbar>
+          <p className="hidden sm:block mx-auto z-50 fixed top-5 left-0 right-0 text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
+            {currentConversation?.title || "..."}
+          </p>
         )}
 
         <AnimatePresence mode="wait">
@@ -483,13 +473,13 @@ export function Chat() {
           ) : (
             <motion.div
               key="chat-view"
-              className="flex flex-col h-full w-full pb-16"
+              className="flex flex-col h-full w-full"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
               <div
-                className="flex-1 flex flex-col max-h-full overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
+                className="flex-1 flex flex-col max-h-full overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar pb-4"
                 ref={chatContainerRef}
               >
                 {displayMessages.map((message, index) => (

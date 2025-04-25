@@ -424,7 +424,7 @@ export const SUBSCRIPTION_TIERS = {
     quotas: {
       small_messages: { limit: 100, resetFrequency: "monthly" },
       large_messages: { limit: 20, resetFrequency: "monthly" },
-      image_generation: { limit: 5, resetFrequency: "3hour" },
+      image_generation: { limit: 5, resetFrequency: "monthly" },
     },
   },
   pro: {
@@ -433,7 +433,7 @@ export const SUBSCRIPTION_TIERS = {
     quotas: {
       small_messages: { limit: 500, resetFrequency: "monthly" },
       large_messages: { limit: 100, resetFrequency: "monthly" },
-      image_generation: { limit: 10, resetFrequency: "3hour" },
+      image_generation: { limit: 10, resetFrequency: "monthly" },
     },
   },
   enterprise: {
@@ -442,7 +442,7 @@ export const SUBSCRIPTION_TIERS = {
     quotas: {
       small_messages: { limit: 5000, resetFrequency: "monthly" },
       large_messages: { limit: 1000, resetFrequency: "monthly" },
-      image_generation: { limit: 100, resetFrequency: "3hour" },
+      image_generation: { limit: 100, resetFrequency: "monthly" },
     },
   },
 };
