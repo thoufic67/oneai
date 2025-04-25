@@ -157,22 +157,22 @@
   - [ ] Get profile
   - [ ] Update profile
   - [ ] Preferences
-- [ ] Usage tracking
-  - [ ] Quota management
-    - [ ] Implement enhanced users table with subscription fields
-    - [ ] Create subscription_history table
-    - [ ] Create usage_quotas table
-    - [ ] Set up database indexes for performance
-    - [ ] Implement QuotaManager class in lib/quota.ts
-    - [ ] Add quota check middleware for protected routes
-  - [ ] Subscription tiers
-    - [ ] Define tier configurations in config/subscription.ts
-    - [ ] Implement tier change logic
-    - [ ] Add subscription history tracking
-    - [ ] Create tier upgrade/downgrade workflows
-  - [ ] API endpoints
-    - [ ] Implement /api/quota/check route
-    - [ ] Implement /api/quota/status route
+- [x] Usage tracking
+  - [x] Quota management
+    - [x] Implement enhanced users table with subscription fields
+    - [x] Create subscription_history table
+    - [x] Create usage_quotas table
+    - [x] Set up database indexes for performance
+    - [x] Implement QuotaManager class in lib/quota.ts
+    - [x] Add quota check middleware for protected routes
+  - [x] Subscription tiers
+    - [x] Define tier configurations in config/subscription.ts
+    - [x] Implement tier change logic
+    - [x] Add subscription history tracking
+    - [x] Create tier upgrade/downgrade workflows
+  - [x] API endpoints
+    - [x] Implement /api/quota/check route
+    - [x] Implement /api/quota/status route
     - [ ] Add quota reset scheduling
     - [ ] Implement quota usage analytics
   - [ ] UI Components

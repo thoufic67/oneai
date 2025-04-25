@@ -4,10 +4,34 @@ create extension if not exists "uuid-ossp";
 -- Create enum types if they don't exist
 do $$ begin
     create type subscription_status as enum ('active', 'cancelled', 'past_due', 'unpaid', 'trial');
+exception 
+    when duplicate_object then null;
+end $$;
+
+do $$ begin
     create type subscription_plan as enum ('free', 'basic', 'pro', 'enterprise');
 exception 
     when duplicate_object then null;
 end $$;
+
+do $$ begin
+    create type reset_frequency as enum ('3hour', 'daily', 'monthly', 'yearly');
+exception 
+    when duplicate_object then null;
+end $$;
+
+-- Create function to safely increment quota
+CREATE OR REPLACE FUNCTION increment_quota(increment_by integer)
+RETURNS integer
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN COALESCE(used_count, 0) + increment_by;
+END;
+$$;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION increment_quota TO authenticated;
 
 -- Users Table
 create table public.users (
@@ -17,11 +41,26 @@ create table public.users (
   picture_url text,
   provider_type text,
   provider_id text,
+  subscription_tier subscription_plan default 'free' not null,
+  subscription_status subscription_status default 'active' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   
   constraint email_length check (char_length(email) >= 3),
   constraint unique_provider unique (provider_type, provider_id)
+);
+
+-- Subscription History Table
+create table public.subscription_history (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.users(id) on delete cascade not null,
+  old_tier subscription_plan,
+  new_tier subscription_plan not null,
+  change_reason text not null,
+  changed_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  metadata jsonb default '{}'::jsonb,
+  
+  constraint valid_change_reason check (change_reason in ('upgrade', 'downgrade', 'system', 'payment_failure'))
 );
 
 -- Subscriptions Table
@@ -82,21 +121,40 @@ create table public.chat_messages (
   constraint unique_revision_sequence unique (original_message_id, revision_number)
 );
 
+-- Attachments Table
+create table public.attachments (
+  id uuid default uuid_generate_v4() primary key,
+  message_id uuid references public.chat_messages(id) on delete cascade not null,
+  user_id uuid references public.users(id) on delete cascade not null,
+  file_name text not null,
+  file_type text not null,
+  file_size integer not null,
+  file_url text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  metadata jsonb default '{}'::jsonb,
+  
+  constraint file_name_length check (char_length(file_name) >= 1),
+  constraint positive_file_size check (file_size > 0)
+);
+
 -- Usage Quotas Table
 create table public.usage_quotas (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.users(id) on delete cascade not null,
-  model_id text not null,
-  messages_used integer default 0,
-  messages_limit integer not null,
-  tokens_used bigint default 0,
-  tokens_limit bigint,
-  reset_at timestamp with time zone not null,
-  last_message_at timestamp with time zone,
+  subscription_tier subscription_plan not null,
+  quota_key text not null,
+  used_count integer default 0,
+  quota_limit integer not null,
+  reset_frequency reset_frequency not null,
+  last_reset_at timestamp with time zone not null,
+  next_reset_at timestamp with time zone not null,
+  last_usage_at timestamp with time zone,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   
-  constraint positive_messages check (messages_used >= 0 and messages_limit > 0)
+  constraint positive_usage check (used_count >= 0 and quota_limit > 0),
+  constraint unique_user_quota unique (user_id, quota_key),
+  constraint valid_quota_key check (quota_key in ('small_messages', 'large_messages', 'image_generation'))
 );
 
 -- Indexes
@@ -104,6 +162,9 @@ create table public.usage_quotas (
 -- Subscriptions indexes
 create index idx_subscriptions_user_active on public.subscriptions(user_id) where status = 'active';
 create index idx_subscriptions_period_end on public.subscriptions(current_period_end) where status = 'active';
+
+-- Subscription history index
+create index idx_subscription_history_user on public.subscription_history(user_id, changed_at);
 
 -- Conversations indexes
 create index idx_conversations_user_id on public.conversations(user_id);
@@ -113,9 +174,13 @@ create index idx_conversations_last_message on public.conversations(last_message
 create index idx_chat_messages_conv_latest on public.chat_messages(conversation_id) where is_latest = true;
 create index idx_chat_messages_conv_seq on public.chat_messages(conversation_id, sequence_number, is_latest);
 
+-- Attachments indexes
+create index idx_attachments_message on public.attachments(message_id);
+create index idx_attachments_user on public.attachments(user_id);
+
 -- Usage quotas indexes
-create index idx_quota_usage_user on public.usage_quotas(user_id, model_id, reset_at);
-create index idx_quota_reset on public.usage_quotas(reset_at) where messages_used > 0;
+create index idx_quota_usage_user on public.usage_quotas(user_id, quota_key);
+create index idx_quota_reset on public.usage_quotas(next_reset_at) where used_count > 0;
 
 -- RLS Policies
 
@@ -135,10 +200,12 @@ create policy "System can create user profile on auth"
   on public.users for insert
   with check (auth.uid() = id);
 
--- Add policy for usage quotas creation during auth
-create policy "System can create initial usage quotas"
-  on public.usage_quotas for insert
-  with check (auth.uid() = user_id);
+-- Subscription history policies
+alter table public.subscription_history enable row level security;
+
+create policy "Users can view their subscription history"
+  on public.subscription_history for select
+  using (auth.uid() = user_id);
 
 -- Subscriptions table policies
 alter table public.subscriptions enable row level security;
@@ -167,6 +234,13 @@ create policy "Users can perform all actions on messages in their conversations"
     )
   );
 
+-- Attachments table policies
+alter table public.attachments enable row level security;
+
+create policy "Users can perform all actions on their own attachments"
+  on public.attachments for all
+  using (auth.uid() = user_id);
+
 -- Usage quotas table policies
 alter table public.usage_quotas enable row level security;
 
@@ -174,6 +248,11 @@ create policy "Users can view their own usage quotas"
   on public.usage_quotas for select
   using (auth.uid() = user_id);
 
+create policy "Users can update their own usage quotas"
+  on public.usage_quotas for update
+  using (auth.uid() = user_id);
+
 -- Enable realtime for relevant tables
 alter publication supabase_realtime add table conversations;
-alter publication supabase_realtime add table chat_messages; 
+alter publication supabase_realtime add table chat_messages;
+alter publication supabase_realtime add table attachments; 
