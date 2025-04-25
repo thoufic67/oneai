@@ -935,3 +935,217 @@ export class OpenRouterClient {
       headers: {
         Authorization: `
 ```
+
+## Razorpay Checkout Integration
+
+### Checkout Flow
+
+1. **Plan Selection**
+
+   - User selects a subscription plan
+   - System generates order details
+   - Razorpay checkout is initialized
+
+2. **Checkout Configuration**
+
+```typescript
+// lib/razorpay/checkout.ts
+interface RazorpayCheckoutOptions {
+  key: string;
+  subscription_id: string;
+  name: string;
+  description: string;
+  image?: string;
+  callback_url: string;
+  prefill: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  notes?: Record<string, string>;
+  theme?: {
+    color: string;
+  };
+}
+
+export const initializeRazorpayCheckout = async (
+  options: RazorpayCheckoutOptions
+) => {
+  const razorpay = new Razorpay(options);
+  razorpay.open();
+  return razorpay;
+};
+```
+
+3. **Payment Verification**
+
+```typescript
+// lib/razorpay/verify.ts
+export const verifyRazorpayPayment = async (
+  razorpay_payment_id: string,
+  razorpay_subscription_id: string,
+  razorpay_signature: string
+) => {
+  const text = razorpay_payment_id + "|" + razorpay_subscription_id;
+  const generated_signature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+    .update(text)
+    .digest("hex");
+
+  return generated_signature === razorpay_signature;
+};
+```
+
+4. **Webhook Handling**
+
+```typescript
+// app/api/webhooks/razorpay/route.ts
+export async function POST(req: Request) {
+  const payload = await req.json();
+  const signature = req.headers.get("x-razorpay-signature");
+
+  if (!verifyWebhookSignature(payload, signature)) {
+    return new Response("Invalid signature", { status: 400 });
+  }
+
+  switch (payload.event) {
+    case "subscription.activated":
+      await handleSubscriptionActivated(payload);
+      break;
+    case "subscription.charged":
+      await handleSubscriptionCharged(payload);
+      break;
+    case "subscription.cancelled":
+      await handleSubscriptionCancelled(payload);
+      break;
+    // Handle other events
+  }
+
+  return new Response("OK", { status: 200 });
+}
+```
+
+### Component Implementation
+
+```typescript
+// components/subscription/checkout-button.tsx
+export const RazorpayCheckoutButton = ({ plan }: { plan: SubscriptionPlan }) => {
+  const { user } = useUser();
+  const router = useRouter();
+
+  const handleCheckout = async () => {
+    try {
+      // 1. Create subscription on backend
+      const { subscription_id } = await createSubscription(plan.id);
+
+      // 2. Initialize Razorpay checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        subscription_id,
+        name: "OneAI Platform",
+        description: `${plan.name} Subscription`,
+        image: "/logo.png",
+        callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/verify`,
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: {
+          color: "#0F172A",
+        },
+      };
+
+      const razorpay = await initializeRazorpayCheckout(options);
+
+      // 3. Handle payment completion
+      razorpay.on("payment.success", handlePaymentSuccess);
+      razorpay.on("payment.error", handlePaymentError);
+    } catch (error) {
+      toast.error("Failed to initialize checkout");
+    }
+  };
+
+  return (
+    <Button onClick={handleCheckout}>
+      Subscribe to {plan.name}
+    </Button>
+  );
+};
+```
+
+### Database Updates
+
+```sql
+-- Add payment_status to subscriptions table
+ALTER TABLE subscriptions
+ADD COLUMN payment_status TEXT CHECK (
+  payment_status IN (
+    'pending',
+    'authorized',
+    'captured',
+    'failed',
+    'refunded'
+  )
+);
+
+-- Add payment tracking table
+CREATE TABLE subscription_payments (
+    id UUID PRIMARY KEY,
+    subscription_id UUID REFERENCES subscriptions(id),
+    razorpay_payment_id TEXT NOT NULL,
+    razorpay_signature TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB
+);
+
+-- Index for payment lookups
+CREATE INDEX idx_subscription_payments
+ON subscription_payments(subscription_id, created_at);
+```
+
+### Error Handling
+
+```typescript
+// lib/razorpay/errors.ts
+export class RazorpayError extends Error {
+  constructor(
+    message: string,
+    public code: string,
+    public status: number
+  ) {
+    super(message);
+    this.name = "RazorpayError";
+  }
+}
+
+export const handleRazorpayError = (error: any) => {
+  if (error.error) {
+    const { code, description } = error.error;
+    throw new RazorpayError(description, code, error.status);
+  }
+  throw error;
+};
+```
+
+### Testing Flow
+
+1. **Test Subscription Creation**
+
+   - Create test plan in Razorpay dashboard
+   - Use test API keys
+   - Verify webhook delivery
+
+2. **Test Payment Flow**
+
+   - Use test card numbers
+   - Verify signature validation
+   - Check webhook handling
+
+3. **Test Error Scenarios**
+   - Payment failures
+   - Invalid signatures
+   - Network errors
+   - Timeout handling

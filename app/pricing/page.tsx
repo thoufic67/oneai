@@ -5,6 +5,7 @@ import PostHogClient from "@/posthog";
 import { Button, Card, CardBody, CardHeader } from "@heroui/react";
 import { Check } from "lucide-react";
 import { useAuth } from "../components/auth-provider";
+import { useRouter } from "next/navigation";
 
 type PricingPlan = {
   name: string;
@@ -47,6 +48,8 @@ const PRICING_PLANS: PricingPlan[] = [
 export default function PricingPage() {
   const { user } = useAuth();
   const posthog = PostHogClient();
+  const router = useRouter();
+
   const handleSubscribe = (plan: PricingPlan) => {
     console.log("Subscribing to plan:", plan);
     posthog.capture({
@@ -57,6 +60,11 @@ export default function PricingPage() {
         price: plan.price,
       },
     });
+    if (user) {
+      router.push("/checkout");
+    } else {
+      router.push("/login");
+    }
   };
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 min-h-full">

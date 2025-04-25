@@ -8,13 +8,19 @@ class AuthService {
   // Redirect to Google login page
   async initiateGoogleLogin() {
     try {
+      const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");
+      const redirectTo = `${process.env.NEXT_PUBLIC_URL}/auth/callback`;
+
+      console.log("redirectTo", redirectTo);
       const options: SignInWithOAuthCredentials = {
         provider: "google",
         options: {
-          redirectTo: `${process.env.NEXT_PUBLIC_URL}/auth/callback`,
+          redirectTo,
           queryParams: {
             // access_type: "offline",
             // prompt: "consent",
+            next: `https://${process.env.NEXT_PUBLIC_URL}/${redirectAfterLogin}`,
+            "x-forwarded-host": `https://${process.env.NEXT_PUBLIC_URL}/${redirectAfterLogin}`,
           },
         },
       };
@@ -23,10 +29,13 @@ class AuthService {
         JSON.stringify(options)
       );
       const { error } = await this.supabase.auth.signInWithOAuth(options);
+
       if (error) {
         console.log("Google login error:", error);
         throw error;
       }
+
+      sessionStorage.removeItem("redirectAfterLogin");
     } catch (error) {
       console.error("Error logging in with Google:", error);
       throw error;

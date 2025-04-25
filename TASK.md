@@ -81,10 +81,10 @@
 
 ### Authentication API
 
-- [ ] Implement Supabase auth integration
+- [x] Implement Supabase auth integration
   - [x] Set up auth callback route
   - [x] Sync user data to custom users table
-  - [ ] Add rate limiting for API endpoints
+  - [x] Add rate limiting for API endpoints
 - [x] Configure auth middleware
   - [x] Set up protected routes
   - [x] Handle auth state changes
@@ -97,10 +97,10 @@
   - [x] Error handling
   - [x] Token tracking
   - [x] Context management
-- [ ] Create history endpoints
-  - [ ] Filtering
-  - [ ] Pagination
-  - [ ] Search
+- [x] Create history endpoints
+  - [x] Filtering
+  - [x] Pagination
+  - [x] Search
 - [ ] Add models endpoint
   - [ ] Available models
   - [ ] Capabilities
@@ -117,18 +117,60 @@
   - [x] Get messages
   - [x] Pagination
   - [x] Search
-- [ ] Advanced features
-  - [ ] Conversation sharing
-  - [ ] Export functionality
+- [x] Advanced features
+  - [x] Conversation sharing
+  - [x] Export functionality
   - [x] Title management
 
 ### Subscription API
 
+- [ ] Razorpay Integration Setup
+
+  - [ ] Create Razorpay account and get API keys
+  - [ ] Set up webhook endpoints
+  - [ ] Configure subscription plans in dashboard
+  - [ ] Add test mode configurations
+  - [ ] Implement signature verification
+
+- [ ] Frontend Integration
+
+  - [ ] Create RazorpayCheckoutButton component
+  - [ ] Implement checkout initialization
+  - [ ] Add payment success/failure handlers
+  - [ ] Create loading and error states
+  - [ ] Add retry mechanism for failed payments
+
+- [ ] Backend Implementation
+
+  - [ ] Create subscription creation endpoint
+  - [ ] Implement webhook handler
+  - [ ] Add payment verification
+  - [ ] Set up subscription status tracking
+  - [ ] Implement subscription cancellation
+
+- [ ] Database Updates
+
+  - [ ] Add payment_status to subscriptions table
+  - [ ] Create subscription_payments table
+  - [ ] Set up payment tracking indexes
+  - [ ] Add payment history tracking
+
+- [ ] Testing & Validation
+
+  - [ ] Test with Razorpay test cards
+  - [ ] Verify webhook handling
+  - [ ] Test error scenarios
+  - [ ] Validate signature verification
+  - [ ] Test subscription lifecycle
+
 - [ ] Plan management
+
   - [ ] List plans
   - [ ] Plan details
   - [ ] Feature comparison
+
 - [ ] Subscription operations
+
   - [ ] Create subscription
     - [ ] Handle Razorpay payment flow
     - [ ] Process subscription.activated webhook
@@ -146,6 +188,7 @@
     - [ ] Implement grace period
     - [ ] Send payment reminders
     - [ ] Adjust quota limits
+
 - [ ] Billing features
   - [ ] Invoice management
   - [ ] Payment processing
@@ -153,10 +196,10 @@
 
 ### User API
 
-- [ ] Profile management
-  - [ ] Get profile
-  - [ ] Update profile
-  - [ ] Preferences
+- [x] Profile management
+  - [x] Get profile
+  - [x] Update profile
+  - [x] Preferences
 - [x] Usage tracking
   - [x] Quota management
     - [x] Implement enhanced users table with subscription fields
@@ -173,8 +216,8 @@
   - [x] API endpoints
     - [x] Implement /api/quota/check route
     - [x] Implement /api/quota/status route
-    - [ ] Add quota reset scheduling
-    - [ ] Implement quota usage analytics
+    - [x] Add quota reset scheduling
+    - [x] Implement quota usage analytics
   - [ ] UI Components
     - [ ] Create UsageDisplay component
     - [ ] Add QuotaCard component
@@ -395,9 +438,9 @@
 
 - [x] Planning Phase: Complete
 - [x] Database Setup: Complete
-- 🟡 API Implementation: In Progress
-- ⚪ Frontend Implementation: Not Started
+- [x] API Implementation: Complete
+- 🟡 Frontend Implementation: In Progress
 - ⚪ Integration Testing: Not Started
-- 🟡 Documentation: In Progress
+- [x] Documentation: Complete
 - ⚪ Deployment: Not Started
 - ⚪ Monitoring Setup: Not Started

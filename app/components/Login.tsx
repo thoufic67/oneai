@@ -13,7 +13,7 @@ export default function Login() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full w-full p-4 overflow-hidden">
-      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg animate-blur-in border-2 border-primary-500">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
             Welcome to OneAI
@@ -27,7 +27,9 @@ export default function Login() {
           <Button
             onPress={handleGoogleLogin}
             className="w-full flex items-center justify-center space-x-2"
-            variant="bordered"
+            variant="solid"
+            color="primary"
+            size="lg"
           >
             <svg viewBox="0 0 24 24" width="24" height="24" className="mr-2">
               <path

@@ -75,14 +75,14 @@ export const Navbar = () => {
                 Pricing
               </Link>
             </NavbarItem>
-            <NavbarItem>
+            {/* <NavbarItem>
               <Link
                 className="text-sm text-default-800 font-medium"
                 href="/contact"
               >
                 Contact
               </Link>
-            </NavbarItem>
+            </NavbarItem> */}
             <NavbarItem>
               <Button
                 as={Link}
@@ -100,7 +100,7 @@ export const Navbar = () => {
           <>
             <NavbarContent>
               <NavbarBrand>
-                <Link href="/" className="flex items-center gap-2">
+                <Link href="/new" className="flex items-center gap-2">
                   <Image
                     src="/one-ai-favicon.svg"
                     alt="OneAI"
