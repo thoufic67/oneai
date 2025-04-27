@@ -30,8 +30,13 @@ export const Navbar = () => {
   const { openCommandK } = useShortcutKey();
   const [showSimpleNavbar, setShowSimpleNavbar] = useState(true); // Default to true for server-side render
   const { user } = useAuth();
+  const [isNavbarVisible, setIsNavbarVisible] = useState(false);
 
   useEffect(() => {
+    setTimeout(() => {
+      setIsNavbarVisible(true);
+    }, 500);
+
     // Update navbar state based on current path
     setShowSimpleNavbar(PATHS_TO_HIDE_NAVBAR.includes(pathname));
   }, [pathname]);
@@ -45,11 +50,13 @@ export const Navbar = () => {
       <HeroUINavbar
         isBlurred
         maxWidth={showSimpleNavbar ? "xl" : "full"}
-        className={`${
+        className={`transition-all duration-300 ${
           showSimpleNavbar
             ? "w-fit mx-auto bg-gradient-to-r from-primary-50 to-primary-100 border border-gray-200 rounded-full top-8 transition-all duration-300"
             : "w-full"
-        }`}
+        }
+        ${isNavbarVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-10"}
+        `}
         position="sticky"
       >
         {showSimpleNavbar ? (

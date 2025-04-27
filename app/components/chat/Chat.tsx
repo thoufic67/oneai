@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef, useLayoutEffect } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  useLayoutEffect,
+} from "react";
 import {
   chatService,
   Message,
@@ -28,6 +34,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
+import { Skeleton } from "@heroui/skeleton";
 
 // Add utility functions for session storage with expiration
 const storeWithExpiry = (key: string, value: any) => {
@@ -86,7 +93,7 @@ interface Model {
   logo: string;
 }
 
-const models: Model[] = [
+export const models: Model[] = [
   {
     name: "Gemini",
     value: "google/gemini-2.0-flash-001",
@@ -143,7 +150,7 @@ export function Chat() {
   const { user } = useAuth();
 
   // State for current messages display
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(
@@ -160,7 +167,7 @@ export function Chat() {
   );
 
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [loadingConversation, setLoadingConversation] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(true);
   const [currentConversation, setCurrentConversation] = useState<
     Conversation | undefined
   >(undefined);
@@ -200,6 +207,7 @@ export function Chat() {
     if (conversationId && !isNewChat) {
       handleSelectChat(conversationId, false);
     } else if (isNewChat) {
+      setLoadingConversation(false);
       handleNewChat(false);
     }
   }, [conversationId, isNewChat]);
@@ -217,14 +225,21 @@ export function Chat() {
       setCurrentConversation(conversationDetails);
       console.log("messagesData", messagesData);
       // Convert API messages to component format
-      const formattedMessages: Message[] = messagesData?.data?.map(
-        (msg: ChatMessage) => ({
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-        })
-      );
+      // const formattedMessages: ChatMessage[] = messagesData?.data?.map(
+      //   (msg: ChatMessage) => ({
+      //     id: msg.id,
+      //     created_at: msg.created_at,
+      //     role: msg.role as "user" | "assistant",
+      //     content: msg.content,
+      //     conversation_id: msg.conversation_id,
+      //     user_id: msg.user_id,
+      //     sequence_number: msg?.sequence_number || 0,
+      //     revision_number: msg?.revision_number || 0,
+      //     model_id: msg.model_id,
+      //   })
+      // );
 
-      setMessages(formattedMessages || []);
+      setMessages(messagesData?.data || []);
 
       // Update model if present in message metadata
       // Note: This would need to be implemented on the backend to store model in message metadata
@@ -255,7 +270,15 @@ export function Chat() {
       setError(null);
 
       // Add user message to UI for immediate feedback
-      const userMessage: Message = { role: "user", content: inputMessage };
+      const userMessage: ChatMessage = {
+        role: "user",
+        content: inputMessage,
+        model_id: selectedModel,
+        id: "",
+        conversation_id: currentChatId || "",
+        user_id: user?.id || "",
+        created_at: new Date().toISOString(),
+      };
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInputMessage("");
@@ -305,12 +328,18 @@ export function Chat() {
         async (finalText, convId) => {
           if (convId && currentChatId !== convId) {
             setCurrentChatId(convId);
+            router.push(`/c/${convId}?`);
           }
 
           // Add the final streamed message to the messages array
           setMessages((prevMessages) => [
             ...prevMessages,
             {
+              id: "",
+              conversation_id: currentChatId || "",
+              user_id: user?.id || "",
+              model_id: selectedModel,
+              created_at: new Date().toISOString(),
               role: "assistant",
               content: finalText || streamingMessage?.content || "",
             },
@@ -438,15 +467,44 @@ export function Chat() {
     <div className="flex h-full w-full max-h-full justify-center items-center">
       <div className="flex flex-col  flex-1 max-w-4xl w-full h-full">
         {currentChatId && messages.length > 0 && (
-          <p className="hidden sm:block mx-auto z-50 fixed top-5 left-0 right-0 text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="hidden  sm:block sm:max-w-sm lg:max-w-xl  mx-auto z-50 fixed top-5 left-0 right-0 text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
             {currentConversation?.title || "..."}
           </p>
         )}
 
         <AnimatePresence mode="wait">
           {loadingConversation ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900"></div>
+            <div className="flex flex-col gap-6 justify-start items-center h-full w-full max-w-2xl mx-auto py-12">
+              {/* User bubble skeleton */}
+              <div className="flex w-full p-2 justify-end">
+                <div className="flex gap-2 w-full items-end justify-end">
+                  <div className="flex flex-col gap-2 items-end w-full max-w-[90%]">
+                    <Skeleton className="h-4 w-full rounded-lg" />
+                    <Skeleton className="h-4 w-24 rounded-lg" />
+                  </div>
+                  {/* User avatar placeholder */}
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                </div>
+              </div>
+
+              {/* Assistant bubble skeleton */}
+              <div className="flex w-full p-2">
+                <div className="flex gap-2 w-full items-start">
+                  {/* Assistant avatar placeholder */}
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex flex-col gap-2 items-start w-full max-w-[90%]">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <React.Fragment key={index}>
+                        <Skeleton className="h-4 w-full rounded-lg" />
+                        <Skeleton className="h-4 w-full rounded-lg" />
+                        <Skeleton className="h-3 w-full rounded-lg" />
+                        <Skeleton className="h-3 w-96 rounded-lg" />
+                        <Skeleton className="h-24 w-full rounded-lg" />
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           ) : messages.length === 0 ? (
             <motion.div
@@ -494,6 +552,7 @@ export function Chat() {
                     isAssistant={message.role === "assistant"}
                     content={message.content}
                     isLoading={message === streamingMessage && isLoading}
+                    model={message.model_id}
                   />
                 ))}
                 {streamingMessage && (
@@ -501,6 +560,7 @@ export function Chat() {
                     isAssistant={true}
                     content={streamingMessage.content}
                     isLoading={true}
+                    model={selectedModel}
                   />
                 )}
                 {/* <Image

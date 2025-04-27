@@ -1,17 +1,19 @@
-import { Avatar } from "@heroui/react";
+import { Avatar, Button, Image, Tooltip } from "@heroui/react";
 import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, RefreshCcw } from "lucide-react";
 import React from "react";
 import { useAuth } from "@/app/components/auth-provider";
+import { models } from "@/app/components/chat/Chat";
 
 interface ChatBubbleProps {
   isAssistant: boolean;
   content: string;
   isLoading?: boolean;
   onRegenerate?: () => void;
+  model?: string;
 }
 
 // Heading components for different levels
@@ -216,9 +218,13 @@ export function ChatBubble({
   content,
   isLoading,
   onRegenerate,
+  model,
 }: ChatBubbleProps) {
   const [messageCopied, setMessageCopied] = useState(false);
   const { user } = useAuth();
+  const modelDetails = useMemo(() => {
+    return models.find((m) => m.value === model);
+  }, [model]);
 
   useEffect(() => {
     console.log("messageCopied", content);
@@ -282,22 +288,42 @@ export function ChatBubble({
 
             {isAssistant && !isLoading && (
               <div className="flex gap-2">
-                <button
-                  onClick={copyMessageToClipboard}
-                  className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
-                  aria-label="Copy message"
-                >
-                  {messageCopied ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-                {
-                  <button
-                    onClick={onRegenerate}
-                    className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
-                    aria-label="Regenerate message"
+                <Tooltip content="Copy message">
+                  <Button
+                    isIconOnly
+                    onPress={copyMessageToClipboard}
+                    variant="flat"
+                    size="sm"
+                    radius="lg"
+                    className="self-start mt-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                    aria-label="Copy message"
                   >
-                    <RefreshCcw size={16} />
-                  </button>
-                }
+                    {messageCopied ? <Check size={16} /> : <Copy size={16} />}
+                  </Button>
+                </Tooltip>
+
+                <Tooltip content="Regenerate message (Coming soon)">
+                  <div>
+                    <Button
+                      onPress={onRegenerate}
+                      isDisabled
+                      variant="flat"
+                      radius="lg"
+                      size="sm"
+                      className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                      aria-label="Regenerate message"
+                    >
+                      <Image
+                        src={modelDetails?.logo}
+                        alt={modelDetails?.name}
+                        width={16}
+                        height={16}
+                      />
+                      {modelDetails?.name}
+                      <RefreshCcw size={16} />
+                    </Button>
+                  </div>
+                </Tooltip>
               </div>
             )}
           </div>

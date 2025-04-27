@@ -44,6 +44,7 @@ interface ChatMessage {
   metadata?: Record<string, any>;
   created_at: string;
   sequence_number?: number;
+  revision_number?: number;
   attachment_url?: string;
   attachment_type?: "image" | "video" | "audio" | "document" | "other";
 }
