@@ -2,10 +2,9 @@
  * @file Razorpay webhook handler for subscription events
  */
 
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/razorpay";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -17,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
 
     switch (payload.event) {
       case "subscription.activated": {
@@ -137,7 +136,7 @@ export async function POST(req: Request) {
 
 // Helper function to initialize quotas for a new subscription
 async function initializeQuotas(userId: string, planId: string) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
 
   // Get quota limits for the plan
   const quotaLimits = getQuotaLimitsForPlan(planId);

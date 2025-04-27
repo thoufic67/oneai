@@ -1,20 +1,40 @@
 /**
- * @file Payment verification endpoint for Razorpay subscriptions
+ * @file API route for verifying Razorpay payments and updating subscription status
  */
 
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { verifyRazorpayPayment } from "@/lib/razorpay";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    console.log("user", { user, req });
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Parse form-urlencoded body
+    const text = await req.text();
+    const body = Object.fromEntries(new URLSearchParams(text));
+
     const {
       razorpay_payment_id,
       razorpay_subscription_id,
       razorpay_signature,
-    } = await req.json();
+    } = body;
 
-    // Verify payment signature
+    console.log("razor pay verify req", {
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature,
+    });
+
+    // Verify the payment signature
     const isValid = await verifyRazorpayPayment(
       razorpay_payment_id,
       razorpay_subscription_id,
@@ -28,34 +48,38 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabase = await createClient();
+    // Record the payment in subscription_payments table
+    const { data: subscriptionPayment, error: subscriptionPaymentError } =
+      await supabase.from("subscription_payments").insert({
+        subscription_id: razorpay_subscription_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        status: "verified",
+        metadata: {
+          verified_at: new Date().toISOString(),
+        },
+      });
 
-    // Update subscription status
-    await supabase
+    if (subscriptionPaymentError) {
+      console.error("Error recording payment", subscriptionPaymentError);
+    }
+
+    // Update subscription status to 'active' if not already
+    const { data: subscription, error: subscriptionError } = await supabase
       .from("subscriptions")
       .update({
         status: "active",
-        metadata: {
-          razorpay_payment_id,
-          razorpay_signature,
-          verified_at: new Date().toISOString(),
-        },
+        payment_status: "captured",
+        updated_at: new Date().toISOString(),
       })
       .eq("provider_subscription_id", razorpay_subscription_id);
 
-    // Record the payment
-    await supabase.from("subscription_payments").insert({
-      subscription_id: razorpay_subscription_id,
-      razorpay_payment_id,
-      razorpay_signature,
-      status: "verified",
-      verified_at: new Date(),
-    });
-
-    console.log("Payment verified successfully");
+    if (subscriptionError) {
+      console.error("Error updating subscription", subscriptionError);
+    }
 
     return NextResponse.json({
-      status: "success",
+      success: true,
       message: "Payment verified successfully",
     });
   } catch (error: any) {
