@@ -16,22 +16,9 @@ import {
 import { useAuth } from "../auth-provider";
 import { ChatBubble } from "./ChatBubble";
 import { OneAIInput } from "./OneAIInput";
-import {
-  Button,
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Input,
-} from "@heroui/react";
-import { AlertCircle, Send, Settings } from "lucide-react";
+import { Button, useDisclosure } from "@heroui/react";
+import { AlertCircle, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@heroui/skeleton";
