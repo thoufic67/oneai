@@ -451,7 +451,10 @@ export function Chat() {
   };
 
   return (
-    <div className="flex h-full w-full max-h-full justify-center items-center">
+    <div
+      className="flex h-full w-full max-h-full justify-center items-center overflow-y-auto overflow-x-hidden"
+      ref={chatContainerRef}
+    >
       <div className="flex flex-col  flex-1 max-w-4xl w-full h-full">
         {currentChatId && messages.length > 0 && (
           <p className="hidden  sm:block sm:max-w-sm lg:max-w-xl  mx-auto z-50 fixed top-5 left-0 right-0 text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
@@ -529,10 +532,7 @@ export function Chat() {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div
-                className="flex-1 flex flex-col max-h-full overflow-y-auto overflow-x-hidden gap-4 w-full no-scrollbar p-4"
-                ref={chatContainerRef}
-              >
+              <div className="flex-1 flex flex-col max-h-full gap-4 w-full no-scrollbar p-4">
                 {displayMessages.map((message, index) => (
                   <ChatBubble
                     key={index}
@@ -557,7 +557,7 @@ export function Chat() {
                   height={100}
                   className={`w-8 h-8 ${isLoading ? "animate-spin" : ""} border border-100 border-gray-900`}
                 /> */}
-                <div className={`relative w-10 h-10 rounded-full overflow-`}>
+                <div className={`relative w-10 h-10 rounded-full pb-52`}>
                   {/* <div
                     className={`absolute rounded-full w-8 h-8 bg-gradient-to-r from-primary-400/50 to-primary-600/50 ${isLoading ? "animate-pulse" : ""}`}
                   ></div>
@@ -594,7 +594,7 @@ export function Chat() {
                   />
                 </div>
               </div>
-              <div className="sticky w-full bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
+              <div className="fixed w-full bottom-0 left-0 right-0 w-full backdrop-blur-md border-t border-gray-200 dark:border-gray-800">
                 {error && (
                   <div className="p-4 text-red-500 bg-red-100 rounded mb-4 mx-auto flex items-center gap-2 rounded-lg">
                     <AlertCircle className="w-4 h-4" />
