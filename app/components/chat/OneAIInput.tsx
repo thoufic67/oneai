@@ -5,13 +5,17 @@ import {
   DropdownMenu,
   DropdownItem,
   Button,
-  Chip,
+  Image,
   Tooltip,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { forwardRef, useState } from "react";
-import { Search, ChevronDown, Globe } from "lucide-react";
-import Image from "next/image";
+import {
+  Image as ImageIcon,
+  ChevronDown,
+  Globe,
+  Paperclip,
+} from "lucide-react";
 
 interface ModelOption {
   name: string;
@@ -119,8 +123,41 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
             />
 
             {/* Search and Model Options */}
+
             <div className="flex items-center justify-start gap-2 mt-2">
-              <Tooltip content="Search">
+              <Tooltip content="File upload (Coming soon)">
+                <div>
+                  <Button
+                    isDisabled
+                    onPress={toggleWebSearch}
+                    isIconOnly
+                    size="sm"
+                    className={`flex rounded-full border border-default-300  ${
+                      false ? "bg-primary text-white " : "text-default-500"
+                    } transition-colors duration-300`}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Tooltip>
+
+              <Tooltip content="Image generation (Coming soon)">
+                <div>
+                  <Button
+                    isDisabled
+                    onPress={toggleWebSearch}
+                    isIconOnly
+                    size="sm"
+                    className={`flex rounded-full border border-default-300  ${
+                      false ? "bg-primary text-white " : "text-default-500"
+                    } transition-colors duration-300`}
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Tooltip>
+
+              <Tooltip content="Web Search">
                 <Button
                   onPress={toggleWebSearch}
                   isIconOnly

@@ -10,9 +10,8 @@ import {
   DropdownMenu,
   DropdownItem,
 } from "@heroui/dropdown";
-import Link from "next/link";
 import { Spinner } from "@heroui/spinner";
-import { Tooltip } from "@heroui/react";
+import { Tooltip, Link } from "@heroui/react";
 
 export default function UserProfile() {
   const { user, loading, error, logout } = useAuth();

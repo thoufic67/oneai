@@ -2,9 +2,8 @@
  * @file page.tsx
  * @description Landing page component that showcases the AI model access platform with pricing and features
  */
-import { Button } from "@heroui/button";
 import Image from "next/image";
-import Link from "next/link";
+import LandingPageButton from "./components/landing-page-button";
 
 export default function Home() {
   const aiModels = [
@@ -81,16 +80,7 @@ export default function Home() {
 
         {/* CTA Button */}
         <div className="animate-blur-in-down delay-1000">
-          <Link href="/new">
-            <Button
-              size="lg"
-              variant="solid"
-              color="primary"
-              className="hover:scale-125 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300"
-            >
-              Let&apos;s go
-            </Button>
-          </Link>
+          <LandingPageButton />
         </div>
       </div>
     </main>
