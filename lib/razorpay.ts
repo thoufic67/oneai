@@ -9,8 +9,8 @@ import { Plans } from "razorpay/dist/types/plans";
 
 // Server-side instance
 export const razorpayServer = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-  key_secret: process.env.NEXT_PUBLIC_RAZORPAY_KEY_SECRET!,
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
 export interface RazorpayCheckoutOptions {
@@ -71,7 +71,7 @@ export const verifyRazorpayPayment = async (
 ) => {
   const text = razorpay_payment_id + "|" + razorpay_subscription_id;
   const generated_signature = crypto
-    .createHmac("sha256", process.env.NEXT_PUBLIC_RAZORPAY_KEY_SECRET!)
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
     .update(text)
     .digest("hex");
 
@@ -85,7 +85,7 @@ export const verifyWebhookSignature = (
   if (!signature) return false;
 
   const crypto = require("crypto");
-  const secret = process.env.NEXT_PUBLIC_RAZORPAY_WEBHOOK_SECRET!;
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET!;
   const shasum = crypto.createHmac("sha256", secret);
   shasum.update(JSON.stringify(payload));
   const digest = shasum.digest("hex");

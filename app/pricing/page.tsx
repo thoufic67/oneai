@@ -84,7 +84,7 @@ export default function PricingPage() {
   const handlePayment = async (subscriptionId: string, plan: PricingPlan) => {
     try {
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        key: process.env.RAZORPAY_KEY_ID!,
         subscription_id: subscriptionId,
         name: "OneAI",
         description: `${plan.name} Subscription`,

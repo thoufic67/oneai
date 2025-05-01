@@ -1040,7 +1040,7 @@ export const RazorpayCheckoutButton = ({ plan }: { plan: SubscriptionPlan }) => 
 
       // 2. Initialize Razorpay checkout
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
+        key: process.env.RAZORPAY_KEY_ID!,
         subscription_id,
         name: "OneAI Platform",
         description: `${plan.name} Subscription`,
