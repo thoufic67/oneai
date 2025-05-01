@@ -9,15 +9,13 @@ import { ShareError } from "@/types/share";
 import { ChatBubble } from "@/app/components/chat/ChatBubble";
 
 interface SharedConversationPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function SharedConversationPage({
   params,
 }: SharedConversationPageProps) {
-  const { id } = await params;
+  const id = (await params).id;
   // Fetch data from the API endpoint
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_APP_URL}/api/share/${id}`

@@ -12,7 +12,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
-  const { id } = await params;
+  const id = (await params).id;
+
   console.log("Fetch share for conversation id", id);
   //Get the share record if it exists
   const supabase = await createClient();
