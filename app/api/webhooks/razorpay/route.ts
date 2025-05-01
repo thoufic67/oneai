@@ -5,121 +5,319 @@
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
+import { Webhooks } from "razorpay/dist/types/webhooks";
+
+// Razorpay webhook payload types
+type RazorpayWebhookEvent =
+  | "subscription.authenticated"
+  | "subscription.activated"
+  | "subscription.charged"
+  | "subscription.completed"
+  | "subscription.cancelled"
+  | "subscription.pending"
+  | "subscription.halted"
+  | "subscription.created"
+  | "subscription.paused"
+  | "subscription.resumed";
+
+interface RazorpayWebhookPayload {
+  entity: string;
+  account_id: string;
+  event: RazorpayWebhookEvent;
+  contains: string[];
+  payload: {
+    subscription: {
+      entity: {
+        id: string;
+        entity: string;
+        plan_id: string;
+        customer_id: string;
+        status: string;
+        current_start: number;
+        current_end: number;
+        ended_at: number | null;
+        quantity: number;
+        notes: {
+          user_id: string;
+          [key: string]: string;
+        };
+        charge_at: number;
+        start_at: number;
+        end_at: number;
+        auth_attempts: number;
+        total_count: number;
+        paid_count: number;
+        customer_notify: boolean;
+        created_at: number;
+        expire_by: number | null;
+        short_url: string | null;
+        has_scheduled_changes: boolean;
+        change_scheduled_at: number | null;
+        source: string;
+        payment_method: string;
+        offer_id: string | null;
+        remaining_count: number;
+      };
+    };
+    payment?: {
+      entity: {
+        id: string;
+        entity: string;
+        amount: number;
+        currency: string;
+        status: string;
+        order_id: string;
+        invoice_id: string;
+        international: boolean;
+        method: string;
+        amount_refunded: number;
+        amount_transferred: number;
+        refund_status: string | null;
+        captured: string;
+        description: string;
+        card_id: string;
+        card: {
+          number: string;
+          network: string;
+          color: string;
+        };
+        bank: any | null;
+        wallet: any | null;
+        vpa: any | null;
+        email: string;
+        contact: string;
+        customer_id: string;
+        token_id: string;
+        notes: any[];
+        fee: number;
+        tax: number;
+        error_code: string | null;
+        error_description: string | null;
+        acquirer_data: {
+          auth_code: string;
+        };
+        created_at: number;
+      };
+    };
+  };
+  created_at: number;
+}
 
 export async function POST(req: Request) {
   try {
-    const payload = await req.json();
+    const payload = (await req.json()) as RazorpayWebhookPayload;
     const signature = req.headers.get("x-razorpay-signature");
 
-    // Verify webhook signature using utility function
+    console.log("payload", payload);
+
+    // Verify webhook signature
     if (!verifyWebhookSignature(payload, signature)) {
+      console.error("Invalid webhook signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const supabase = await createClient();
+    const subscriptionEntity = payload.payload.subscription.entity;
+    const { notes } = subscriptionEntity;
+
+    console.log("notes", {
+      subscription: JSON.stringify(subscriptionEntity),
+      notes: JSON.stringify(notes),
+    });
+
+    console.log("Processing webhook event:", payload.event, {
+      subscription_id: subscriptionEntity.id,
+      status: subscriptionEntity.status,
+    });
 
     switch (payload.event) {
-      case "subscription.activated": {
-        // Update subscription status and assign quotas
-        const { subscription } = payload;
-        const { notes } = subscription;
+      case "subscription.created": {
+        // Initial subscription creation - may not need action if handled in verify endpoint
+        break;
+      }
 
+      case "subscription.authenticated": {
+        // Payment authentication successful
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "authenticated",
+            payment_status: "authorized",
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
+        break;
+      }
+
+      case "subscription.activated": {
+        // Subscription is now active after successful payment
         await supabase
           .from("subscriptions")
           .update({
             status: "active",
-            current_period_start: new Date(subscription.current_start),
-            current_period_end: new Date(subscription.current_end),
-            metadata: subscription,
+            payment_status: "captured",
+            current_period_start: new Date(
+              subscriptionEntity.current_start * 1000
+            ),
+            current_period_end: new Date(subscriptionEntity.current_end * 1000),
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
           })
-          .eq("provider_subscription_id", subscription.id);
+          .eq("provider_subscription_id", subscriptionEntity.id);
 
         // Update user's subscription tier
-        await supabase
-          .from("users")
-          .update({
-            subscription_tier: subscription.plan_id,
-            subscription_status: "active",
-          })
-          .eq("id", notes.user_id);
+        if (notes.user_id) {
+          await supabase
+            .from("users")
+            .update({
+              subscription_tier: subscriptionEntity.plan_id,
+              subscription_status: "active",
+            })
+            .eq("id", notes.user_id);
 
-        // Initialize quotas for the new subscription
-        await initializeQuotas(notes.user_id, subscription.plan_id);
+          // Initialize quotas for the new subscription
+          await initializeQuotas(notes.user_id, subscriptionEntity.plan_id);
+        }
         break;
       }
 
       case "subscription.charged": {
         // Record successful payment
-        const { subscription, payment } = payload;
+        const paymentEntity = payload.payload.payment?.entity;
+        if (!paymentEntity) break;
 
         await supabase.from("subscription_payments").insert({
-          subscription_id: subscription.id,
-          razorpay_payment_id: payment.id,
-          razorpay_signature: signature,
-          amount: payment.amount,
-          currency: payment.currency,
-          status: payment.status,
-          metadata: payment,
+          subscription_id: subscriptionEntity.id,
+          razorpay_payment_id: paymentEntity.id,
+          razorpay_signature: signature || "",
+          amount: paymentEntity.amount,
+          currency: paymentEntity.currency,
+          status: paymentEntity.status,
+          metadata: {
+            ...paymentEntity,
+            last_event: payload.event,
+            last_event_at: new Date().toISOString(),
+          },
         });
+
+        // Update subscription with new period dates
+        await supabase
+          .from("subscriptions")
+          .update({
+            current_period_start: new Date(
+              subscriptionEntity.current_start * 1000
+            ),
+            current_period_end: new Date(subscriptionEntity.current_end * 1000),
+            payment_status: "captured",
+            metadata: {
+              ...subscriptionEntity,
+              last_payment: paymentEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
+        break;
+      }
+
+      case "subscription.pending": {
+        // Payment is pending
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "pending",
+            payment_status: "pending",
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
+        break;
+      }
+
+      case "subscription.halted": {
+        // Subscription halted due to payment failure
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "halted",
+            payment_status: "failed",
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
+
+        if (notes?.user_id) {
+          await supabase
+            .from("users")
+            .update({
+              subscription_status: "halted",
+            })
+            .eq("id", notes.user_id);
+        }
         break;
       }
 
       case "subscription.cancelled": {
-        // Update subscription status
-        const { subscription } = payload;
-
+        // Subscription cancelled by user or admin
         await supabase
           .from("subscriptions")
           .update({
             status: "cancelled",
             canceled_at: new Date(),
-            metadata: subscription,
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
           })
-          .eq("provider_subscription_id", subscription.id);
+          .eq("provider_subscription_id", subscriptionEntity.id);
 
-        // Update user's subscription status
-        await supabase
-          .from("users")
-          .update({
-            subscription_status: "cancelled",
-          })
-          .eq("id", subscription.notes.user_id);
+        if (notes.user_id) {
+          await supabase
+            .from("users")
+            .update({
+              subscription_status: "cancelled",
+            })
+            .eq("id", notes.user_id);
+        }
         break;
       }
 
-      case "subscription.pending": {
-        // Handle pending payment
-        const { subscription } = payload;
-
+      case "subscription.completed": {
+        // All installments completed
         await supabase
           .from("subscriptions")
           .update({
-            status: "pending",
-            metadata: subscription,
+            status: "completed",
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
           })
-          .eq("provider_subscription_id", subscription.id);
-        break;
-      }
+          .eq("provider_subscription_id", subscriptionEntity.id);
 
-      case "subscription.halted": {
-        // Handle failed payments
-        const { subscription } = payload;
-
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "halted",
-            metadata: subscription,
-          })
-          .eq("provider_subscription_id", subscription.id);
-
-        // Update user's subscription status
-        await supabase
-          .from("users")
-          .update({
-            subscription_status: "halted",
-          })
-          .eq("id", subscription.notes.user_id);
+        if (notes.user_id) {
+          await supabase
+            .from("users")
+            .update({
+              subscription_status: "completed",
+            })
+            .eq("id", notes.user_id);
+        }
         break;
       }
     }

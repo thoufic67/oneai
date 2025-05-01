@@ -63,25 +63,43 @@ create table public.subscription_history (
   constraint valid_change_reason check (change_reason in ('upgrade', 'downgrade', 'system', 'payment_failure'))
 );
 
--- Subscriptions Table
-create table public.subscriptions (
-  id uuid default uuid_generate_v4() primary key,
-  user_id uuid references public.users(id) on delete cascade not null,
-  plan_id text not null,
-  status subscription_status not null default 'active',
-  payment_provider text not null,
-  provider_subscription_id text not null,
-  current_period_start timestamp with time zone not null,
-  current_period_end timestamp with time zone not null,
-  cancel_at_period_end boolean default false,
+-- Subscriptions Table (Updated version)
+CREATE TABLE public.subscriptions (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id uuid REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  plan_id text NOT NULL,
+  status subscription_status NOT NULL DEFAULT 'active',
+  payment_status text CHECK (payment_status IN ('pending', 'authorized', 'captured', 'failed', 'refunded')),
+  payment_provider text NOT NULL,
+  provider_subscription_id text NOT NULL,
+  current_period_start timestamp with time zone NOT NULL,
+  current_period_end timestamp with time zone NOT NULL,
+  cancel_at_period_end boolean DEFAULT false,
   trial_start timestamp with time zone,
   trial_end timestamp with time zone,
   canceled_at timestamp with time zone,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  metadata jsonb default '{}'::jsonb,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  metadata jsonb DEFAULT '{}'::jsonb,
   
-  constraint unique_provider_subscription unique (payment_provider, provider_subscription_id)
+  CONSTRAINT unique_provider_subscription UNIQUE (payment_provider, provider_subscription_id)
+);
+
+-- Subscription Payments Table (Updated version)
+CREATE TABLE public.subscription_payments (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  subscription_id text NOT NULL,
+  razorpay_payment_id text NOT NULL,
+  razorpay_signature text NOT NULL,
+  idempotency_key text NOT NULL,
+  amount integer NOT NULL,
+  currency text NOT NULL,
+  status text NOT NULL CHECK (status IN ('pending', 'authorized', 'captured', 'failed', 'refunded')),
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  
+  CONSTRAINT unique_idempotency_key UNIQUE (idempotency_key),
+  CONSTRAINT unique_razorpay_payment UNIQUE (razorpay_payment_id)
 );
 
 -- Conversations Table
@@ -160,11 +178,14 @@ create table public.usage_quotas (
 -- Indexes
 
 -- Subscriptions indexes
-create index idx_subscriptions_user_active on public.subscriptions(user_id) where status = 'active';
-create index idx_subscriptions_period_end on public.subscriptions(current_period_end) where status = 'active';
+CREATE INDEX idx_subscriptions_user_active ON public.subscriptions(user_id) WHERE status = 'active';
+CREATE INDEX idx_subscriptions_period_end ON public.subscriptions(current_period_end) WHERE status = 'active';
 
 -- Subscription history index
 create index idx_subscription_history_user on public.subscription_history(user_id, changed_at);
+
+-- Create index for payment lookups
+CREATE INDEX idx_subscription_payments ON public.subscription_payments(subscription_id, created_at);
 
 -- Conversations indexes
 create index idx_conversations_user_id on public.conversations(user_id);
@@ -195,7 +216,6 @@ create policy "Users can update their own profile"
   on public.users for update
   using (auth.uid() = id);
 
--- Add new policy for user creation during auth
 create policy "System can create user profile on auth"
   on public.users for insert
   with check (auth.uid() = id);
@@ -208,11 +228,56 @@ create policy "Users can view their subscription history"
   using (auth.uid() = user_id);
 
 -- Subscriptions table policies
-alter table public.subscriptions enable row level security;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
-create policy "Users can view their own subscriptions"
-  on public.subscriptions for select
-  using (auth.uid() = user_id);
+CREATE POLICY "Users can create their own subscriptions"
+ON subscriptions
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view their own subscriptions"
+ON subscriptions
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own subscriptions"
+ON subscriptions
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own subscriptions"
+ON subscriptions
+FOR DELETE
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role can manage all subscriptions"
+ON subscriptions
+FOR ALL
+TO service_role
+USING (true)
+WITH CHECK (true);
+
+-- Subscription payments policies
+ALTER TABLE public.subscription_payments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own subscription payments"
+  ON public.subscription_payments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 
+      FROM public.subscriptions 
+      WHERE provider_subscription_id = subscription_payments.subscription_id
+      AND user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Service role can insert subscription payments"
+  ON public.subscription_payments FOR INSERT
+  WITH CHECK (true);
 
 -- Conversations table policies
 alter table public.conversations enable row level security;

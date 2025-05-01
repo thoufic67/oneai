@@ -46,16 +46,26 @@ export async function POST(req: Request) {
       await razorpayServer.subscriptions.create(subscriptionOptions);
 
     // Store subscription details in your database
-    await supabase.from("subscriptions").insert({
+    const { data, error } = await supabase.from("subscriptions").insert({
       user_id: user.id,
       plan_id: planId,
-      status: "created",
+      status: "unpaid",
       payment_provider: "razorpay",
       provider_subscription_id: subscription.id,
       current_period_start: new Date(),
       current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       metadata: subscription,
     });
+
+    if (error) {
+      console.error("Subscription creation error:", error);
+      return NextResponse.json(
+        { error: error.message || "Failed to create subscription" },
+        { status: 500 }
+      );
+    }
+
+    console.log("Subscription created:", data);
 
     return NextResponse.json({
       subscription_id: subscription.id,

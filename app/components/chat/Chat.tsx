@@ -240,7 +240,7 @@ export function Chat() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingMessage]);
+  }, [messages]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
