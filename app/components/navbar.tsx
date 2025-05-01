@@ -11,9 +11,9 @@ import {
 } from "@heroui/navbar";
 import { Button } from "@heroui/button";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { History, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, usePathname, useParams } from "next/navigation";
+import { History, Plus, Search, Share } from "lucide-react";
 
 import { ThemeSwitch } from "@/app/components/theme-switch";
 import UserProfile from "@/app/components/user-profile";
@@ -21,8 +21,7 @@ import { useShortcutKey } from "@/app/components/search/ShortcutKeyProvider";
 import Image from "next/image";
 import { Tooltip } from "@heroui/react";
 import { useAuth } from "@/app/components/auth-provider";
-
-const PATHS_TO_HIDE_NAVBAR = ["/", "/login", "/pricing", "/about", "/register"];
+import { ShareButton } from "@/components/chat/share-button";
 
 export const Navbar = () => {
   const router = useRouter();
@@ -31,6 +30,10 @@ export const Navbar = () => {
   const [showSimpleNavbar, setShowSimpleNavbar] = useState(true); // Default to true for server-side render
   const { user } = useAuth();
   const [isNavbarVisible, setIsNavbarVisible] = useState(false);
+  const { id } = useParams();
+  const PATHS_TO_HIDE_NAVBAR = useMemo(() => {
+    return ["/", "/login", "/pricing", "/about", "/register", `/share/${id}`];
+  }, [id]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -148,6 +151,11 @@ export const Navbar = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </Tooltip>
+                  {id && (
+                    <Tooltip content="Share">
+                      <ShareButton conversationId={id as string} />
+                    </Tooltip>
+                  )}
                 </>
                 <ThemeSwitch />
               </NavbarItem>
