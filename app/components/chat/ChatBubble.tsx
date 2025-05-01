@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, Button, Image, Tooltip } from "@heroui/react";
 import { motion } from "framer-motion";
 import Markdown from "react-markdown";
