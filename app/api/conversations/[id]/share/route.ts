@@ -9,10 +9,11 @@ import { ShareError, ShareResponse } from "@/types/share";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   const { id } = await params;
+  console.log("Fetch share for conversation id", id);
   //Get the share record if it exists
   const supabase = await createClient();
   const { data: share, error: shareError } = await supabase
@@ -37,11 +38,11 @@ export async function GET(
 }
 
 export async function POST(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
-    const { id } = await params;
     const supabase = await createClient();
 
     // Get the current user
@@ -111,12 +112,12 @@ export async function POST(
 }
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const supabase = await createClient();
-    const { id } = await params;
 
     // Get the current user
     const {

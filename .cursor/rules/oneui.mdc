@@ -20,4 +20,18 @@ Important:
 * Always use the createClient from `"@/lib/supabase/server";` for supabase client in api routes
 
 
+While reading params in server components or in api paths follow the below example
+```
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  return <h1>My Page</h1>
+}
+```
+
+
 Feel free to use the playwright tool to open in browser for testing after making the file changes

@@ -6,7 +6,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 import { Button } from "@heroui/button";
 import {
   Modal,
@@ -18,6 +18,7 @@ import {
 import { ShareResponse } from "@/types/share";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Code } from "@heroui/code";
 
 interface ShareButtonProps {
   conversationId: string;
@@ -27,6 +28,7 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
 
   // Check for existing share when modal opens
@@ -155,7 +157,7 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
             <div className="flex flex-col gap-4">
               {!shareUrl ? (
                 <Button
-                  onClick={handleShare}
+                  onPress={handleShare}
                   disabled={isLoading}
                   className="w-full"
                 >
@@ -164,14 +166,27 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
               ) : (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={shareUrl}
-                      readOnly
-                      className="flex-1 px-3 py-2 border rounded-md bg-muted"
-                    />
-                    <Button onClick={handleCopy} variant="bordered">
-                      Copy
+                    <Code
+                      radius="lg"
+                      className="flex-1 px-3 py-2 border  bg-muted"
+                    >
+                      {shareUrl}
+                    </Code>
+                    <Button
+                      isIconOnly
+                      onPress={() => {
+                        handleCopy();
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 3000);
+                      }}
+                      variant="flat"
+                      className="text-primary"
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -188,12 +203,9 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
               >
                 {isLoading ? "Deleting..." : "Delete share link"}
               </Button>
-              {/* <Button variant="bordered" onPress={() => setIsOpen(false)}>
-              Close
-            </Button>
-            <Button variant="bordered" onPress={handleDelete}>
-              Delete
-            </Button> */}
+              <Button variant="bordered" onPress={() => setIsOpen(false)}>
+                Close
+              </Button>
             </ModalFooter>
           )}
         </ModalContent>
