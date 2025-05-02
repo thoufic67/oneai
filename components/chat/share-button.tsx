@@ -1,12 +1,13 @@
 /**
  * Share button component for conversations
  * Opens a modal with sharing options and checks for existing share links
+ * Uses native Web Share API for sharing capabilities
  */
 
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check, Copy, Share2 } from "lucide-react";
+import { Check, Copy, Share, Share2 } from "lucide-react";
 import { Button } from "@heroui/button";
 import {
   Modal,
@@ -27,6 +28,7 @@ interface ShareButtonProps {
 export function ShareButton({ conversationId }: ShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
@@ -102,7 +104,7 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
 
   const handleDelete = async () => {
     try {
-      setIsLoading(true);
+      setIsDeleting(true);
       const response = await fetch(
         `/api/conversations/${conversationId}/share`,
         {
@@ -121,7 +123,25 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
       toast.error("Failed to delete share link");
       console.error("Delete error:", error);
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
+    }
+  };
+
+  const handleNativeShare = async () => {
+    if (!shareUrl) return;
+
+    try {
+      await navigator.share({
+        title: "Shared Conversation",
+        text: "Check out this OneAI conversation!",
+        url: shareUrl,
+      });
+      toast.success("Successfully shared!");
+    } catch (error) {
+      if ((error as Error).name !== "AbortError") {
+        toast.error("Failed to share");
+        console.error("Share error:", error);
+      }
     }
   };
 
@@ -143,6 +163,8 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
         onOpenChange={setIsOpen}
         backdrop="blur"
         hideCloseButton
+        // className="max-w-full"
+        size="md"
       >
         <ModalContent>
           <ModalHeader className="flex flex-col gap-2">
@@ -164,11 +186,11 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
                   {isLoading ? "Creating link..." : "Generate share link"}
                 </Button>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2">
                     <Code
                       radius="lg"
-                      className="flex-1 px-3 py-2 border  bg-muted"
+                      className="flex-1 px-3 py-2 border bg-muted max-w-full overflow-x-auto"
                     >
                       {shareUrl}
                     </Code>
@@ -188,6 +210,16 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
                         <Copy className="h-4 w-4" />
                       )}
                     </Button>
+                    {typeof navigator !== "undefined" &&
+                      "share" in navigator && (
+                        <Button
+                          isIconOnly
+                          onPress={handleNativeShare}
+                          variant="flat"
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                      )}
                   </div>
                 </div>
               )}
@@ -199,9 +231,9 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
                 onPress={handleDelete}
                 variant="bordered"
                 color="danger"
-                disabled={isLoading}
+                disabled={isDeleting}
               >
-                {isLoading ? "Deleting..." : "Delete share link"}
+                {isDeleting ? "Deleting..." : "Delete share link"}
               </Button>
               <Button variant="bordered" onPress={() => setIsOpen(false)}>
                 Close
