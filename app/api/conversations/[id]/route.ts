@@ -12,6 +12,7 @@ export async function GET(
       data: { user },
       error: sessionError,
     } = await supabase.auth.getUser();
+    console.log("User", { user });
 
     if (sessionError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
