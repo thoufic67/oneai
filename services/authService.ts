@@ -9,7 +9,7 @@ class AuthService {
   async initiateGoogleLogin() {
     try {
       const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");
-      const redirectTo = `${process.env.NEXT_PUBLIC_URL}/auth/callback`;
+      const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`;
 
       console.log("redirectTo", redirectTo);
       const options: SignInWithOAuthCredentials = {
@@ -19,8 +19,8 @@ class AuthService {
           queryParams: {
             // access_type: "offline",
             // prompt: "consent",
-            next: `https://${process.env.NEXT_PUBLIC_URL}/${redirectAfterLogin}`,
-            "x-forwarded-host": `https://${process.env.NEXT_PUBLIC_URL}/${redirectAfterLogin}`,
+            next: `https://${process.env.NEXT_PUBLIC_APP_URL}/${redirectAfterLogin}`,
+            "x-forwarded-host": `https://${process.env.NEXT_PUBLIC_APP_URL}/${redirectAfterLogin}`,
           },
         },
       };
