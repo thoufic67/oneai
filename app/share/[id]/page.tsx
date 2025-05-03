@@ -37,6 +37,7 @@ export default async function SharedConversationPage({
   }
 
   const { conversation } = await response.json();
+  console.log("conversation ", JSON.stringify(conversation));
 
   // Filter and sort messages
   const messages = conversation.messages
@@ -45,7 +46,7 @@ export default async function SharedConversationPage({
 
   return (
     <div className="flex overflow-y-auto h-screen">
-      <div className="container max-w-4xl mx-auto py-8 px-4">
+      <div className="container max-w-4xl mx-auto px-4">
         <div className="space-y-8">
           <div>
             <h1 className="text-2xl font-bold mb-2">{conversation.title}</h1>
@@ -54,9 +55,10 @@ export default async function SharedConversationPage({
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 pb-24 sm:pb-0">
             {messages.map((message: any) => (
               <ChatBubble
+                isReadonly
                 key={message.id}
                 isAssistant={message.role === "assistant"}
                 content={message.content}
