@@ -68,12 +68,12 @@ export const Navbar = () => {
               <Link href="/" className="flex items-center gap-2">
                 <Image
                   src="/one-ai-favicon.svg"
-                  alt="OneAI"
+                  alt="Aiflo"
                   width={24}
                   height={24}
                 />
                 <span className="font-bold text-lg text-primary-500">
-                  OneAI
+                  Aiflo
                 </span>
               </Link>
             </NavbarBrand>
@@ -113,11 +113,11 @@ export const Navbar = () => {
                 <Link href="/new" className="flex items-center gap-2">
                   <Image
                     src="/one-ai-favicon.svg"
-                    alt="OneAI"
+                    alt="Aiflo"
                     width={24}
                     height={24}
                   />
-                  <span className="font-bold text-lg">OneAI</span>
+                  <span className="font-bold text-lg">Aiflo</span>
                 </Link>
               </NavbarBrand>
             </NavbarContent>

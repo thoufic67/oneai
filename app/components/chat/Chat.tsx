@@ -15,7 +15,7 @@ import {
 } from "@/services/api";
 import { useAuth } from "../auth-provider";
 import { ChatBubble } from "./ChatBubble";
-import { OneAIInput } from "./OneAIInput";
+import { ChatInput } from "./ChatInput";
 import { Button, useDisclosure } from "@heroui/react";
 import { AlertCircle, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -147,10 +147,10 @@ export function Chat() {
 
   // Load initial values from session storage with expiration
   const [selectedModel, setSelectedModel] = useState<ModelType>(() =>
-    getWithExpiry("oneai_selected_model", models[0].value)
+    getWithExpiry("aiflo_selected_model", models[0].value)
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(() =>
-    getWithExpiry("oneai_web_search_enabled", false)
+    getWithExpiry("aiflo_web_search_enabled", false)
   );
 
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -167,11 +167,11 @@ export function Chat() {
 
   // Persist preferences to session storage when they change
   useEffect(() => {
-    storeWithExpiry("oneai_selected_model", selectedModel);
+    storeWithExpiry("aiflo_selected_model", selectedModel);
   }, [selectedModel]);
 
   useEffect(() => {
-    storeWithExpiry("oneai_web_search_enabled", webSearchEnabled);
+    storeWithExpiry("aiflo_web_search_enabled", webSearchEnabled);
   }, [webSearchEnabled]);
 
   useLayoutEffect(() => {
@@ -396,13 +396,13 @@ export function Chat() {
   // Handle model change and save to session storage
   const handleModelChange = (model: string) => {
     setSelectedModel(model as ModelType);
-    storeWithExpiry("oneai_selected_model", model);
+    storeWithExpiry("aiflo_selected_model", model);
   };
 
   // Handle web search toggle and save to session storage
   const handleWebSearchToggle = (enabled: boolean) => {
     setWebSearchEnabled(enabled);
-    storeWithExpiry("oneai_web_search_enabled", enabled);
+    storeWithExpiry("aiflo_web_search_enabled", enabled);
   };
 
   // Combine regular messages with streaming message for display
@@ -413,7 +413,7 @@ export function Chat() {
   // Create shared input component to avoid duplication
   const renderChatInput = () => (
     <div className="flex flex-col gap-2">
-      <OneAIInput
+      <ChatInput
         ref={inputRef}
         disabled={isLoading}
         value={inputMessage}
@@ -540,6 +540,7 @@ export function Chat() {
                     content={message.content}
                     isLoading={message === streamingMessage && isLoading}
                     model={message.model_id}
+                    isReadonly={false}
                   />
                 ))}
                 {streamingMessage && (
@@ -548,6 +549,7 @@ export function Chat() {
                     content={streamingMessage.content}
                     isLoading={true}
                     model={selectedModel}
+                    isReadonly={true}
                   />
                 )}
                 {/* <Image

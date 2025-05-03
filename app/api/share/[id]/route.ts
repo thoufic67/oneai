@@ -38,6 +38,7 @@ export async function GET(
             id,
             role,
             content,
+            model_id,
             created_at,
             sequence_number,
             is_latest

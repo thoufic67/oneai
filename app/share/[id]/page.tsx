@@ -47,15 +47,15 @@ export default async function SharedConversationPage({
   return (
     <div className="flex overflow-y-auto h-screen">
       <div className="container max-w-4xl mx-auto px-4">
-        <div className="space-y-8">
-          <div>
+        <div className="space-y-8 sm:pt-24 ">
+          <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">{conversation.title}</h1>
             <p className="text-sm text-muted-foreground">
               Shared conversation • Read-only view
             </p>
           </div>
 
-          <div className="space-y-6 pb-24 sm:pb-0">
+          <div className="space-y-6 pb-24">
             {messages.map((message: any) => (
               <ChatBubble
                 isReadonly
@@ -63,7 +63,7 @@ export default async function SharedConversationPage({
                 isAssistant={message.role === "assistant"}
                 content={message.content}
                 isLoading={false}
-                model={message.model}
+                model={message.model_id}
               />
             ))}
           </div>

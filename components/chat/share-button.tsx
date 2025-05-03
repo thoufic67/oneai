@@ -133,7 +133,7 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
     try {
       await navigator.share({
         title: "Shared Conversation",
-        text: "Check out this OneAI conversation!",
+        text: "Check out this Aiflo conversation!",
         url: shareUrl,
       });
       toast.success("Successfully shared!");

@@ -1,4 +1,4 @@
-# OneAI Platform Planning
+# Aiflo Platform Planning
 
 ## Overview
 
@@ -991,7 +991,7 @@ export const OPENROUTER_CONFIG = {
   },
   HEADERS: {
     "HTTP-Referer": process.env.NEXT_PUBLIC_API_URL,
-    "X-Title": "OneAI Platform",
+    "X-Title": "Aiflo Platform",
   },
 };
 ```
@@ -1134,7 +1134,7 @@ export const RazorpayCheckoutButton = ({ plan }: { plan: SubscriptionPlan }) => 
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         subscription_id,
-        name: "OneAI Platform",
+        name: "Aiflo Platform",
         description: `${plan.name} Subscription`,
         image: "/logo.png",
         callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/verify`,
