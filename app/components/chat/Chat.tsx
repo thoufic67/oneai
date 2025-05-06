@@ -155,7 +155,9 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     getWithExpiry("aiflo_web_search_enabled", false)
   );
 
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(
+    initialConversation?.id || null
+  );
   const [loadingConversation, setLoadingConversation] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<
     Conversation | undefined
