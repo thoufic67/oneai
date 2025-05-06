@@ -43,7 +43,7 @@ export default function Home() {
         {/* Logo and Title */}
         <div className="space-y-4 animate-blur-in-up">
           <Image
-            src="/one-ai-favicon.svg"
+            src="/favicon.svg"
             alt="Aiflo Logo"
             width={80}
             height={80}

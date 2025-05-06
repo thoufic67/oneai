@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   icons: {
-    icon: "/one-ai-favicon.svg",
+    icon: "/favicon.svg",
   },
 };
 
