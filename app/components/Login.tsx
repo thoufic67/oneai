@@ -16,7 +16,7 @@ export default function Login() {
       <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg animate-blur-in border-2 border-primary-500">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Welcome to OneAI
+            Welcome to Aiflo
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Sign in to continue

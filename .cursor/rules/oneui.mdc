@@ -17,6 +17,27 @@ Important:
 * Never try to use a different component library
 * Don't use the older next ui components always use heroui components
 * Whenever you are creating new file add a file comment describing what the file does, whenever file changes update the description of the file
+* Always use the createClient from `"@/lib/supabase/server";` for supabase client in api routes
+* Ensure you are cleaning up any screenshot taken
+
+
+
+localhost url: http://localhost:3001/
+
+
+
+While reading params in server components or in api paths follow the below example
+```
+export default function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  return <h1>My Page</h1>
+}
+```
 
 
 Feel free to use the playwright tool to open in browser for testing after making the file changes

@@ -175,6 +175,22 @@ create table public.usage_quotas (
   constraint valid_quota_key check (quota_key in ('small_messages', 'large_messages', 'image_generation'))
 );
 
+-- Shared Conversations Table
+CREATE TABLE shared_conversations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id),
+    user_id UUID NOT NULL REFERENCES users(id),
+    share_id TEXT UNIQUE NOT NULL,  -- Unique identifier for sharing
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,  -- Optional expiration time
+    is_active BOOLEAN DEFAULT true,
+    metadata JSONB,
+    CONSTRAINT fk_conversation
+        FOREIGN KEY (conversation_id)
+        REFERENCES conversations(id)
+        ON DELETE CASCADE
+);
+
 -- Indexes
 
 -- Subscriptions indexes
@@ -202,6 +218,10 @@ create index idx_attachments_user on public.attachments(user_id);
 -- Usage quotas indexes
 create index idx_quota_usage_user on public.usage_quotas(user_id, quota_key);
 create index idx_quota_reset on public.usage_quotas(next_reset_at) where used_count > 0;
+
+-- Shared conversations indexes
+CREATE INDEX idx_shared_conversations_share_id ON shared_conversations(share_id);
+CREATE INDEX idx_shared_conversations_user ON shared_conversations(user_id);
 
 -- RLS Policies
 
@@ -286,6 +306,17 @@ create policy "Users can perform all actions on their own conversations"
   on public.conversations for all
   using (auth.uid() = user_id);
 
+-- Allow public access to shared conversations
+CREATE POLICY "Public can view shared conversations"
+    ON conversations FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM shared_conversations
+            WHERE conversation_id = conversations.id
+            AND is_active = true
+        )
+    );
+
 -- Chat messages table policies
 alter table public.chat_messages enable row level security;
 
@@ -298,6 +329,17 @@ create policy "Users can perform all actions on messages in their conversations"
       where id = chat_messages.conversation_id
     )
   );
+
+-- Allow public access to messages of shared conversations
+CREATE POLICY "Public can view messages of shared conversations"
+    ON chat_messages FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM shared_conversations
+            WHERE conversation_id = chat_messages.conversation_id
+            AND is_active = true
+        )
+    );
 
 -- Attachments table policies
 alter table public.attachments enable row level security;
@@ -320,6 +362,29 @@ create policy "Users can update their own usage quotas"
 create policy "System can create initial usage quotas"
   on public.usage_quotas for insert
   with check (auth.uid() = user_id);
+
+-- Shared conversations policies
+ALTER TABLE shared_conversations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own shared conversations"
+    ON shared_conversations FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create shared conversations"
+    ON shared_conversations FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own shared conversations"
+    ON shared_conversations FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own shared conversations"
+    ON shared_conversations FOR DELETE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Public can view active shared conversations"
+    ON shared_conversations FOR SELECT
+    USING (is_active = true);
 
 -- Enable realtime for relevant tables
 alter publication supabase_realtime add table conversations;

@@ -1,4 +1,4 @@
-# OneAI Platform Implementation Tasks
+# Aiflo Platform Implementation Tasks
 
 ## Initial Setup
 
@@ -121,6 +121,61 @@
   - [x] Conversation sharing
   - [x] Export functionality
   - [x] Title management
+
+### Share Functionality Implementation
+
+- [x] Database Setup
+
+  - [x] Create shared_conversations table
+  - [x] Set up indexes for performance
+  - [x] Configure RLS policies
+  - [x] Test database constraints
+
+- [x] API Implementation
+
+  - [x] Create /api/conversations/[id]/share endpoint
+    - [x] Generate unique share ID
+    - [x] Create shared conversation record
+    - [x] Return shareable URL
+  - [x] Create /api/share/[id] endpoint
+    - [x] Fetch shared conversation
+    - [x] Validate share status
+    - [x] Return conversation data
+  - [x] Add share deactivation endpoint
+    - [x] Toggle share status
+    - [x] Handle expiration
+  - [x] Create /api/conversations/[id]/share/delete endpoint
+    - [x] Validate user ownership
+    - [x] Remove shared conversation record
+    - [x] Handle concurrent deletions
+    - [x] Return success/failure status
+
+- [x] UI Components
+
+  - [x] Add Share button to navbar
+    - [x] Show only on conversation pages
+    - [x] Add click handler
+  - [x] Create Share Modal component
+    - [x] Generate link button
+    - [x] Copy link functionality
+    - [x] Delete share button
+    - [x] Confirmation dialog for deletion
+    - [x] Success/error notifications
+    - [x] Loading states
+  - [x] Create Shared Conversation View
+    - [x] Read-only conversation display
+    - [x] Error handling for invalid/expired/deleted shares
+    - [x] Loading states
+
+- [ ] Testing & Validation
+  - [ ] Test share link generation
+  - [ ] Test share deletion
+    - [ ] Verify owner-only deletion
+    - [ ] Test concurrent deletion handling
+    - [ ] Verify immediate public access removal
+  - [ ] Verify public access
+  - [ ] Test expiration handling
+  - [ ] Validate security policies
 
 ### Subscription API
 

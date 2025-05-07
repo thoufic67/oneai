@@ -252,7 +252,7 @@ export default function Login() {
 
   return (
     <div className="login-container">
-      <h1>Welcome to OneAI</h1>
+      <h1>Welcome to Aiflo</h1>
       <p>Sign in to continue</p>
 
       <button className="google-login-button" onClick={handleGoogleLogin}>

@@ -43,14 +43,14 @@ export default function Home() {
         {/* Logo and Title */}
         <div className="space-y-4 animate-blur-in-up">
           <Image
-            src="/one-ai-favicon.svg"
-            alt="OneAI Logo"
+            src="/favicon.svg"
+            alt="Aiflo Logo"
             width={80}
             height={80}
             className="mx-auto"
           />
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            One AI
+            AI Flo
           </h1>
         </div>
 

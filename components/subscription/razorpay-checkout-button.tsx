@@ -50,7 +50,7 @@ export const RazorpayCheckoutButton = ({
       const options = {
         key: process.env.RAZORPAY_KEY_ID!,
         subscription_id,
-        name: "OneAI Platform",
+        name: "Aiflo Platform",
         description: `${plan.name} Subscription`,
         image: "/logo.png",
         callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/verify`,

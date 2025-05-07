@@ -2,12 +2,20 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Command } from "cmdk";
-import { Search, Plus, MessageSquare, Loader2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  MessageSquare,
+  Loader2,
+  ArrowLeft,
+  Home,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { chatService, Conversation } from "@/services/api";
 import { Modal, ModalContent } from "@heroui/react";
 import { cn } from "@/lib/utils";
 import "./command-menu.css";
+import { BackgroundGradient } from "../background-gradient";
 
 interface CommandKProps {
   isOpen: boolean;
@@ -121,9 +129,9 @@ export function CommandK({
               <Command.Group heading="Navigation" className="command-group">
                 <Command.Item
                   className="command-item"
-                  onSelect={() => runCommand(() => router.push("/"))}
+                  onSelect={() => runCommand(() => router.push("/new"))}
                 >
-                  <MessageSquare className="mr-2 h-4 w-4" />
+                  <Home className="mr-2 h-4 w-4" />
                   Go to Home
                   <div className="command-shortcut">⌘H</div>
                 </Command.Item>
@@ -134,7 +142,7 @@ export function CommandK({
                       runCommand(() => router.push(`/c/${currentChatId}`))
                     }
                   >
-                    <MessageSquare className="mr-2 h-4 w-4" />
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Return to Current Chat
                     <div className="command-shortcut">⌘C</div>
                   </Command.Item>
@@ -177,10 +185,18 @@ export function CommandK({
                       className="command-item"
                       onSelect={() => handleSelectChat(conversation.id)}
                     >
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      {conversation.title || "Untitled Conversation"}
-                      <div className="command-shortcut">
-                        {new Date(conversation.created_at).toLocaleDateString()}
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center">
+                          <MessageSquare className="mr-2 h-4 w-4 min-w-4 min-h-4" />
+                          <p className="max-w-md truncate">
+                            {conversation.title || "Untitled Conversation"}
+                          </p>
+                        </div>
+                        <div className="command-shortcut">
+                          {new Date(
+                            conversation.created_at
+                          ).toLocaleDateString()}
+                        </div>
                       </div>
                     </Command.Item>
                   ))}

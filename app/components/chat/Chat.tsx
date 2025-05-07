@@ -15,7 +15,7 @@ import {
 } from "@/services/api";
 import { useAuth } from "../auth-provider";
 import { ChatBubble } from "./ChatBubble";
-import { OneAIInput } from "./OneAIInput";
+import { ChatInput } from "./ChatInput";
 import { Button, useDisclosure } from "@heroui/react";
 import { AlertCircle, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,6 +80,11 @@ interface Model {
   logo: string;
 }
 
+interface ChatProps {
+  initialMessages?: ChatMessage[];
+  initialConversation?: Conversation;
+}
+
 export const models: Model[] = [
   {
     name: "Gemini",
@@ -128,16 +133,13 @@ export const models: Model[] = [
   // },
 ];
 
-export function Chat() {
+export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const conversationId = params?.id as string;
-  const isNewChat = pathname === "/new";
+
   const { user } = useAuth();
 
   // State for current messages display
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<Message | null>(
@@ -147,17 +149,19 @@ export function Chat() {
 
   // Load initial values from session storage with expiration
   const [selectedModel, setSelectedModel] = useState<ModelType>(() =>
-    getWithExpiry("oneai_selected_model", models[0].value)
+    getWithExpiry("aiflo_selected_model", models[0].value)
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(() =>
-    getWithExpiry("oneai_web_search_enabled", false)
+    getWithExpiry("aiflo_web_search_enabled", false)
   );
 
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [loadingConversation, setLoadingConversation] = useState(true);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(
+    initialConversation?.id || null
+  );
+  const [loadingConversation, setLoadingConversation] = useState(false);
   const [currentConversation, setCurrentConversation] = useState<
     Conversation | undefined
-  >(undefined);
+  >(initialConversation);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -167,11 +171,11 @@ export function Chat() {
 
   // Persist preferences to session storage when they change
   useEffect(() => {
-    storeWithExpiry("oneai_selected_model", selectedModel);
+    storeWithExpiry("aiflo_selected_model", selectedModel);
   }, [selectedModel]);
 
   useEffect(() => {
-    storeWithExpiry("oneai_web_search_enabled", webSearchEnabled);
+    storeWithExpiry("aiflo_web_search_enabled", webSearchEnabled);
   }, [webSearchEnabled]);
 
   useLayoutEffect(() => {
@@ -188,55 +192,6 @@ export function Chat() {
       }
     };
   }, [isLoading, animateVideoRef.current]);
-
-  // Load conversation when path contains a conversation ID
-  useEffect(() => {
-    if (conversationId && !isNewChat) {
-      handleSelectChat(conversationId, false);
-    } else if (isNewChat) {
-      setLoadingConversation(false);
-      handleNewChat(false);
-    }
-  }, [conversationId, isNewChat]);
-
-  // Load conversation messages when a conversation is selected
-  const loadConversationMessages = async (conversationId: string) => {
-    try {
-      setLoadingConversation(true);
-      const messagesData =
-        await chatService.getConversationMessages(conversationId);
-
-      // Also get the conversation details
-      const conversationDetails =
-        await chatService.getConversation(conversationId);
-      setCurrentConversation(conversationDetails);
-      console.log("messagesData", messagesData);
-      // Convert API messages to component format
-      // const formattedMessages: ChatMessage[] = messagesData?.data?.map(
-      //   (msg: ChatMessage) => ({
-      //     id: msg.id,
-      //     created_at: msg.created_at,
-      //     role: msg.role as "user" | "assistant",
-      //     content: msg.content,
-      //     conversation_id: msg.conversation_id,
-      //     user_id: msg.user_id,
-      //     sequence_number: msg?.sequence_number || 0,
-      //     revision_number: msg?.revision_number || 0,
-      //     model_id: msg.model_id,
-      //   })
-      // );
-
-      setMessages(messagesData?.data || []);
-
-      // Update model if present in message metadata
-      // Note: This would need to be implemented on the backend to store model in message metadata
-    } catch (error) {
-      console.error("Error loading conversation messages:", error);
-      setError("Failed to load conversation messages");
-    } finally {
-      setLoadingConversation(false);
-    }
-  };
 
   useEffect(() => {
     scrollToBottom();
@@ -338,17 +293,6 @@ export function Chat() {
           inputRef.current?.focus();
         }
       );
-
-      // Update conversation if needed
-      // if (conversationId && !currentChatId) {
-      //   try {
-      //     const conversation =
-      //       await chatService.getConversation(conversationId);
-      //     setNewConversation(conversation);
-      //   } catch (error) {
-      //     console.error("Error fetching conversation:", error);
-      //   }
-      // }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       console.error("Chat error:", error);
@@ -375,34 +319,16 @@ export function Chat() {
     inputRef.current?.focus();
   };
 
-  const handleSelectChat = async (chatId: string, navigate = true) => {
-    try {
-      setCurrentChatId(chatId);
-      await loadConversationMessages(chatId);
-      setStreamingMessage(null);
-      setError(null);
-      setInputMessage("");
-
-      // Navigate to the selected conversation route if needed
-      if (navigate) {
-        router.push(`/c/${chatId}`);
-      }
-    } catch (error) {
-      console.error("Error selecting chat:", error);
-      setError("Failed to load selected conversation");
-    }
-  };
-
   // Handle model change and save to session storage
   const handleModelChange = (model: string) => {
     setSelectedModel(model as ModelType);
-    storeWithExpiry("oneai_selected_model", model);
+    storeWithExpiry("aiflo_selected_model", model);
   };
 
   // Handle web search toggle and save to session storage
   const handleWebSearchToggle = (enabled: boolean) => {
     setWebSearchEnabled(enabled);
-    storeWithExpiry("oneai_web_search_enabled", enabled);
+    storeWithExpiry("aiflo_web_search_enabled", enabled);
   };
 
   // Combine regular messages with streaming message for display
@@ -413,7 +339,7 @@ export function Chat() {
   // Create shared input component to avoid duplication
   const renderChatInput = () => (
     <div className="flex flex-col gap-2">
-      <OneAIInput
+      <ChatInput
         ref={inputRef}
         disabled={isLoading}
         value={inputMessage}
@@ -540,6 +466,7 @@ export function Chat() {
                     content={message.content}
                     isLoading={message === streamingMessage && isLoading}
                     model={message.model_id}
+                    isReadonly={false}
                   />
                 ))}
                 {streamingMessage && (
@@ -548,6 +475,7 @@ export function Chat() {
                     content={streamingMessage.content}
                     isLoading={true}
                     model={selectedModel}
+                    isReadonly={true}
                   />
                 )}
                 {/* <Image

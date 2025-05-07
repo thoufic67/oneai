@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, Button, Image, Tooltip } from "@heroui/react";
 import { motion } from "framer-motion";
 import Markdown from "react-markdown";
@@ -9,6 +11,7 @@ import { useAuth } from "@/app/components/auth-provider";
 import { models } from "@/app/components/chat/Chat";
 
 interface ChatBubbleProps {
+  isReadonly: boolean;
   isAssistant: boolean;
   content: string;
   isLoading?: boolean;
@@ -214,6 +217,7 @@ const MarkdownComponents = {
 };
 
 export function ChatBubble({
+  isReadonly,
   isAssistant,
   content,
   isLoading,
@@ -306,7 +310,7 @@ export function ChatBubble({
                   <div>
                     <Button
                       onPress={onRegenerate}
-                      isDisabled
+                      isDisabled={isReadonly || true}
                       variant="flat"
                       radius="lg"
                       size="sm"

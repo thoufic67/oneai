@@ -30,7 +30,7 @@ function SettingsPage() {
   const [usageBasedPricing, setUsageBasedPricing] = useState(true);
   const [usageBasedPricingPremium, setUsageBasedPricingPremium] =
     useState(true);
-
+  console.log("quotaData", quotaData);
   // Helper function to format the reset date
   const formatResetDate = (date: Date) => {
     const now = new Date();
@@ -142,36 +142,38 @@ function SettingsPage() {
               ) : (
                 <div>
                   {quotaData &&
-                    Object.entries(quotaData.quotas).map(([key, quota]) => {
-                      const resetDays = formatResetDate(quota.resetsAt);
-                      return (
-                        <div key={key} className="mb-6">
-                          <div className="flex justify-between text-sm mb-2">
-                            <span className="capitalize">
-                              {key.replace(/_/g, " ")}
-                            </span>
-                            <div className="text-right">
-                              <span>
-                                {quota.used} / {quota.limit}
+                    Object.entries(quotaData.quotas)
+                      .filter(([key]) => key === "small_messages")
+                      .map(([key, quota]) => {
+                        const resetDays = formatResetDate(quota.resetsAt);
+                        return (
+                          <div key={key} className="mb-6">
+                            <div className="flex justify-between text-sm mb-2">
+                              <span className="capitalize">
+                                {key.replace(/_/g, " ")}
                               </span>
+                              <div className="text-right">
+                                <span>
+                                  {quota.used} / {quota.limit}
+                                </span>
+                              </div>
+                            </div>
+                            <Progress
+                              value={Math.min(100, quota.percentageUsed)}
+                              className="w-full"
+                              size="md"
+                            />
+                            <div className="flex justify-between text-xs text-gray-500 mt-1">
+                              <span>
+                                {quota.used >= quota.limit
+                                  ? `You've hit your limit of ${quota.limit} requests`
+                                  : `${quota.remaining} requests remaining`}
+                              </span>
+                              <span>Resets in {resetDays} days</span>
                             </div>
                           </div>
-                          <Progress
-                            value={Math.min(100, quota.percentageUsed)}
-                            className="w-full"
-                            size="md"
-                          />
-                          <div className="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>
-                              {quota.used >= quota.limit
-                                ? `You've hit your limit of ${quota.limit} requests`
-                                : `${quota.remaining} requests remaining`}
-                            </span>
-                            <span>Resets in {resetDays} days</span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                 </div>
               )}
             </CardBody>

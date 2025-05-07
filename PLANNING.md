@@ -1,4 +1,4 @@
-# OneAI Platform Planning
+# Aiflo Platform Planning
 
 ## Overview
 
@@ -366,6 +366,98 @@ WHERE user_id = :user_id
     AND reset_at > CURRENT_TIMESTAMP;
 */
 ```
+
+### Shared Conversations Table
+
+```sql
+CREATE TABLE shared_conversations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id),
+    user_id UUID NOT NULL REFERENCES users(id),
+    share_id TEXT UNIQUE NOT NULL,  -- Unique identifier for sharing
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,  -- Optional expiration time
+    is_active BOOLEAN DEFAULT true,
+    metadata JSONB,
+    CONSTRAINT fk_conversation
+        FOREIGN KEY (conversation_id)
+        REFERENCES conversations(id)
+        ON DELETE CASCADE
+);
+
+-- Index for quick lookups
+CREATE INDEX idx_shared_conversations_share_id ON shared_conversations(share_id);
+CREATE INDEX idx_shared_conversations_user ON shared_conversations(user_id);
+
+-- RLS policies for shared_conversations
+ALTER TABLE shared_conversations ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to view their own shared conversations
+CREATE POLICY "Users can view own shared conversations"
+    ON shared_conversations FOR SELECT
+    USING (auth.uid() = user_id);
+
+-- Allow users to create shared conversations
+CREATE POLICY "Users can create shared conversations"
+    ON shared_conversations FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+-- Allow users to manage their own shared conversations
+CREATE POLICY "Users can manage own shared conversations"
+    ON shared_conversations FOR UPDATE
+    USING (auth.uid() = user_id);
+
+-- Allow public access to active shared conversations
+CREATE POLICY "Public can view active shared conversations"
+    ON shared_conversations FOR SELECT
+    USING (is_active = true);
+```
+
+### Share Functionality Flow
+
+1. **Share Button Display**
+
+   - Visible only on conversation pages (`/c/[id]`)
+   - Located in the navbar
+   - Uses HeroUI Modal for share dialog
+
+2. **Share Link Generation**
+
+   - User clicks "Generate Share Link"
+   - System creates entry in shared_conversations
+   - Generates unique share_id
+   - Returns shareable URL
+
+3. **Share Management**
+
+   - View existing share status
+   - Copy share link button
+   - Delete share button
+   - Confirmation dialog for deletion
+   - Real-time status updates
+
+4. **Shared View Access**
+
+   - Public access via `/share/[id]`
+   - Read-only view of conversation
+   - No authentication required
+   - Maintains same UI/UX as main chat
+   - Excludes input/interaction elements
+
+5. **Security Considerations**
+
+   - Only conversation owner can generate shares
+   - Only owner can delete shares
+   - Public access limited to active shares
+   - Optional expiration time
+   - Share can be deactivated by owner
+   - Immediate effect on share deletion
+
+6. **Database Operations**
+   - Hard delete from shared_conversations table
+   - Cascading delete for related data
+   - Maintain audit log of share operations
+   - Handle concurrent access scenarios
 
 ## Quota Tracking and Subscription Management
 
@@ -899,7 +991,7 @@ export const OPENROUTER_CONFIG = {
   },
   HEADERS: {
     "HTTP-Referer": process.env.NEXT_PUBLIC_API_URL,
-    "X-Title": "OneAI Platform",
+    "X-Title": "Aiflo Platform",
   },
 };
 ```
@@ -1042,7 +1134,7 @@ export const RazorpayCheckoutButton = ({ plan }: { plan: SubscriptionPlan }) => 
       const options = {
         key: process.env.RAZORPAY_KEY_ID!,
         subscription_id,
-        name: "OneAI Platform",
+        name: "Aiflo Platform",
         description: `${plan.name} Subscription`,
         image: "/logo.png",
         callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/subscription/verify`,

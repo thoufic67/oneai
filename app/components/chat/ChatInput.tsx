@@ -23,7 +23,7 @@ interface ModelOption {
   logo?: string;
 }
 
-interface OneAIInputProps {
+interface ChatInputProps {
   classNames?: {
     inputWrapper?: string;
     label?: string;
@@ -46,7 +46,7 @@ interface OneAIInputProps {
   onModelChange?: (model: string) => void;
 }
 
-const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
+const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
   (props, ref) => {
     const { theme } = useTheme();
     const {
@@ -237,7 +237,7 @@ const OneAIInput = forwardRef<HTMLTextAreaElement, OneAIInputProps>(
   }
 );
 
-OneAIInput.displayName = "OneAIInput";
+ChatInput.displayName = "ChatInput";
 
-export default OneAIInput;
-export { OneAIInput };
+export default ChatInput;
+export { ChatInput };
