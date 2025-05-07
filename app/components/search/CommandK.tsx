@@ -185,9 +185,13 @@ export function CommandK({
                       className="command-item"
                       onSelect={() => handleSelectChat(conversation.id)}
                     >
-                      <div className="flex items-center justify-between">
-                        <MessageSquare className="mr-2 h-4 w-4 min-w-4 min-h-4" />
-                        {conversation.title || "Untitled Conversation"}
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center">
+                          <MessageSquare className="mr-2 h-4 w-4 min-w-4 min-h-4" />
+                          <p className="max-w-md truncate">
+                            {conversation.title || "Untitled Conversation"}
+                          </p>
+                        </div>
                         <div className="command-shortcut">
                           {new Date(
                             conversation.created_at
