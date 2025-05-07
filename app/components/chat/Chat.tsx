@@ -195,7 +195,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingMessage]);
+  }, [messages]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
