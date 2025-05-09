@@ -50,7 +50,7 @@ export default async function SharedConversationPage({
   return (
     <div className="flex overflow-y-auto h-screen">
       <div className="container max-w-4xl mx-auto px-4">
-        <div className="space-y-8 sm:pt-24 ">
+        <div className="space-y-8 pt-24 ">
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-2">{conversation.title}</h1>
             <p className="text-sm text-muted-foreground">
