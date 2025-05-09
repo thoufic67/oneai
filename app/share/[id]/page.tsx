@@ -1,12 +1,15 @@
 /**
  * Shared conversation view page
  * Displays a read-only view of a shared conversation
+ *
+ * Now also sets the page description dynamically based on the conversation title.
  */
 
 import { notFound } from "next/navigation";
 // import { Message } from "@/components/chat/message";
 import { ShareError } from "@/types/share";
 import { ChatBubble } from "@/app/components/chat/ChatBubble";
+import { Metadata } from "next";
 
 interface SharedConversationPageProps {
   params: Promise<{ id: string }>;
@@ -71,4 +74,29 @@ export default async function SharedConversationPage({
       </div>
     </div>
   );
+}
+
+// Add this function to dynamically set metadata for the page
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const id = (await params).id;
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/share/${id}`
+    );
+    if (!response.ok) throw new Error("Not found");
+    const { conversation } = await response.json();
+    return {
+      title: conversation.title,
+      description: `Shared conversation: ${conversation.title}`,
+    };
+  } catch {
+    return {
+      title: "Shared Conversation",
+      description: "This is a shared conversation view.",
+    };
+  }
 }

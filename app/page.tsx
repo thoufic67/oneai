@@ -1,9 +1,13 @@
 /**
  * @file page.tsx
  * @description Landing page component that showcases the AI model access platform with pricing and features
+ *
+ * Now also sets the page description and title dynamically using siteConfig.
  */
 import Image from "next/image";
 import LandingPageButton from "./components/landing-page-button";
+import { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 
 export default function Home() {
   const aiModels = [
@@ -85,4 +89,12 @@ export default function Home() {
       </div>
     </main>
   );
+}
+
+// Add this function to dynamically set metadata for the landing page
+export function generateMetadata(): Metadata {
+  return {
+    title: siteConfig.name,
+    description: siteConfig.description,
+  };
 }
