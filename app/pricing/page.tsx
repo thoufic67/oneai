@@ -14,18 +14,6 @@ import { RazorpayCheckoutOptions } from "@/lib/razorpay";
 import { useState } from "react";
 import Script from "next/script";
 
-export const initializeRazorpayCheckout = async (
-  options: RazorpayCheckoutOptions
-) => {
-  // Load Razorpay script if not already loaded
-  if (!(window as any).Razorpay) {
-    // await loadRazorpayScript();
-  }
-
-  const razorpay = new (window as any).Razorpay(options);
-  return razorpay;
-};
-
 // const loadRazorpayScript = (): Promise<void> => {
 //   return new Promise((resolve) => {
 //     const script = document.createElement("script");
@@ -121,7 +109,8 @@ export default function PricingPage() {
         },
       };
 
-      const razorpay = await initializeRazorpayCheckout(options);
+      const razorpay = new (window as any).Razorpay(options);
+
       razorpay.open();
     } catch (error) {
       console.error("Payment error:", error);
