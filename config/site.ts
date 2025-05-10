@@ -1,8 +1,8 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "AI Flo",
-  description: "Make beautiful websites regardless of your design experience.",
+  name: "AI Flow",
+  description: "One stop solution for all your AI needs",
   navItems: [
     {
       label: "Home",

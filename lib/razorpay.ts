@@ -3,10 +3,13 @@
  */
 
 import Razorpay from "razorpay";
+import crypto from "crypto";
+import { Subscriptions } from "razorpay/dist/types/subscriptions";
+import { Plans } from "razorpay/dist/types/plans";
 
 // Server-side instance
 export const razorpayServer = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
@@ -58,13 +61,15 @@ export const handleRazorpayError = (error: any) => {
   throw error;
 };
 
+/**
+ * Verify Razorpay payment signature
+ */
 export const verifyRazorpayPayment = async (
   razorpay_payment_id: string,
   razorpay_subscription_id: string,
   razorpay_signature: string
 ) => {
   const text = razorpay_payment_id + "|" + razorpay_subscription_id;
-  const crypto = require("crypto");
   const generated_signature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
     .update(text)
@@ -88,23 +93,33 @@ export const verifyWebhookSignature = (
   return digest === signature;
 };
 
-export const initializeRazorpayCheckout = async (
-  options: RazorpayCheckoutOptions
-) => {
-  // Load Razorpay script if not already loaded
-  if (!(window as any).Razorpay) {
-    await loadRazorpayScript();
+/**
+ * Get subscription details from Razorpay
+ */
+export const getRazorpaySubscription = async (
+  subscriptionId: string
+): Promise<
+  Subscriptions.RazorpaySubscription & { amount: number; currency: string } & {
+    metadata: {
+      plan: Plans.RazorPayPlans;
+    };
   }
+> => {
+  try {
+    const subscription =
+      await razorpayServer.subscriptions.fetch(subscriptionId);
+    const plan = await razorpayServer.plans.fetch(subscription.plan_id);
 
-  const razorpay = new (window as any).Razorpay(options);
-  return razorpay;
-};
-
-const loadRazorpayScript = (): Promise<void> => {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve();
-    document.body.appendChild(script);
-  });
+    return {
+      ...(subscription as unknown as Subscriptions.RazorpaySubscription),
+      amount: Number(plan.item.amount),
+      currency: plan.item.currency || "INR",
+      metadata: {
+        plan: plan,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching Razorpay subscription:", error);
+    throw error;
+  }
 };

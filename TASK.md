@@ -179,36 +179,36 @@
 
 ### Subscription API
 
-- [ ] Razorpay Integration Setup
+- [x] Razorpay Integration Setup
 
-  - [ ] Create Razorpay account and get API keys
-  - [ ] Set up webhook endpoints
-  - [ ] Configure subscription plans in dashboard
-  - [ ] Add test mode configurations
-  - [ ] Implement signature verification
+  - [x] Create Razorpay account and get API keys
+  - [x] Set up webhook endpoints
+  - [x] Configure subscription plans in dashboard
+  - [x] Add test mode configurations
+  - [x] Implement signature verification
 
-- [ ] Frontend Integration
+- [x] Frontend Integration
 
-  - [ ] Create RazorpayCheckoutButton component
-  - [ ] Implement checkout initialization
-  - [ ] Add payment success/failure handlers
-  - [ ] Create loading and error states
-  - [ ] Add retry mechanism for failed payments
+  - [x] Create RazorpayCheckoutButton component
+  - [x] Implement checkout initialization
+  - [x] Add payment success/failure handlers
+  - [x] Create loading and error states
+  - [x] Add retry mechanism for failed payments
 
-- [ ] Backend Implementation
+- [x] Backend Implementation
 
-  - [ ] Create subscription creation endpoint
-  - [ ] Implement webhook handler
-  - [ ] Add payment verification
-  - [ ] Set up subscription status tracking
-  - [ ] Implement subscription cancellation
+  - [x] Create subscription creation endpoint
+  - [x] Implement webhook handler
+  - [x] Add payment verification
+  - [x] Set up subscription status tracking
+  - [x] Implement subscription cancellation
 
-- [ ] Database Updates
+- [x] Database Updates
 
-  - [ ] Add payment_status to subscriptions table
-  - [ ] Create subscription_payments table
-  - [ ] Set up payment tracking indexes
-  - [ ] Add payment history tracking
+  - [x] Add payment_status to subscriptions table
+  - [x] Create subscription_payments table
+  - [x] Set up payment tracking indexes
+  - [x] Add payment history tracking
 
 - [ ] Testing & Validation
 
