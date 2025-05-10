@@ -152,7 +152,7 @@ export async function POST(req: Request) {
           await supabase
             .from("subscriptions")
             .update({
-              status: "authenticated",
+              // status: "authenticated",
               payment_status: "authorized",
               metadata: {
                 ...subscriptionEntity,
@@ -250,19 +250,25 @@ export async function POST(req: Request) {
 
         const { data, error } = await supabase
           .from("subscription_payments")
-          .insert({
-            subscription_id: subscriptionEntity.id,
-            razorpay_payment_id: paymentEntity.id,
-            razorpay_signature: signature || "",
-            amount: paymentEntity.amount,
-            currency: paymentEntity.currency,
-            status: paymentEntity.status,
-            metadata: {
-              ...paymentEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
+          .upsert(
+            {
+              subscription_id: subscriptionEntity.id,
+              razorpay_payment_id: paymentEntity.id,
+              idempotency_key: subscriptionEntity.id + "-" + paymentEntity.id,
+              razorpay_signature: signature || "",
+              amount: paymentEntity.amount,
+              currency: paymentEntity.currency,
+              status: paymentEntity.status,
+              metadata: {
+                ...paymentEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
             },
-          });
+            {
+              onConflict: "idempotency_key",
+            }
+          );
         if (error) {
           console.error("[Webhook] Error recording payment", { error });
         } else {
