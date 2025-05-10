@@ -18,9 +18,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse form-urlencoded body
-    const text = await req.text();
-    const body = Object.fromEntries(new URLSearchParams(text));
+    // Parse JSON body
+    const body = await req.json();
 
     const {
       razorpay_payment_id,

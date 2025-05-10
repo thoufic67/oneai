@@ -24,6 +24,7 @@ import { RazorpayCheckoutOptions } from "@/lib/razorpay";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Script from "next/script";
+import Confetti from "react-confetti"; // Confetti animation for payment success
 
 // const loadRazorpayScript = (): Promise<void> => {
 //   return new Promise((resolve) => {
@@ -111,8 +112,9 @@ export default function PricingPage() {
         name: "Aiflo",
         description: `${plan.name} Subscription`,
         image: "/favicon.svg", // Add your logo path
-        callback_url: `${window.location.origin}/api/subscription/verify`,
+        // callback_url: `${window.location.origin}/api/subscription/verify`,
         handler: (response: any) => {
+          setIsLoading(true);
           console.log("Razorpay response:", response);
           const {
             razorpay_payment_id,
@@ -134,6 +136,9 @@ export default function PricingPage() {
             })
             .catch((err) => {
               console.error("Razorpay verification error:", err);
+            })
+            .finally(() => {
+              setIsLoading(false);
             });
         },
         prefill: {
@@ -183,6 +188,8 @@ export default function PricingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 min-h-full">
+      {/* Show confetti when payment is successful */}
+
       <Script
         type="text/javascript"
         src="https://checkout.razorpay.com/v1/checkout.js"
@@ -194,58 +201,68 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <div className="flex justify-center w-full max-w-md">
-        {PRICING_PLANS.map((plan) => (
-          <Card
-            key={plan.name}
-            className="animate-blur-in w-full border-2 border-primary-500 hover:border-primary-600  hover:shadow-default-300/50 transition-all duration-300 backdrop-blur-[43px] bg-[rgba(237,237,237,0.65)]"
-          >
-            <CardHeader className="flex flex-col gap-2 p-6">
-              <h2 className="text-2xl font-bold">{plan.name}</h2>
-              <p className="text-default-600">Best for casual use.</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold">${plan.price}</span>
-                <span className="text-default-600">/month</span>
-              </div>
-            </CardHeader>
-            <CardBody className="p-6 pt-0">
-              <Button
-                color="primary"
-                size="lg"
-                radius="lg"
-                className="w-full mb-6"
-                variant="solid"
-                onPress={() => handleSubscribe(plan)}
-                isLoading={isLoading}
-              >
-                {isLoading ? "Processing..." : "Subscribe"}
-              </Button>
-              <div className="space-y-3">
-                {plan.features.map((feature, index) => (
-                  <div className="flex items-start gap-2" key={index}>
-                    <Check className="w-5 h-5 text-primary mt-0.5" />
-                    <p className="flex flex-col">
-                      <span className="font-bold">{feature.heading}</span>
-                      {feature.subheading && (
-                        <span className="text-default-600">
-                          {feature.subheading}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-        ))}
-      </div>
+      {!isPaymentSuccessful && (
+        <div className="flex justify-center w-full max-w-md">
+          {PRICING_PLANS.map((plan) => (
+            <Card
+              key={plan.name}
+              className="animate-blur-in w-full border-2 border-primary-500 hover:border-primary-600  hover:shadow-default-300/50 transition-all duration-300 backdrop-blur-[43px] bg-[rgba(237,237,237,0.65)]"
+            >
+              <CardHeader className="flex flex-col gap-2 p-6">
+                <h2 className="text-2xl font-bold">{plan.name}</h2>
+                <p className="text-default-600">Best for casual use.</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold">${plan.price}</span>
+                  <span className="text-default-600">/month</span>
+                </div>
+              </CardHeader>
+              <CardBody className="p-6 pt-0">
+                <Button
+                  color="primary"
+                  size="lg"
+                  radius="lg"
+                  className="w-full mb-6"
+                  variant="solid"
+                  onPress={() => handleSubscribe(plan)}
+                  isLoading={isLoading}
+                >
+                  {isLoading ? "Processing..." : "Subscribe"}
+                </Button>
+                <div className="space-y-3">
+                  {plan.features.map((feature, index) => (
+                    <div className="flex items-start gap-2" key={index}>
+                      <Check className="w-5 h-5 text-primary mt-0.5" />
+                      <p className="flex flex-col">
+                        <span className="font-bold">{feature.heading}</span>
+                        {feature.subheading && (
+                          <span className="text-default-600">
+                            {feature.subheading}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Modal
         isOpen={isPaymentSuccessful}
         // onOpenChange={setOpen}
         hideCloseButton
-        backdrop="blur"
+        backdrop="transparent"
       >
+        {isPaymentSuccessful && (
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={400}
+          />
+        )}
         <ModalContent>
           <ModalHeader className="flex flex-col items-center gap-2">
             <motion.div
@@ -270,7 +287,7 @@ export default function PricingPage() {
               color="primary"
               size="lg"
               radius="lg"
-              className="w-full"
+              className="w-full z-50"
               onPress={() => {
                 router.push("/new");
               }}
