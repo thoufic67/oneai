@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import { verifyRazorpayPayment, getRazorpaySubscription } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
+import { Subscriptions } from "razorpay/dist/types/subscriptions";
 
 export async function POST(req: Request) {
   try {
@@ -49,9 +50,9 @@ export async function POST(req: Request) {
     }
 
     // 2. Get subscription details from Razorpay to confirm the payment amount
-    const subscriptionDetails = await getRazorpaySubscription(
-      razorpay_subscription_id
-    );
+    const subscriptionDetails: Awaited<
+      ReturnType<typeof getRazorpaySubscription>
+    > = await getRazorpaySubscription(razorpay_subscription_id);
     console.log("Fetched subscriptionDetails from razorpay", {
       subscriptionDetails: JSON.stringify(subscriptionDetails),
     });
@@ -75,10 +76,10 @@ export async function POST(req: Request) {
           status: "active",
           payment_status: "authorized",
           current_period_start: new Date(
-            subscriptionDetails.current_start * 1000
+            (subscriptionDetails.current_start || 0) * 1000
           ).toISOString(),
           current_period_end: new Date(
-            subscriptionDetails.current_end * 1000
+            (subscriptionDetails.current_end || 0) * 1000
           ).toISOString(),
           cancel_at_period_end: false,
           metadata: {
