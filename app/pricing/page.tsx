@@ -132,7 +132,12 @@ export default function PricingPage() {
             .then((res) => res.json())
             .then((data) => {
               console.log("Razorpay verification response:", data);
-              setPaymentSuccessful(true);
+              if (data.success) {
+                setPaymentSuccessful(true);
+              } else {
+                setPaymentSuccessful(false);
+                throw new Error("Payment failed" + data.error);
+              }
             })
             .catch((err) => {
               console.error("Razorpay verification error:", err);

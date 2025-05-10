@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 import { Navbar } from "@/app/components/navbar";
+import { Footer } from "@/app/components/footer";
 import { Providers } from "./components/providers";
 import { BackgroundGradient } from "@/app/components/background-gradient";
 
@@ -50,33 +51,7 @@ export default function RootLayout({
             <main className="container w-full h-full max-h-full max-w-full overflow-hidden">
               {children}
             </main>
-            <footer className="w-full flex items-center justify-between p-8">
-              <p className="text-sm text-default-800">
-                &copy; {new Date().getFullYear()} Aiflo. All rights reserved.
-              </p>
-              <nav className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
-                <Link
-                  href="/privacy"
-                  className="text-sm hover:underline focus:underline"
-                >
-                  Privacy Policy
-                </Link>
-                <span aria-hidden="true">|</span>
-                <Link
-                  href="/terms"
-                  className="text-sm hover:underline focus:underline"
-                >
-                  Terms of Service
-                </Link>
-                <span aria-hidden="true">|</span>
-                <Link
-                  href="/contact"
-                  className="text-sm hover:underline focus:underline"
-                >
-                  Contact
-                </Link>
-              </nav>
-            </footer>
+            <Footer />
           </div>
         </Providers>
       </body>
