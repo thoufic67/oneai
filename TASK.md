@@ -499,3 +499,11 @@
 - [x] Documentation: Complete
 - ⚪ Deployment: Not Started
 - ⚪ Monitoring Setup: Not Started
+
+## [2024-06-09] Created Terms of Service Page
+
+- Added a new terms of service page at /terms using HeroUI, Tailwind, and consistent layout with the privacy policy page. [COMPLETED]
+
+// Discovered During Work
+
+- [TODO] Link to the terms of service page from the footer or main navigation for user accessibility.

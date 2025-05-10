@@ -51,3 +51,9 @@ After modifying the `.npmrc` file, you need to run `pnpm install` again to ensur
 ## License
 
 Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template/blob/main/LICENSE).
+
+## Legal & Policies
+
+- Privacy Policy is available at `/privacy`.
+- Terms of Service is available at `/terms`.
+- Please review these pages to understand how user data is handled and the rules for using the service.

@@ -18,7 +18,8 @@ type RazorpayWebhookEvent =
   | "subscription.halted"
   | "subscription.created"
   | "subscription.paused"
-  | "subscription.resumed";
+  | "subscription.resumed"
+  | "subscription.updated";
 
 interface RazorpayWebhookPayload {
   entity: string;
@@ -318,6 +319,71 @@ export async function POST(req: Request) {
             })
             .eq("id", notes.user_id);
         }
+        break;
+      }
+
+      case "subscription.paused": {
+        // Subscription has been paused (e.g., by user or admin)
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "paused",
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
+
+        if (notes.user_id) {
+          await supabase
+            .from("users")
+            .update({
+              subscription_status: "paused",
+            })
+            .eq("id", notes.user_id);
+        }
+        break;
+      }
+
+      case "subscription.resumed": {
+        // Subscription has been resumed after being paused
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "active",
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
+
+        if (notes.user_id) {
+          await supabase
+            .from("users")
+            .update({
+              subscription_status: "active",
+            })
+            .eq("id", notes.user_id);
+        }
+        break;
+      }
+
+      case "subscription.updated": {
+        // Subscription details updated (e.g., plan, quantity, etc.)
+        await supabase
+          .from("subscriptions")
+          .update({
+            metadata: {
+              ...subscriptionEntity,
+              last_event: payload.event,
+              last_event_at: new Date().toISOString(),
+            },
+          })
+          .eq("provider_subscription_id", subscriptionEntity.id);
         break;
       }
     }

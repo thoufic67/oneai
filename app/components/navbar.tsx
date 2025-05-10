@@ -22,7 +22,7 @@ import Image from "next/image";
 import { Tooltip } from "@heroui/react";
 import { useAuth } from "@/app/components/auth-provider";
 import { ShareButton } from "@/components/chat/share-button";
-
+import { publicRoutes } from "@/config/site";
 export const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -32,7 +32,7 @@ export const Navbar = () => {
   const [isNavbarVisible, setIsNavbarVisible] = useState(false);
   const { id } = useParams();
   const PATHS_TO_HIDE_NAVBAR = useMemo(() => {
-    return ["/", "/login", "/pricing", "/about", "/register", `/share/${id}`];
+    return [...publicRoutes, `/share/${id}`];
   }, [id]);
 
   useEffect(() => {

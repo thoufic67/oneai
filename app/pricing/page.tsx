@@ -6,12 +6,23 @@
 
 import { title } from "@/app/components/primitives";
 import PostHogClient from "@/posthog";
-import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "@heroui/react";
 import { Check } from "lucide-react";
 import { useAuth } from "../components/auth-provider";
 import { useRouter } from "next/navigation";
 import { RazorpayCheckoutOptions } from "@/lib/razorpay";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import Script from "next/script";
 
 // const loadRazorpayScript = (): Promise<void> => {
@@ -68,6 +79,7 @@ export default function PricingPage() {
   const posthog = PostHogClient();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isPaymentSuccessful, setPaymentSuccessful] = useState(false);
 
   const createSubscription = async (planId: string) => {
     try {
@@ -96,10 +108,34 @@ export default function PricingPage() {
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         subscription_id: subscriptionId,
-        name: "OneAI",
+        name: "Aiflo",
         description: `${plan.name} Subscription`,
         image: "/favicon.svg", // Add your logo path
         callback_url: `${window.location.origin}/api/subscription/verify`,
+        handler: (response: any) => {
+          console.log("Razorpay response:", response);
+          const {
+            razorpay_payment_id,
+            razorpay_subscription_id,
+            razorpay_signature,
+          } = response;
+          fetch("/api/subscription/verify", {
+            method: "POST",
+            body: JSON.stringify({
+              razorpay_payment_id,
+              razorpay_subscription_id,
+              razorpay_signature,
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              console.log("Razorpay verification response:", data);
+              setPaymentSuccessful(true);
+            })
+            .catch((err) => {
+              console.error("Razorpay verification error:", err);
+            });
+        },
         prefill: {
           name: user?.user_metadata?.full_name,
           email: user?.email,
@@ -203,6 +239,47 @@ export default function PricingPage() {
           </Card>
         ))}
       </div>
+
+      <Modal
+        isOpen={isPaymentSuccessful}
+        // onOpenChange={setOpen}
+        hideCloseButton
+        backdrop="blur"
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col items-center gap-2">
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="rounded-full bg-green-100 p-4 mb-2"
+            >
+              <Check className="w-10 h-10 text-green-600" />
+            </motion.div>
+            <span className="text-2xl font-bold text-center text-green-700">
+              Subscription Successful!
+            </span>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-center text-default-700 mb-2">
+              Thank you for subscribing. Your journey with OneAI starts now.
+            </p>
+          </ModalBody>
+          <ModalFooter className="flex justify-center">
+            <Button
+              color="primary"
+              size="lg"
+              radius="lg"
+              className="w-full"
+              onPress={() => {
+                router.push("/new");
+              }}
+            >
+              Start your journey
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

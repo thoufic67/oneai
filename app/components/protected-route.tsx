@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./auth-provider";
 import { Spinner } from "@heroui/spinner";
+import { publicRoutes } from "@/config/site";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,16 +18,6 @@ export function ProtectedRoute({
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-
-  // Public routes that don't require authentication
-  const publicRoutes = [
-    "/login",
-    "/auth/callback",
-    "/signup",
-    "/about",
-    "/docs",
-    "/blog",
-  ];
 
   useEffect(() => {
     if (

@@ -50,7 +50,23 @@ export default function RootLayout({
             <main className="container w-full h-full max-h-full max-w-full overflow-hidden">
               {children}
             </main>
-            <footer className="w-full flex items-center justify-center py-3"></footer>
+            <footer className="w-full flex items-center justify-between p-8">
+              <p className="text-sm text-default-800">
+                &copy; {new Date().getFullYear()} Aiflo. All rights reserved.
+              </p>
+              <nav className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <Link
+                  href="/privacy"
+                  className="hover:underline focus:underline"
+                >
+                  Privacy Policy
+                </Link>
+                <span aria-hidden="true">|</span>
+                <Link href="/terms" className="hover:underline focus:underline">
+                  Terms of Service
+                </Link>
+              </nav>
+            </footer>
           </div>
         </Providers>
       </body>

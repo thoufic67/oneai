@@ -67,3 +67,16 @@ export const siteConfig = {
     sponsor: "https://patreon.com/jrgarciadev",
   },
 };
+
+// Public routes that don't require authentication
+export const publicRoutes = [
+  "/",
+  "/login",
+  "/auth/callback",
+  "/signup",
+  "/about",
+  "/docs",
+  "/blog",
+  "/privacy",
+  "/terms",
+];
