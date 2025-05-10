@@ -9,9 +9,9 @@ export default function TermsOfServicePage() {
     <div className="inline-block max-w-5xl w-full text-left justify-center">
       <h1 className={title()}>Terms of Service</h1>
       <p className={subtitle() + " mb-6"}>
-        Please read these Terms of Service ("Terms") carefully before using our
-        services. By accessing or using our app, you agree to be bound by these
-        Terms.
+        Please read these Terms of Service (&quot;Terms&quot;) carefully before
+        using our services. By accessing or using our app, you agree to be bound
+        by these Terms.
       </p>
       <section>
         <h2 className="font-semibold text-lg mb-2">1. Acceptance of Terms</h2>
@@ -75,10 +75,10 @@ export default function TermsOfServicePage() {
       <section>
         <h2 className="font-semibold text-lg mb-2">6. Disclaimers</h2>
         <p>
-          The service is provided on an "AS IS" and "AS AVAILABLE" basis. We
-          disclaim all warranties of any kind, whether express or implied,
-          including but not limited to merchantability, fitness for a particular
-          purpose, and non-infringement.
+          The service is provided on an &quot;AS IS&quot; and &quot;AS
+          AVAILABLE&quot; basis. We disclaim all warranties of any kind, whether
+          express or implied, including but not limited to merchantability,
+          fitness for a particular purpose, and non-infringement.
         </p>
       </section>
       <section>
