@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/services/authService";
 import { User } from "@supabase/supabase-js";
+import { isPublicRoute } from "@/config/site";
 
 interface AuthContextType {
   user: User | null;
@@ -32,17 +33,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Public routes that don't require authentication
-  const publicRoutes = [
-    "/login",
-    "/auth/callback",
-    "/signup",
-    "/",
-    "/about",
-    "/docs",
-    "/blog",
-  ];
-
   // Function to fetch user data
   const refreshUser = async () => {
     try {
@@ -69,10 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
 
         // If not authenticated and trying to access a protected route
-        if (
-          !currentUser &&
-          !publicRoutes.some((route) => pathname?.startsWith(route))
-        ) {
+        if (!currentUser && !isPublicRoute(pathname)) {
           router.push("/login");
         }
       } catch (err) {

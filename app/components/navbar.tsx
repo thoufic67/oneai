@@ -22,7 +22,7 @@ import Image from "next/image";
 import { Tooltip } from "@heroui/react";
 import { useAuth } from "@/app/components/auth-provider";
 import { ShareButton } from "@/components/chat/share-button";
-import { publicRoutes } from "@/config/site";
+import { publicRoutes, isPublicRoute } from "@/config/site";
 export const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,9 +31,6 @@ export const Navbar = () => {
   const { user } = useAuth();
   const [isNavbarVisible, setIsNavbarVisible] = useState(false);
   const { id } = useParams();
-  const PATHS_TO_HIDE_NAVBAR = useMemo(() => {
-    return [...publicRoutes, `/share/${id}`];
-  }, [id]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -41,7 +38,7 @@ export const Navbar = () => {
     }, 500);
 
     // Update navbar state based on current path
-    setShowSimpleNavbar(PATHS_TO_HIDE_NAVBAR.includes(pathname));
+    setShowSimpleNavbar(isPublicRoute(pathname));
   }, [pathname]);
 
   const handleNewChat = () => {
@@ -97,7 +94,7 @@ export const Navbar = () => {
                 size="sm"
                 className="text-sm rounded-full"
               >
-                {user ? "Launch App" : "Login"}
+                {user ? "Let's go" : "Login"}
               </Button>
             </NavbarItem>
           </NavbarContent>

@@ -57,13 +57,23 @@ export default function RootLayout({
               <nav className="flex gap-4 text-sm text-gray-500 dark:text-gray-400">
                 <Link
                   href="/privacy"
-                  className="hover:underline focus:underline"
+                  className="text-sm hover:underline focus:underline"
                 >
                   Privacy Policy
                 </Link>
                 <span aria-hidden="true">|</span>
-                <Link href="/terms" className="hover:underline focus:underline">
+                <Link
+                  href="/terms"
+                  className="text-sm hover:underline focus:underline"
+                >
                   Terms of Service
+                </Link>
+                <span aria-hidden="true">|</span>
+                <Link
+                  href="/contact"
+                  className="text-sm hover:underline focus:underline"
+                >
+                  Contact
                 </Link>
               </nav>
             </footer>

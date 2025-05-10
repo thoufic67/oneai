@@ -70,7 +70,6 @@ export const siteConfig = {
 
 // Public routes that don't require authentication
 export const publicRoutes = [
-  "/",
   "/login",
   "/auth/callback",
   "/signup",
@@ -79,4 +78,10 @@ export const publicRoutes = [
   "/blog",
   "/privacy",
   "/terms",
+  "/contact",
+  "/pricing",
 ];
+
+export const isPublicRoute = (path: string) => {
+  return publicRoutes.some((route) => path.startsWith(route)) || path === "/";
+};

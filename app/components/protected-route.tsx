@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./auth-provider";
 import { Spinner } from "@heroui/spinner";
-import { publicRoutes } from "@/config/site";
+import { isPublicRoute, publicRoutes } from "@/config/site";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -20,11 +20,7 @@ export function ProtectedRoute({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (
-      !loading &&
-      !user &&
-      !publicRoutes.some((route) => pathname?.startsWith(route))
-    ) {
+    if (!loading && !user && !isPublicRoute(pathname)) {
       // Store the attempted URL to redirect back after login
       sessionStorage.setItem("redirectAfterLogin", pathname || "/");
       router.push("/login");
@@ -48,7 +44,7 @@ export function ProtectedRoute({
   }
 
   // If it's a public route or user is authenticated, render the children
-  if (publicRoutes.some((route) => pathname?.startsWith(route)) || user) {
+  if (isPublicRoute(pathname) || user) {
     console.log("Rendering children");
     return <>{children}</>;
   }
