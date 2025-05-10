@@ -80,6 +80,7 @@ export const publicRoutes = [
   "/terms",
   "/contact",
   "/pricing",
+  "/share",
 ];
 
 export const isPublicRoute = (path: string) => {
