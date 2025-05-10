@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createClient as createClientSupabase } from "@supabase/supabase-js";
 
-export async function createClient(serviceRoleKey: string) {
+export async function createClient(serviceRoleKey?: string) {
   console.log("Creating client with service role key:", serviceRoleKey);
   if (serviceRoleKey) {
     console.log("Creating service role client");
