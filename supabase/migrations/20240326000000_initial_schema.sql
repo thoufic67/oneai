@@ -363,6 +363,12 @@ create policy "System can create initial usage quotas"
   on public.usage_quotas for insert
   with check (auth.uid() = user_id);
 
+create policy "Service role can manage all usage quotas"
+  on public.usage_quotas for all
+  to service_role
+  using (true)
+  with check (true);
+
 -- Shared conversations policies
 ALTER TABLE shared_conversations ENABLE ROW LEVEL SECURITY;
 

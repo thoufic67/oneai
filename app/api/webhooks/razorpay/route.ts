@@ -109,288 +109,480 @@ export async function POST(req: Request) {
     const payload = (await req.json()) as RazorpayWebhookPayload;
     const signature = req.headers.get("x-razorpay-signature");
 
-    console.log("payload", payload);
+    console.log("[Webhook] Received payload:", JSON.stringify(payload));
+    console.log("[Webhook] Signature:", signature);
 
     // Verify webhook signature
     if (!verifyWebhookSignature(payload, signature)) {
-      console.error("Invalid webhook signature");
+      console.error("[Webhook] Invalid webhook signature", {
+        signature,
+        payload,
+      });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = await createClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
     const subscriptionEntity = payload.payload.subscription.entity;
     const { notes } = subscriptionEntity;
 
-    console.log("notes", {
-      subscription: JSON.stringify(subscriptionEntity),
-      notes: JSON.stringify(notes),
-    });
+    console.log(
+      "[Webhook] Subscription entity:",
+      JSON.stringify(subscriptionEntity)
+    );
+    console.log("[Webhook] Notes:", JSON.stringify(notes));
 
-    console.log("Processing webhook event:", payload.event, {
+    console.log("[Webhook] Processing event:", payload.event, {
       subscription_id: subscriptionEntity.id,
       status: subscriptionEntity.status,
     });
 
     switch (payload.event) {
       case "subscription.created": {
-        // Initial subscription creation - may not need action if handled in verify endpoint
+        console.log(
+          "[Webhook] Event: subscription.created - No action taken (handled elsewhere)"
+        );
         break;
       }
 
       case "subscription.authenticated": {
-        // Payment authentication successful
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "authenticated",
-            payment_status: "authorized",
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.authenticated - Updating subscription status to authenticated"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "authenticated",
+              payment_status: "authorized",
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription updated for authentication");
+        }
         break;
       }
 
       case "subscription.activated": {
-        // Subscription is now active after successful payment
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "active",
-            payment_status: "captured",
-            current_period_start: new Date(
-              subscriptionEntity.current_start * 1000
-            ),
-            current_period_end: new Date(subscriptionEntity.current_end * 1000),
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.activated - Activating subscription"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "active",
+              payment_status: "captured",
+              current_period_start: new Date(
+                subscriptionEntity.current_start * 1000
+              ),
+              current_period_end: new Date(
+                subscriptionEntity.current_end * 1000
+              ),
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription activated in DB");
+        }
 
         // Update user's subscription tier
         if (notes.user_id) {
-          await supabase
+          console.log("[Webhook] Updating user subscription tier", {
+            user_id: notes.user_id,
+            plan_id: subscriptionEntity.plan_id,
+          });
+          const { data: userData, error: userError } = await supabase
             .from("users")
             .update({
-              subscription_tier: subscriptionEntity.plan_id,
+              subscription_tier: "basic",
               subscription_status: "active",
             })
             .eq("id", notes.user_id);
-
+          if (userError) {
+            console.error("[Webhook] Error updating user", {
+              error: userError,
+            });
+          } else {
+            console.log("[Webhook] User subscription tier updated");
+          }
           // Initialize quotas for the new subscription
+          console.log("[Webhook] Initializing quotas for user", {
+            user_id: notes.user_id,
+            plan_id: subscriptionEntity.plan_id,
+          });
           await initializeQuotas(notes.user_id, subscriptionEntity.plan_id);
+        } else {
+          console.warn(
+            "[Webhook] No user_id found in notes for subscription activation"
+          );
         }
         break;
       }
 
       case "subscription.charged": {
-        // Record successful payment
+        console.log(
+          "[Webhook] Event: subscription.charged - Recording payment"
+        );
         const paymentEntity = payload.payload.payment?.entity;
-        if (!paymentEntity) break;
+        if (!paymentEntity) {
+          console.warn(
+            "[Webhook] No payment entity found in payload for charged event"
+          );
+          break;
+        }
 
-        await supabase.from("subscription_payments").insert({
-          subscription_id: subscriptionEntity.id,
-          razorpay_payment_id: paymentEntity.id,
-          razorpay_signature: signature || "",
-          amount: paymentEntity.amount,
-          currency: paymentEntity.currency,
-          status: paymentEntity.status,
-          metadata: {
-            ...paymentEntity,
-            last_event: payload.event,
-            last_event_at: new Date().toISOString(),
-          },
-        });
-
-        // Update subscription with new period dates
-        await supabase
-          .from("subscriptions")
-          .update({
-            current_period_start: new Date(
-              subscriptionEntity.current_start * 1000
-            ),
-            current_period_end: new Date(subscriptionEntity.current_end * 1000),
-            payment_status: "captured",
+        const { data, error } = await supabase
+          .from("subscription_payments")
+          .insert({
+            subscription_id: subscriptionEntity.id,
+            razorpay_payment_id: paymentEntity.id,
+            razorpay_signature: signature || "",
+            amount: paymentEntity.amount,
+            currency: paymentEntity.currency,
+            status: paymentEntity.status,
             metadata: {
-              ...subscriptionEntity,
-              last_payment: paymentEntity,
+              ...paymentEntity,
               last_event: payload.event,
               last_event_at: new Date().toISOString(),
             },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+          });
+        if (error) {
+          console.error("[Webhook] Error recording payment", { error });
+        } else {
+          console.log("[Webhook] Payment recorded in subscription_payments", {
+            payment_id: paymentEntity.id,
+          });
+        }
+
+        // Update subscription with new period dates
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              current_period_start: new Date(
+                subscriptionEntity.current_start * 1000
+              ),
+              current_period_end: new Date(
+                subscriptionEntity.current_end * 1000
+              ),
+              payment_status: "captured",
+              metadata: {
+                ...subscriptionEntity,
+                last_payment: paymentEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription updated after charge");
+        }
         break;
       }
 
       case "subscription.pending": {
-        // Payment is pending
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "pending",
-            payment_status: "pending",
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.pending - Marking as pending"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "pending",
+              payment_status: "pending",
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription marked as pending");
+        }
         break;
       }
 
       case "subscription.halted": {
-        // Subscription halted due to payment failure
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "halted",
-            payment_status: "failed",
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log("[Webhook] Event: subscription.halted - Marking as halted");
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "halted",
+              payment_status: "failed",
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription marked as halted");
+        }
 
         if (notes?.user_id) {
+          console.log("[Webhook] Updating user status to halted", {
+            user_id: notes.user_id,
+          });
           await supabase
             .from("users")
             .update({
               subscription_status: "halted",
             })
             .eq("id", notes.user_id);
+        } else {
+          console.warn("[Webhook] No user_id found in notes for halted event");
         }
         break;
       }
 
       case "subscription.cancelled": {
-        // Subscription cancelled by user or admin
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "cancelled",
-            canceled_at: new Date(),
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.cancelled - Cancelling subscription"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "cancelled",
+              canceled_at: new Date(),
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription cancelled in DB");
+        }
 
         if (notes.user_id) {
+          console.log("[Webhook] Updating user status to cancelled", {
+            user_id: notes.user_id,
+          });
           await supabase
             .from("users")
             .update({
               subscription_status: "cancelled",
             })
             .eq("id", notes.user_id);
+        } else {
+          console.warn(
+            "[Webhook] No user_id found in notes for cancelled event"
+          );
         }
         break;
       }
 
       case "subscription.completed": {
-        // All installments completed
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "completed",
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.completed - Completing subscription"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "completed",
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription marked as completed");
+        }
 
         if (notes.user_id) {
-          await supabase
+          console.log("[Webhook] Updating user status to completed", {
+            user_id: notes.user_id,
+          });
+          const { data: userData, error: userError } = await supabase
             .from("users")
             .update({
               subscription_status: "completed",
             })
             .eq("id", notes.user_id);
+          if (userError) {
+            console.error("[Webhook] Error updating user", {
+              error: userError,
+            });
+          } else {
+            console.log("[Webhook] User status updated to completed");
+          }
+        } else {
+          console.warn(
+            "[Webhook] No user_id found in notes for completed event"
+          );
         }
         break;
       }
 
       case "subscription.paused": {
-        // Subscription has been paused (e.g., by user or admin)
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "paused",
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.paused - Pausing subscription"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "paused",
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription paused in DB");
+        }
 
         if (notes.user_id) {
-          await supabase
+          console.log("[Webhook] Updating user status to paused", {
+            user_id: notes.user_id,
+          });
+          const { data: userData, error: userError } = await supabase
             .from("users")
             .update({
               subscription_status: "paused",
             })
             .eq("id", notes.user_id);
+          if (userError) {
+            console.error("[Webhook] Error updating user", {
+              error: userError,
+            });
+          } else {
+            console.log("[Webhook] User status updated to paused");
+          }
+        } else {
+          console.warn("[Webhook] No user_id found in notes for paused event");
         }
         break;
       }
 
       case "subscription.resumed": {
-        // Subscription has been resumed after being paused
-        await supabase
-          .from("subscriptions")
-          .update({
-            status: "active",
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.resumed - Resuming subscription"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: "active",
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription resumed in DB");
+        }
 
         if (notes.user_id) {
-          await supabase
+          console.log("[Webhook] Updating user status to active", {
+            user_id: notes.user_id,
+          });
+          const { data: userData, error: userError } = await supabase
             .from("users")
             .update({
               subscription_status: "active",
             })
             .eq("id", notes.user_id);
+          if (userError) {
+            console.error("[Webhook] Error updating user", {
+              error: userError,
+            });
+          } else {
+            console.log("[Webhook] User status updated to active");
+          }
+        } else {
+          console.warn("[Webhook] No user_id found in notes for resumed event");
         }
         break;
       }
 
       case "subscription.updated": {
-        // Subscription details updated (e.g., plan, quantity, etc.)
-        await supabase
-          .from("subscriptions")
-          .update({
-            metadata: {
-              ...subscriptionEntity,
-              last_event: payload.event,
-              last_event_at: new Date().toISOString(),
-            },
-          })
-          .eq("provider_subscription_id", subscriptionEntity.id);
+        console.log(
+          "[Webhook] Event: subscription.updated - Updating subscription metadata"
+        );
+        const { data: subscriptionData, error: subscriptionError } =
+          await supabase
+            .from("subscriptions")
+            .update({
+              metadata: {
+                ...subscriptionEntity,
+                last_event: payload.event,
+                last_event_at: new Date().toISOString(),
+              },
+            })
+            .eq("provider_subscription_id", subscriptionEntity.id);
+        if (subscriptionError) {
+          console.error("[Webhook] Error updating subscription", {
+            error: subscriptionError,
+          });
+        } else {
+          console.log("[Webhook] Subscription metadata updated");
+        }
         break;
       }
     }
 
+    console.log("[Webhook] Successfully processed event:", payload.event);
     return NextResponse.json({ status: "success" });
   } catch (error: any) {
-    console.error("Webhook error:", error);
+    console.error("[Webhook] Error processing webhook:", error);
     return NextResponse.json(
       { error: error.message || "Webhook processing failed" },
       { status: 500 }
@@ -400,42 +592,65 @@ export async function POST(req: Request) {
 
 // Helper function to initialize quotas for a new subscription
 async function initializeQuotas(userId: string, planId: string) {
-  const supabase = await createClient();
+  const supabase = await createClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
   // Get quota limits for the plan
   const quotaLimits = getQuotaLimitsForPlan(planId);
+  console.log("[Quotas] Initializing quotas for user", {
+    userId,
+    planId,
+    quotaLimits,
+  });
 
   // Initialize each quota type
   for (const [quotaKey, limit] of Object.entries(quotaLimits)) {
-    await supabase.from("usage_quotas").upsert({
-      user_id: userId,
-      quota_key: quotaKey,
-      used_count: 0,
-      quota_limit: limit,
-      reset_frequency: "monthly",
-      last_reset_at: new Date(),
-      next_reset_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-    });
+    console.log(
+      `[Quotas] Upserting quota: ${quotaKey} with limit: ${limit} for user: ${userId}`
+    );
+    const { data: quotaData, error: quotaError } = await supabase
+      .from("usage_quotas")
+      .upsert(
+        {
+          user_id: userId,
+          quota_key: quotaKey,
+          used_count: 0,
+          quota_limit: limit,
+          subscription_tier: "basic",
+          reset_frequency: "monthly",
+          last_reset_at: new Date(),
+          next_reset_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        },
+        { onConflict: "user_id,quota_key" }
+      );
+    if (quotaError) {
+      console.error("[Quotas] Error upserting quota", {
+        error: quotaError,
+      });
+    } else {
+      console.log("[Quotas] Quota upserted successfully", { quotaData });
+    }
   }
+  console.log("[Quotas] Quotas initialized for user", { userId });
 }
 
 // Helper function to get quota limits for a plan
 function getQuotaLimitsForPlan(planId: string) {
   // This is a placeholder - implement based on your plan configuration
   const quotaLimits = {
-    plan_basic: {
-      small_messages: 100,
-      large_messages: 20,
-      image_generation: 5,
+    pro: {
+      small_messages: 1000,
+      large_messages: 200,
+      image_generation: 100,
     },
-    plan_pro: {
+    basic: {
       small_messages: 500,
       large_messages: 100,
-      image_generation: 10,
+      image_generation: 50,
     },
   };
 
-  return (
-    quotaLimits[planId as keyof typeof quotaLimits] || quotaLimits.plan_basic
-  );
+  const limits =
+    quotaLimits[planId as keyof typeof quotaLimits] || quotaLimits.basic;
+  console.log("[Quotas] Fetched quota limits for plan", { planId, limits });
+  return limits;
 }
