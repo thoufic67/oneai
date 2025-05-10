@@ -10,8 +10,30 @@ import { Button, Card, CardBody, CardHeader } from "@heroui/react";
 import { Check } from "lucide-react";
 import { useAuth } from "../components/auth-provider";
 import { useRouter } from "next/navigation";
-import { initializeRazorpayCheckout } from "@/lib/razorpay";
+import { RazorpayCheckoutOptions } from "@/lib/razorpay";
 import { useState } from "react";
+import Script from "next/script";
+
+export const initializeRazorpayCheckout = async (
+  options: RazorpayCheckoutOptions
+) => {
+  // Load Razorpay script if not already loaded
+  if (!(window as any).Razorpay) {
+    // await loadRazorpayScript();
+  }
+
+  const razorpay = new (window as any).Razorpay(options);
+  return razorpay;
+};
+
+// const loadRazorpayScript = (): Promise<void> => {
+//   return new Promise((resolve) => {
+//     const script = document.createElement("script");
+//     script.src = "https://checkout.razorpay.com/v1/checkout.js";
+//     script.onload = () => resolve();
+//     document.body.appendChild(script);
+//   });
+// };
 
 type PricingPlan = {
   name: string;
@@ -84,11 +106,11 @@ export default function PricingPage() {
   const handlePayment = async (subscriptionId: string, plan: PricingPlan) => {
     try {
       const options = {
-        key: process.env.RAZORPAY_KEY_ID!,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         subscription_id: subscriptionId,
         name: "OneAI",
         description: `${plan.name} Subscription`,
-        image: "/logo.png", // Add your logo path
+        image: "/favicon.svg", // Add your logo path
         callback_url: `${window.location.origin}/api/subscription/verify`,
         prefill: {
           name: user?.user_metadata?.full_name,
@@ -136,6 +158,10 @@ export default function PricingPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-6 min-h-full">
+      <Script
+        type="text/javascript"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
       <div className="text-center space-y-4 mb-12 animate-blur-in-up">
         <h1 className={title({ color: "violet" })}>Pricing</h1>
         <p className="text-default-600 max-w-lg mx-auto">

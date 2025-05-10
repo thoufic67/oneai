@@ -9,7 +9,7 @@ import { Plans } from "razorpay/dist/types/plans";
 
 // Server-side instance
 export const razorpayServer = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
@@ -91,27 +91,6 @@ export const verifyWebhookSignature = (
   const digest = shasum.digest("hex");
 
   return digest === signature;
-};
-
-export const initializeRazorpayCheckout = async (
-  options: RazorpayCheckoutOptions
-) => {
-  // Load Razorpay script if not already loaded
-  if (!(window as any).Razorpay) {
-    await loadRazorpayScript();
-  }
-
-  const razorpay = new (window as any).Razorpay(options);
-  return razorpay;
-};
-
-const loadRazorpayScript = (): Promise<void> => {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve();
-    document.body.appendChild(script);
-  });
 };
 
 /**
