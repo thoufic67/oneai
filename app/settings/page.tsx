@@ -18,6 +18,7 @@ import { ProtectedRoute } from "@/app/components/protected-route";
 import { Avatar } from "@heroui/avatar";
 import { useQuota } from "@/app/hooks/useQuota";
 import { Skeleton } from "@heroui/skeleton";
+import { useSubscription } from "../hooks/useSubscription";
 
 function SettingsPage() {
   const { user } = useAuth();
@@ -26,6 +27,8 @@ function SettingsPage() {
     loading: quotaLoading,
     error: quotaError,
   } = useQuota();
+  const { data: subscriptionData } = useSubscription();
+
   const [monthlySpendingLimit, setMonthlySpendingLimit] = useState("20");
   const [usageBasedPricing, setUsageBasedPricing] = useState(true);
   const [usageBasedPricingPremium, setUsageBasedPricingPremium] =
@@ -89,34 +92,42 @@ function SettingsPage() {
               </span>
             </CardHeader>
             <CardBody>
-              <Button
-                as={Link}
-                href="/pricing"
-                variant="bordered"
-                size="md"
-                radius="lg"
-              >
-                {quotaData?.subscription.tier === "pro"
-                  ? "MANAGE SUBSCRIPTION"
-                  : "UPGRADE TO PRO"}
-              </Button>
-              <div className="mt-4">
+              {quotaData?.subscription.tier === "free" ? (
                 <Button
-                  className="text-sm text-default-500"
-                  endContent={<Info className="w-4 h-4" />}
-                  variant="light"
+                  as={Link}
+                  href="/pricing"
+                  variant="bordered"
+                  size="md"
+                  radius="lg"
                 >
-                  Advanced
+                  UPGRADE
                 </Button>
-              </div>
+              ) : (
+                <Button
+                  as={Link}
+                  href={`https://api.razorpay.com/v1/t/subscriptions/${subscriptionData?.subscription?.provider_subscription_id}`}
+                  variant="bordered"
+                  size="md"
+                  radius="lg"
+                  target="_blank"
+                >
+                  MANAGE SUBSCRIPTION
+                </Button>
+              )}
             </CardBody>
           </Card>
         </div>
         {/* Usage Section */}
         <div className="col-span-1 md:col-span-2">
           <Card className="w-full">
-            <CardHeader>
+            <CardHeader className="flex flex-col items-start gap-3">
               <h2 className="text-xl font-semibold">Usage</h2>
+              <p className="text-xs text-gray-500 flex items-center gap-2">
+                <span>
+                  <Info className="w-4 h-4" />
+                </span>{" "}
+                Usage usually gets updated within couple of hours.
+              </p>
             </CardHeader>
             <CardBody className="space-y-6">
               {quotaLoading ? (
