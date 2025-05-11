@@ -1,11 +1,15 @@
-import { LazyChat } from "@/app/components/chat/LazyChat";
-import { ProtectedRoute } from "@/app/components/protected-route";
-import { Chat } from "../components/chat/Chat";
+"use client";
 
+import { Chat } from "../components/chat/Chat";
+import { useAuth } from "../components/auth-provider";
+import { redirect } from "next/navigation";
 export default function NewChat() {
-  return (
-    // <ProtectedRoute>
+  const { subscriptionData } = useAuth();
+
+  return subscriptionData?.subscription?.status === "free" ||
+    subscriptionData?.subscription === null ? (
+    redirect("/pricing")
+  ) : (
     <Chat />
-    // </ProtectedRoute>
   );
 }

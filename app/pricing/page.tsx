@@ -20,20 +20,12 @@ import {
 import { Check } from "lucide-react";
 import { useAuth } from "../components/auth-provider";
 import { useRouter } from "next/navigation";
-import { RazorpayCheckoutOptions } from "@/lib/razorpay";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Script from "next/script";
 import Confetti from "react-confetti"; // Confetti animation for payment success
 import { PLANS, Plan } from "@/lib/plans";
-// const loadRazorpayScript = (): Promise<void> => {
-//   return new Promise((resolve) => {
-//     const script = document.createElement("script");
-//     script.src = "https://checkout.razorpay.com/v1/checkout.js";
-//     script.onload = () => resolve();
-//     document.body.appendChild(script);
-//   });
-// };
 
 export default function PricingPage() {
   const { user } = useAuth();
