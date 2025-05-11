@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
         <h2 className="font-semibold text-lg mb-2">7. Contact Us</h2>
         <p>
           If you have any questions about this Privacy Policy, please contact us
-          at <Link href="mailto:support@aiflo.space">support@yourapp.com</Link>.
+          at <Link href="mailto:support@aiflo.space">support@aiflo.space</Link>.
         </p>
       </section>
     </div>
