@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function CancellationPage() {
   return (
-    <div className="inline-block max-w-5xl w-full text-left justify-center">
+    <div className="inline-block max-w-5xl w-full text-left ">
       <h1 className={title() + " mb-2"}>Cancellation & Refunds</h1>
       <p className={subtitle() + " mb-6"}>
         Please review our cancellation and refund policy below. We aim to

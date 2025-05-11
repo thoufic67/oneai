@@ -54,6 +54,13 @@ Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template
 
 ## Legal & Policies
 
-- Privacy Policy is available at `/privacy`.
-- Terms of Service is available at `/terms`.
+- Privacy Policy: `/privacy`
+- Terms of Service: `/terms`
+- Cancellation & Refunds: `/cancellation` (new, accessible from footer)
 - Please review these pages to understand how user data is handled and the rules for using the service.
+
+## Public Pages
+
+- Privacy Policy: `/privacy`
+- Terms of Service: `/terms`
+- Cancellation & Refunds: `/cancellation` (new, accessible from footer)

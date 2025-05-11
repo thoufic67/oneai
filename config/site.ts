@@ -81,6 +81,7 @@ export const publicRoutes = [
   "/contact",
   "/pricing",
   "/share",
+  "/cancellation",
 ];
 
 export const isPublicRoute = (path: string) => {

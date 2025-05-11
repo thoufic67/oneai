@@ -13,7 +13,7 @@ export const Footer = () => {
 
   return (
     isPublic && (
-      <footer className="w-full flex items-center justify-between p-8">
+      <footer className="w-full flex flex-col  items-center justify-between p-8">
         <p className="text-sm text-default-800">
           &copy; {new Date().getFullYear()} {siteConfig.name}. All rights
           reserved.
@@ -25,14 +25,21 @@ export const Footer = () => {
           >
             Privacy Policy
           </Link>
-          <span aria-hidden="true">|</span>
+
           <Link
             href="/terms"
             className="text-sm hover:underline focus:underline"
           >
             Terms of Service
           </Link>
-          <span aria-hidden="true">|</span>
+
+          <Link
+            href="/cancellation"
+            className="text-sm hover:underline focus:underline"
+          >
+            Cancellation & Refunds
+          </Link>
+
           <Link
             href="/contact"
             className="text-sm hover:underline focus:underline"
