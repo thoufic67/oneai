@@ -22,7 +22,10 @@ export const PLANS: Plan[] = [
     name: "Basic",
     price: 999,
     currency: "INR",
-    id: "plan_QTWQY2cqBWZ2ma", // Replace with your actual Razorpay plan ID
+    id:
+      process.env.NODE_ENV === "development"
+        ? "plan_QTWQY2cqBWZ2ma"
+        : "plan_QTWneymEdMUvPK", // Replace with your actual Razorpay plan ID
     features: [
       {
         heading: "Access to the best LLMs",
