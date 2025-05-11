@@ -114,7 +114,10 @@ function SettingsPage() {
                   </div>
                   <Button
                     as={Link}
-                    href={`https://api.razorpay.com/v1/t/subscriptions/${subscriptionData?.subscription?.provider_subscription_id}`}
+                    href={
+                      subscriptionData?.subscription?.metadata?.short_url ||
+                      "https://aiflo.space"
+                    }
                     variant="bordered"
                     size="md"
                     radius="lg"
