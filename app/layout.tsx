@@ -47,11 +47,11 @@ export default function RootLayout({
         <Providers>
           <BackgroundGradient />
           <div className="relative flex flex-col w-dvw h-dvh">
-            <Navbar />
-            <main className="container w-full h-full max-h-full max-w-full overflow-hidden">
+            <main className="container w-full h-full max-h-full max-w-full overflow-x-hidden">
+              <Navbar />
               {children}
+              <Footer />
             </main>
-            <Footer />
           </div>
         </Providers>
       </body>
