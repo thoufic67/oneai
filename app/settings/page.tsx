@@ -13,7 +13,7 @@ import { Button } from "@heroui/button";
 import { Switch } from "@heroui/switch";
 import { Progress } from "@heroui/progress";
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Crown, Info } from "lucide-react";
 import { ProtectedRoute } from "@/app/components/protected-route";
 import { Avatar } from "@heroui/avatar";
 import { useQuota } from "@/app/hooks/useQuota";
@@ -87,11 +87,16 @@ function SettingsPage() {
           <Card className="w-full">
             <CardHeader className="flex flex-row items-center gap-3">
               <h2 className="text-xl font-semibold">Account</h2>
-              <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
+              <span className="px-2 py-1 flex items-center gap-2 text-xs bg-primary/10 text-primary rounded-full">
                 {quotaData?.subscription.tier.toUpperCase() || "FREE"}
+                {quotaData?.subscription.tier !== "free" && (
+                  <span className="text-xs text-gray-500">
+                    <Crown className="w-4 h-4 text-orange-500" />
+                  </span>
+                )}
               </span>
             </CardHeader>
-            <CardBody>
+            <CardBody className="flex flex-col gap-2">
               {quotaData?.subscription.tier === "free" ? (
                 <Button
                   as={Link}
@@ -103,16 +108,26 @@ function SettingsPage() {
                   UPGRADE
                 </Button>
               ) : (
-                <Button
-                  as={Link}
-                  href={`https://api.razorpay.com/v1/t/subscriptions/${subscriptionData?.subscription?.provider_subscription_id}`}
-                  variant="bordered"
-                  size="md"
-                  radius="lg"
-                  target="_blank"
-                >
-                  MANAGE SUBSCRIPTION
-                </Button>
+                <>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-gray-500">
+                      Next Billing Date:{" "}
+                      {new Date(
+                        subscriptionData?.subscription?.current_period_end || ""
+                      ).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <Button
+                    as={Link}
+                    href={`https://api.razorpay.com/v1/t/subscriptions/${subscriptionData?.subscription?.provider_subscription_id}`}
+                    variant="bordered"
+                    size="md"
+                    radius="lg"
+                    target="_blank"
+                  >
+                    MANAGE SUBSCRIPTION
+                  </Button>
+                </>
               )}
             </CardBody>
           </Card>

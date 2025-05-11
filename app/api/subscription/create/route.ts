@@ -8,6 +8,7 @@ import {
   RazorpaySubscriptionCreateOptions,
 } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
+import { getPlanDetails } from "@/lib/plans";
 
 export async function POST(req: Request) {
   try {
@@ -77,19 +78,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
-
-// Helper function to get plan details - implement based on your setup
-async function getPlanDetails(planId: string) {
-  // This is a placeholder - implement based on your plan storage
-  const plans = {
-    plan_QNLdiIIYp1E5G5: {
-      id: "plan_QNLdiIIYp1E5G5",
-      name: "Pro Plan",
-      price: 997,
-      // Add other plan details
-    },
-  };
-
-  return plans[planId as keyof typeof plans];
 }

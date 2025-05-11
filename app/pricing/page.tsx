@@ -25,7 +25,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Script from "next/script";
 import Confetti from "react-confetti"; // Confetti animation for payment success
-
+import { PLANS } from "@/lib/plans";
 // const loadRazorpayScript = (): Promise<void> => {
 //   return new Promise((resolve) => {
 //     const script = document.createElement("script");
@@ -41,41 +41,6 @@ type PricingPlan = {
   planId: string; // Razorpay plan ID
   features: { heading: string; subheading?: string; comingSoon?: boolean }[];
 };
-
-const PRICING_PLANS: PricingPlan[] = [
-  {
-    name: "Basic",
-    price: 999,
-    planId: "plan_QNLdiIIYp1E5G5", // Replace with your actual Razorpay plan ID
-    features: [
-      {
-        heading: "Access to the best LLMs",
-        subheading:
-          "Claude, GPT-4o, Llama, Grok, Mistral, Gemini, DeepSeek, Perplexity",
-      },
-      {
-        heading: "Documents up to 10k chars",
-        comingSoon: true,
-      },
-      {
-        heading: "Generate images",
-        comingSoon: true,
-        subheading:
-          "Gpt Image, Midjourney, Dall-E, Stable Diffusion, Recraft & FLUX",
-      },
-      {
-        heading: "Unlimited text messages",
-        subheading: "fair usage policy applies",
-      },
-      // {
-      //   heading: "Documents up to 10k chars (~3 pages)",
-      // },
-      {
-        heading: "Cancel anytime",
-      },
-    ],
-  },
-];
 
 export default function PricingPage() {
   const { user } = useAuth();
@@ -183,7 +148,7 @@ export default function PricingPage() {
         return;
       }
 
-      const subscriptionId = await createSubscription(plan.planId);
+      const subscriptionId = await createSubscription(plan.id);
       await handlePayment(subscriptionId, plan);
     } catch (error) {
       console.error("Subscription error:", error);
@@ -210,7 +175,7 @@ export default function PricingPage() {
 
       {!isPaymentSuccessful && (
         <div className="flex justify-center w-full max-w-md">
-          {PRICING_PLANS.map((plan) => (
+          {PLANS.map((plan) => (
             <Card
               key={plan.name}
               className="animate-blur-in w-full border-2 border-primary-500 hover:border-primary-600  hover:shadow-default-300/50 transition-all duration-300 backdrop-blur-[43px] bg-[rgba(237,237,237,0.65)]"

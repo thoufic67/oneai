@@ -10,6 +10,11 @@ export interface QuotaStatusResponse {
   subscription: {
     tier: string;
     status: string;
+    current_period_end: string;
+    current_period_start: string;
+    provider_subscription_id: string;
+    provider: string;
+    plan_id: string;
   };
   quotas: Record<QuotaKey, QuotaStatus>;
 }
