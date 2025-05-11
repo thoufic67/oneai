@@ -105,7 +105,7 @@ export default function TermsOfServicePage() {
         <h2 className="font-semibold text-lg mb-2">9. Contact Us</h2>
         <p>
           If you have any questions about these Terms, please contact us at{" "}
-          <Link href="mailto:support@aiflo.space">support@aiflo.space</Link>.
+          <Link href="mailto:thoufic@achieveit.ai">thoufic@achieveit.ai</Link>.
         </p>
       </section>
     </div>

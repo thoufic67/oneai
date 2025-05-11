@@ -6,7 +6,7 @@ import { Mail } from "lucide-react";
 import { Button } from "@heroui/button";
 import { useState } from "react";
 
-const EMAIL = "contact@aiflo.space";
+const EMAIL = "thoufic@achieveit.ai";
 
 export default function ContactPage() {
   const [copied, setCopied] = useState(false);

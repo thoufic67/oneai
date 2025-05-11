@@ -28,7 +28,7 @@ export default function CancellationPage() {
           To cancel your subscription, please log in to your account and
           navigate to the subscription management section. If you encounter any
           issues, contact our support team at{" "}
-          <Link href="mailto:support@aiflo.space">support@aiflo.space</Link>.
+          <Link href="mailto:thoufic@achieveit.ai">thoufic@achieveit.ai</Link>.
         </p>
       </section>
       <section className="mb-6">
@@ -62,7 +62,7 @@ export default function CancellationPage() {
         <p>
           If you have any questions about our cancellation or refund policy,
           please contact us at{" "}
-          <Link href="mailto:support@aiflo.space">support@aiflo.space</Link>.
+          <Link href="mailto:thoufic@achieveit.ai">thoufic@achieveit.ai</Link>.
         </p>
       </section>
     </div>
