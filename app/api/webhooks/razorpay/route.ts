@@ -148,6 +148,22 @@ export async function POST(req: Request) {
         console.log(
           "[Webhook] Event: subscription.authenticated - Updating subscription status to authenticated"
         );
+
+        //get the subscription from the database
+        const {
+          data: existingSubscriptionData,
+          error: existingSubscriptionError,
+        } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("provider_subscription_id", subscriptionEntity.id);
+
+        if (existingSubscriptionError) {
+          console.error("[Webhook] Error getting subscription", {
+            error: existingSubscriptionError,
+          });
+        }
+
         const { data: subscriptionData, error: subscriptionError } =
           await supabase
             .from("subscriptions")
@@ -155,7 +171,7 @@ export async function POST(req: Request) {
               // status: "authenticated",
               payment_status: "authorized",
               metadata: {
-                ...subscriptionEntity,
+                ...existingSubscriptionData,
                 last_event: payload.event,
                 last_event_at: new Date().toISOString(),
               },
