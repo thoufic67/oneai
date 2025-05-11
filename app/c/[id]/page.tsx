@@ -1,6 +1,7 @@
 import { Chat } from "@/app/components/chat/Chat";
 import type { Conversation, ChatMessage } from "@/services/api";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 
 // File: app/c/[id]/page.tsx
 // Description: Server component for conversation page. Fetches conversation messages and details server-side from API routes, forwarding cookies for authentication, and passes them to Chat as props.
@@ -54,7 +55,7 @@ export default async function ConversationPage({
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return notFound();
   }
 
   return (
