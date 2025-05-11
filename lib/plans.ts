@@ -3,7 +3,7 @@
  * @description Defines the available plans for the application
  */
 
-interface Plan {
+export interface Plan {
   name: string;
   price: number;
   currency: string;
@@ -11,7 +11,7 @@ interface Plan {
   features: Feature[];
 }
 
-interface Feature {
+export interface Feature {
   heading: string;
   subheading?: string;
   comingSoon?: boolean;

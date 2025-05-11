@@ -25,7 +25,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Script from "next/script";
 import Confetti from "react-confetti"; // Confetti animation for payment success
-import { PLANS } from "@/lib/plans";
+import { PLANS, Plan } from "@/lib/plans";
 // const loadRazorpayScript = (): Promise<void> => {
 //   return new Promise((resolve) => {
 //     const script = document.createElement("script");
@@ -34,13 +34,6 @@ import { PLANS } from "@/lib/plans";
 //     document.body.appendChild(script);
 //   });
 // };
-
-type PricingPlan = {
-  name: string;
-  price: number;
-  planId: string; // Razorpay plan ID
-  features: { heading: string; subheading?: string; comingSoon?: boolean }[];
-};
 
 export default function PricingPage() {
   const { user } = useAuth();
@@ -71,7 +64,7 @@ export default function PricingPage() {
     }
   };
 
-  const handlePayment = async (subscriptionId: string, plan: PricingPlan) => {
+  const handlePayment = async (subscriptionId: string, plan: Plan) => {
     try {
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
@@ -131,7 +124,7 @@ export default function PricingPage() {
     }
   };
 
-  const handleSubscribe = async (plan: PricingPlan) => {
+  const handleSubscribe = async (plan: Plan) => {
     try {
       setIsLoading(true);
       posthog.capture({
