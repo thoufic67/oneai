@@ -5,11 +5,20 @@ import { useRouter, usePathname } from "next/navigation";
 import { authService } from "@/services/authService";
 import { User } from "@supabase/supabase-js";
 import { isPublicRoute } from "@/config/site";
+import { useQuota, QuotaStatusResponse } from "../hooks/useQuota";
+import {
+  useSubscription,
+  SubscriptionStatusResponse,
+} from "../hooks/useSubscription";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
+  quotaData: QuotaStatusResponse | null;
+  quotaLoading: boolean;
+  quotaError: string | null;
+  subscriptionData: SubscriptionStatusResponse | null;
   logout: () => Promise<void>;
   refreshUser: () => Promise<User | null>;
 }
@@ -18,6 +27,10 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   error: null,
+  quotaData: null,
+  quotaLoading: false,
+  quotaError: null,
+  subscriptionData: null,
   logout: async () => {},
   refreshUser: async () => null,
 });
@@ -32,6 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const {
+    data: quotaData,
+    loading: quotaLoading,
+    error: quotaError,
+  } = useQuota();
+  const { data: subscriptionData } = useSubscription();
 
   // Function to fetch user data
   const refreshUser = async () => {
@@ -112,6 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     error,
+    quotaData,
+    quotaLoading,
+    quotaError,
+    subscriptionData,
     logout,
     refreshUser,
   };

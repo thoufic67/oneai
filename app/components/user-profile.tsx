@@ -12,9 +12,10 @@ import {
 } from "@heroui/dropdown";
 import { Spinner } from "@heroui/spinner";
 import { Tooltip, Link } from "@heroui/react";
+import { Crown } from "lucide-react";
 
 export default function UserProfile() {
-  const { user, loading, error, logout } = useAuth();
+  const { user, loading, error, logout, quotaData } = useAuth();
 
   // Add debugging to understand auth state
   useEffect(() => {
@@ -56,18 +57,28 @@ export default function UserProfile() {
       </DropdownTrigger>
       <DropdownMenu aria-label="User menu">
         <DropdownItem key="profile" className="font-medium">
-          <div className="flex flex-col">
-            <span>{user.user_metadata.name}</span>
-            <span className="text-xs text-gray-500">{user.email}</span>
-          </div>
+          {quotaData?.subscription?.tier === "free" ? (
+            <Link href="/pricing" className="w-full text-md">
+              Upgrade to Pro
+              <span>
+                <Crown className="w-4 h-4 text-orange-500" />
+              </span>
+            </Link>
+          ) : (
+            <div className="flex flex-col">
+              <span>{user.user_metadata.name}</span>
+              <span className="text-xs text-gray-500">{user.email}</span>
+            </div>
+          )}
         </DropdownItem>
+
         {/* <DropdownItem key="dashboard" className="w-full">
           <Link href="/dashboard" className="w-full">
             Dashboard
           </Link>
         </DropdownItem> */}
         <DropdownItem key="settings" className="w-full">
-          <Link href="/settings" className="w-full">
+          <Link href="/settings" className="w-full text-md">
             Settings
           </Link>
         </DropdownItem>

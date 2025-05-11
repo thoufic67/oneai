@@ -21,13 +21,8 @@ import { Skeleton } from "@heroui/skeleton";
 import { useSubscription } from "../hooks/useSubscription";
 
 function SettingsPage() {
-  const { user } = useAuth();
-  const {
-    data: quotaData,
-    loading: quotaLoading,
-    error: quotaError,
-  } = useQuota();
-  const { data: subscriptionData } = useSubscription();
+  const { user, subscriptionData, quotaData, quotaLoading, quotaError } =
+    useAuth();
 
   const [monthlySpendingLimit, setMonthlySpendingLimit] = useState("20");
   const [usageBasedPricing, setUsageBasedPricing] = useState(true);
