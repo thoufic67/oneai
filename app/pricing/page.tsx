@@ -39,7 +39,7 @@ type PricingPlan = {
   name: string;
   price: number;
   planId: string; // Razorpay plan ID
-  features: { heading: string; subheading?: string }[];
+  features: { heading: string; subheading?: string; comingSoon?: boolean }[];
 };
 
 const PRICING_PLANS: PricingPlan[] = [
@@ -53,14 +53,16 @@ const PRICING_PLANS: PricingPlan[] = [
         subheading:
           "Claude, GPT-4o, Llama, Grok, Mistral, Gemini, DeepSeek, Perplexity",
       },
-      // {
-      //   heading: "Reasoning model (CoT)",
-      //   subheading: "o4-mini, DeepSeek R1",
-      // },
-      // {
-      //   heading: "Generate images",
-      //   subheading: "Midjourney, Dall-E, Stable Diffusion, Recraft & FLUX",
-      // },
+      {
+        heading: "Documents up to 10k chars",
+        comingSoon: true,
+      },
+      {
+        heading: "Generate images",
+        comingSoon: true,
+        subheading:
+          "Gpt Image, Midjourney, Dall-E, Stable Diffusion, Recraft & FLUX",
+      },
       {
         heading: "Unlimited text messages",
         subheading: "fair usage policy applies",
@@ -238,7 +240,14 @@ export default function PricingPage() {
                     <div className="flex items-start gap-2" key={index}>
                       <Check className="w-5 h-5 text-primary mt-0.5" />
                       <p className="flex flex-col">
-                        <span className="font-bold">{feature.heading}</span>
+                        <span className="font-bold">
+                          {feature.heading}
+                          {feature.comingSoon && (
+                            <span className="ml-2 px-1 mb-1 bg-primary-500  rounded-full text-xs text-default-100">
+                              coming soon
+                            </span>
+                          )}
+                        </span>
                         {feature.subheading && (
                           <span className="text-default-600">
                             {feature.subheading}
