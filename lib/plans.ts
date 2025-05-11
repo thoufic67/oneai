@@ -25,7 +25,7 @@ export const PLANS: Plan[] = [
     id:
       process.env.NODE_ENV === "development"
         ? "plan_QTWQY2cqBWZ2ma"
-        : "plan_QTWneymEdMUvPK", // Replace with your actual Razorpay plan ID
+        : "plan_QTWneymEdMUvPK",
     features: [
       {
         heading: "Access to the best LLMs",
