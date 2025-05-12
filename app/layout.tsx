@@ -3,6 +3,7 @@ import { Metadata, Viewport } from "next";
 import { Link } from "@heroui/link";
 import clsx from "clsx";
 import { Inter } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head />
       <body className={`${inter.className} font-sans antialiased `}>
+        <Toaster />
         <Providers>
           <BackgroundGradient />
           <div className="relative flex flex-col w-dvw h-dvh">

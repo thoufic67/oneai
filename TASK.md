@@ -507,3 +507,14 @@
 // Discovered During Work
 
 - [TODO] Link to the terms of service page from the footer or main navigation for user accessibility.
+
+- [x] Add subscription cancellation support
+  - [x] Razorpay cancel API integration
+  - [x] /api/subscription/cancel route
+  - [x] Settings UI button and feedback
+  - [x] Toast notifications and loading state
+  - [x] DB update on cancel
+
+// Discovered During Work
+
+- [TODO] Review webhook and DB sync for cancellations to ensure consistency if user cancels via Razorpay portal.

@@ -64,3 +64,10 @@ Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template
 - Privacy Policy: `/privacy`
 - Terms of Service: `/terms`
 - Cancellation & Refunds: `/cancellation` (new, accessible from footer)
+
+## Features
+
+- Subscription management (Razorpay integration)
+  - Plan selection, upgrade, and payment
+  - **User-initiated subscription cancellation from Settings page**
+  - Backend API integration for Razorpay subscription cancel

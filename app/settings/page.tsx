@@ -19,6 +19,7 @@ import { Avatar } from "@heroui/avatar";
 import { useQuota } from "@/app/hooks/useQuota";
 import { Skeleton } from "@heroui/skeleton";
 import { useSubscription } from "../hooks/useSubscription";
+import { toast } from "react-hot-toast";
 
 function SettingsPage() {
   const { user, subscriptionData, quotaData, quotaLoading, quotaError } =
@@ -28,6 +29,7 @@ function SettingsPage() {
   const [usageBasedPricing, setUsageBasedPricing] = useState(true);
   const [usageBasedPricingPremium, setUsageBasedPricingPremium] =
     useState(true);
+  const [cancelLoading, setCancelLoading] = useState(false);
   console.log("quotaData", quotaData);
   // Helper function to format the reset date
   const formatResetDate = (date: Date) => {
@@ -37,6 +39,32 @@ function SettingsPage() {
       (resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
     return diffDays;
+  };
+
+  // Cancel subscription handler
+  const handleCancelSubscription = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to cancel your subscription? You will retain access until the end of your billing period."
+      )
+    )
+      return;
+    setCancelLoading(true);
+    try {
+      const res = await fetch("/api/subscription/cancel", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || "Failed to cancel subscription");
+      toast.success(
+        "Subscription cancelled. You will retain access until the end of your billing period."
+      );
+      // Optionally refetch subscription/quota data
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel subscription");
+    } finally {
+      setCancelLoading(false);
+    }
   };
 
   return (
@@ -124,6 +152,19 @@ function SettingsPage() {
                     target="_blank"
                   >
                     MANAGE SUBSCRIPTION
+                  </Button>
+                  {/* Cancel Subscription Button */}
+                  <Button
+                    variant="ghost"
+                    color="danger"
+                    size="md"
+                    radius="lg"
+                    className="mt-2"
+                    onClick={handleCancelSubscription}
+                    isLoading={cancelLoading}
+                    disabled={cancelLoading}
+                  >
+                    Cancel Subscription
                   </Button>
                 </>
               )}

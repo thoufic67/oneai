@@ -123,3 +123,23 @@ export const getRazorpaySubscription = async (
     throw error;
   }
 };
+
+/**
+ * Cancel a Razorpay subscription
+ */
+export const cancelRazorpaySubscription = async (
+  subscriptionId: string,
+  cancelAtCycleEnd: boolean = true
+): Promise<Subscriptions.RazorpaySubscription> => {
+  try {
+    // cancelAtCycleEnd: true means cancel at period end, false means immediate
+    const cancelled = await razorpayServer.subscriptions.cancel(
+      subscriptionId,
+      cancelAtCycleEnd
+    );
+    return cancelled as Subscriptions.RazorpaySubscription;
+  } catch (error) {
+    console.error("Error cancelling Razorpay subscription:", error);
+    throw error;
+  }
+};
