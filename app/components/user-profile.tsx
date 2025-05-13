@@ -19,10 +19,11 @@ export default function UserProfile() {
 
   // Add debugging to understand auth state
   useEffect(() => {
+    console.log("quotaData", quotaData);
     if (error) {
       console.error("Auth error in UserProfile:", error);
     }
-  }, [error]);
+  }, [error, quotaData]);
 
   // Show loading spinner while authentication state is being determined
   if (loading) {

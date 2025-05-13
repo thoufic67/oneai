@@ -17,7 +17,8 @@ import { useAuth } from "../auth-provider";
 import { ChatBubble } from "./ChatBubble";
 import { ChatInput } from "./ChatInput";
 import { Button, useDisclosure } from "@heroui/react";
-import { AlertCircle, Send } from "lucide-react";
+import { AlertCircle, Crown, Send } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
@@ -136,7 +137,7 @@ export const models: Model[] = [
 export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const router = useRouter();
 
-  const { user } = useAuth();
+  const { user, quotaData, subscriptionData } = useAuth();
 
   // State for current messages display
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
@@ -168,6 +169,10 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const animateVideoRef = useRef<HTMLVideoElement>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [tempUserName, setTempUserName] = useState("");
+
+  useEffect(() => {
+    console.log(quotaData);
+  }, [quotaData]);
 
   // Persist preferences to session storage when they change
   useEffect(() => {
@@ -449,6 +454,20 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
               >
                 {renderChatInput()}
               </motion.div>
+              {quotaData?.subscription?.tier === "free" && (
+                <div className="p-2 text-center text-sm text-gray-500 flex gap-1">
+                  You've very limited quota.{" "}
+                  <Link
+                    href="/pricing"
+                    className="flex items-center gap-1 text-blue-500"
+                  >
+                    <span className="flex items-center gap-1">
+                      <Crown className="w-4 h-4 text-orange-500" />
+                    </span>
+                    Upgrade for more usage.
+                  </Link>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
