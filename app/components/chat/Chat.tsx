@@ -456,7 +456,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
               </motion.div>
               {quotaData?.subscription?.tier === "free" && (
                 <div className="p-2 text-center text-sm text-gray-500 flex gap-1">
-                  You've very limited quota.{" "}
+                  You&apos;ve very limited quota.{" "}
                   <Link
                     href="/pricing"
                     className="flex items-center gap-1 text-blue-500"
