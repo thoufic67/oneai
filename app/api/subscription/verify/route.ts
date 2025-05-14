@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { verifyRazorpayPayment, getRazorpaySubscription } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { Subscriptions } from "razorpay/dist/types/subscriptions";
+import { QuotaManager } from "@/lib/quota";
 
 export async function POST(req: Request) {
   try {
@@ -147,6 +148,13 @@ export async function POST(req: Request) {
         );
       }
     }
+
+    // 6. Update user quota
+    const quotaManager = new QuotaManager(supabase);
+    await quotaManager.initializeAllQuotasForPlan(
+      user.id,
+      subscriptionDetails.plan_id
+    );
 
     return NextResponse.json({
       success: true,

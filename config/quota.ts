@@ -3,22 +3,25 @@
  * Defines quota types, reset frequencies, and related types
  */
 
+import plans from "razorpay/dist/types/plans";
+
 export type QuotaKey = "small_messages" | "large_messages" | "image_generation";
 export type ResetFrequency = "3hour" | "daily" | "monthly";
+export type SubscriptionTier = "free" | "basic" | "pro" | "enterprise";
 
 export interface QuotaConfig {
   limit: number;
   resetFrequency: ResetFrequency;
 }
 
-export interface TierQuotas {
-  [key: string]: {
-    name: string;
+export type TierQuotas = {
+  [K in SubscriptionTier]: {
+    name: K;
     quotas: {
-      [K in QuotaKey]: QuotaConfig;
+      [Q in QuotaKey]: QuotaConfig;
     };
   };
-}
+};
 
 export const SUBSCRIPTION_TIERS: TierQuotas = {
   free: {
@@ -29,12 +32,20 @@ export const SUBSCRIPTION_TIERS: TierQuotas = {
       image_generation: { limit: 3, resetFrequency: "monthly" },
     },
   },
-  pro: {
-    name: "pro",
+  basic: {
+    name: "basic",
     quotas: {
       small_messages: { limit: 500, resetFrequency: "monthly" },
       large_messages: { limit: 100, resetFrequency: "monthly" },
-      image_generation: { limit: 10, resetFrequency: "monthly" },
+      image_generation: { limit: 50, resetFrequency: "monthly" },
+    },
+  },
+  pro: {
+    name: "pro",
+    quotas: {
+      small_messages: { limit: 1000, resetFrequency: "monthly" },
+      large_messages: { limit: 200, resetFrequency: "monthly" },
+      image_generation: { limit: 100, resetFrequency: "monthly" },
     },
   },
   enterprise: {
@@ -45,6 +56,15 @@ export const SUBSCRIPTION_TIERS: TierQuotas = {
       image_generation: { limit: 100, resetFrequency: "monthly" },
     },
   },
+};
+
+export const PLANS_TO_SUBSCRIPTION_TIERS: Record<string, SubscriptionTier> = {
+  plan_QTWneymEdMUvPK: "basic",
+  plan_QTWQY2cqBWZ2ma: "basic",
+};
+
+export const getSubscriptionTierFromPlanId = (planId: string) => {
+  return PLANS_TO_SUBSCRIPTION_TIERS[planId] || "free";
 };
 
 export interface QuotaStatus {

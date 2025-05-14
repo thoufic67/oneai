@@ -9,6 +9,8 @@ import {
   QuotaExceededError,
   SUBSCRIPTION_TIERS,
   ResetFrequency,
+  getSubscriptionTierFromPlanId,
+  SubscriptionTier,
 } from "@/config/quota";
 import { SupabaseClient } from "@supabase/supabase-js";
 
@@ -43,10 +45,13 @@ export class QuotaManager {
     // If no quota record exists, create one
     if (!quota) {
       const tierConfig =
-        SUBSCRIPTION_TIERS[user.subscription_tier].quotas[quotaKey];
+        SUBSCRIPTION_TIERS[user.subscription_tier as SubscriptionTier].quotas[
+          quotaKey
+        ];
       await this.initializeQuota(
         userId,
         quotaKey,
+        user.subscription_tier,
         tierConfig.limit,
         tierConfig.resetFrequency
       );
@@ -97,25 +102,52 @@ export class QuotaManager {
   }
 
   /**
+   * Initialize all quotas for a user based on planId
+   */
+  async initializeAllQuotasForPlan(userId: string, planId: string) {
+    const subscriptionTier = getSubscriptionTierFromPlanId(planId);
+    const plan =
+      SUBSCRIPTION_TIERS[subscriptionTier] || SUBSCRIPTION_TIERS["free"];
+    for (const [quotaKey, { limit, resetFrequency }] of Object.entries(
+      plan.quotas
+    )) {
+      await this.initializeQuota(
+        userId,
+        quotaKey as QuotaKey,
+        subscriptionTier,
+        limit,
+        resetFrequency
+      );
+    }
+  }
+
+  /**
    * Initialize quota for a user
    */
-  private async initializeQuota(
+  public async initializeQuota(
     userId: string,
     quotaKey: QuotaKey,
+    subscriptionTier: string,
     limit: number,
     resetFrequency: ResetFrequency
   ): Promise<void> {
     const nextReset = this.calculateNextReset(resetFrequency);
 
-    const { error } = await this.supabase.from("usage_quotas").insert({
-      user_id: userId,
-      quota_key: quotaKey,
-      quota_limit: limit,
-      used_count: 0,
-      reset_frequency: resetFrequency,
-      last_reset_at: new Date().toISOString(),
-      next_reset_at: nextReset.toISOString(),
-    });
+    const { error } = await this.supabase.from("usage_quotas").upsert(
+      {
+        user_id: userId,
+        quota_key: quotaKey,
+        quota_limit: limit,
+        used_count: 0,
+        subscription_tier: subscriptionTier,
+        reset_frequency: resetFrequency,
+        last_reset_at: new Date().toISOString(),
+        next_reset_at: nextReset.toISOString(),
+      },
+      {
+        onConflict: "user_id,quota_key",
+      }
+    );
 
     if (error) throw error;
   }

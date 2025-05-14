@@ -49,8 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     data: quotaData,
     loading: quotaLoading,
     error: quotaError,
+    refetch: refetchQuota,
   } = useQuota();
-  const { data: subscriptionData } = useSubscription();
+  const { data: subscriptionData, refetch: refetchSubscription } =
+    useSubscription();
 
   // Function to fetch user data
   const refreshUser = async () => {
@@ -58,6 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
+      await refetchQuota();
+      await refetchSubscription();
       return currentUser;
     } catch (err) {
       console.error("Error refreshing user data:", err);

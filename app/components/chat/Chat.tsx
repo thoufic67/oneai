@@ -65,7 +65,7 @@ const getWithExpiry = (key: string, defaultValue: any) => {
 };
 
 type ModelType =
-  | "gpt-4o-mini"
+  | "openai/gpt-4.1"
   | "anthropic/claude-3.7-sonnet"
   | "mistral/ministral-8b"
   | "x-ai/grok-3-mini-beta"
@@ -94,7 +94,7 @@ export const models: Model[] = [
   },
   {
     name: "ChatGPT",
-    value: "gpt-4o-mini",
+    value: "openai/gpt-4.1",
     logo: "/logos/openai.svg",
   },
   {

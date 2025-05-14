@@ -1,11 +1,13 @@
 /**
  * @file Razorpay webhook handler for subscription events
+ * Handles subscription status updates and initializes user quotas using QuotaManager from lib/quota.ts
  */
 
 import { NextResponse } from "next/server";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { Webhooks } from "razorpay/dist/types/webhooks";
+import { QuotaManager } from "@/lib/quota";
 
 // Razorpay webhook payload types
 type RazorpayWebhookEvent =
@@ -238,12 +240,16 @@ export async function POST(req: Request) {
           } else {
             console.log("[Webhook] User subscription tier updated");
           }
-          // Initialize quotas for the new subscription
+          // Initialize quotas for the new subscription using QuotaManager
           console.log("[Webhook] Initializing quotas for user", {
             user_id: notes.user_id,
             plan_id: subscriptionEntity.plan_id,
           });
-          await initializeQuotas(notes.user_id, subscriptionEntity.plan_id);
+          const quotaManager = new QuotaManager(supabase);
+          await quotaManager.initializeAllQuotasForPlan(
+            notes.user_id,
+            subscriptionEntity.plan_id
+          );
         } else {
           console.warn(
             "[Webhook] No user_id found in notes for subscription activation"
@@ -610,69 +616,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
-
-// Helper function to initialize quotas for a new subscription
-async function initializeQuotas(userId: string, planId: string) {
-  const supabase = await createClient(process.env.SUPABASE_SERVICE_ROLE_KEY!);
-
-  // Get quota limits for the plan
-  const quotaLimits = getQuotaLimitsForPlan(planId);
-  console.log("[Quotas] Initializing quotas for user", {
-    userId,
-    planId,
-    quotaLimits,
-  });
-
-  // Initialize each quota type
-  for (const [quotaKey, limit] of Object.entries(quotaLimits)) {
-    console.log(
-      `[Quotas] Upserting quota: ${quotaKey} with limit: ${limit} for user: ${userId}`
-    );
-    const { data: quotaData, error: quotaError } = await supabase
-      .from("usage_quotas")
-      .upsert(
-        {
-          user_id: userId,
-          quota_key: quotaKey,
-          used_count: 0,
-          quota_limit: limit,
-          subscription_tier: "basic",
-          reset_frequency: "monthly",
-          last_reset_at: new Date(),
-          next_reset_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        },
-        { onConflict: "user_id,quota_key" }
-      );
-    if (quotaError) {
-      console.error("[Quotas] Error upserting quota", {
-        error: quotaError,
-      });
-    } else {
-      console.log("[Quotas] Quota upserted successfully", { quotaData });
-    }
-  }
-  console.log("[Quotas] Quotas initialized for user", { userId });
-}
-
-// Helper function to get quota limits for a plan
-function getQuotaLimitsForPlan(planId: string) {
-  // This is a placeholder - implement based on your plan configuration
-  const quotaLimits = {
-    pro: {
-      small_messages: 1000,
-      large_messages: 200,
-      image_generation: 100,
-    },
-    basic: {
-      small_messages: 500,
-      large_messages: 100,
-      image_generation: 50,
-    },
-  };
-
-  const limits =
-    quotaLimits[planId as keyof typeof quotaLimits] || quotaLimits.basic;
-  console.log("[Quotas] Fetched quota limits for plan", { planId, limits });
-  return limits;
 }

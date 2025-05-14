@@ -21,18 +21,24 @@ import { Check } from "lucide-react";
 import { useAuth } from "../components/auth-provider";
 import { useRouter } from "next/navigation";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Script from "next/script";
 import Confetti from "react-confetti"; // Confetti animation for payment success
 import { PLANS, Plan } from "@/lib/plans";
 
 export default function PricingPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const posthog = PostHogClient();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentSuccessful, setPaymentSuccessful] = useState(false);
+
+  useEffect(() => {
+    if (isPaymentSuccessful) {
+      refreshUser();
+    }
+  }, [isPaymentSuccessful, refreshUser]);
 
   const createSubscription = async (planId: string) => {
     try {
