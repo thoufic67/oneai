@@ -46,6 +46,7 @@ export async function POST() {
       .update({
         status: "cancelled",
         canceled_at: new Date().toISOString(),
+        cancel_at_period_end: true,
         metadata: {
           ...subscription.metadata,
           last_event: "user_cancelled",

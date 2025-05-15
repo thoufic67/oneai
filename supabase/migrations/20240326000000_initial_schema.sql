@@ -68,6 +68,7 @@ CREATE TABLE public.subscriptions (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   user_id uuid REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   plan_id text NOT NULL,
+  subscription_tier subscription_plan NOT NULL DEFAULT 'free',
   status subscription_status NOT NULL DEFAULT 'active',
   payment_status text CHECK (payment_status IN ('pending', 'authorized', 'captured', 'failed', 'refunded')),
   payment_provider text NOT NULL,
@@ -82,7 +83,7 @@ CREATE TABLE public.subscriptions (
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   metadata jsonb DEFAULT '{}'::jsonb,
   
-  CONSTRAINT unique_provider_subscription UNIQUE (payment_provider, provider_subscription_id)
+  CONSTRAINT unique_provider_subscription UNIQUE (payment_provider, provider_subscription_id, plan_id)
 );
 
 -- Subscription Payments Table (Updated version)

@@ -8,6 +8,7 @@ import { verifyWebhookSignature } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { Webhooks } from "razorpay/dist/types/webhooks";
 import { QuotaManager } from "@/lib/quota";
+import { getSubscriptionTierFromPlanId } from "@/config/quota";
 
 // Razorpay webhook payload types
 type RazorpayWebhookEvent =
@@ -193,12 +194,16 @@ export async function POST(req: Request) {
         console.log(
           "[Webhook] Event: subscription.activated - Activating subscription"
         );
+        const subscriptionTier = getSubscriptionTierFromPlanId(
+          subscriptionEntity.plan_id
+        );
         const { data: subscriptionData, error: subscriptionError } =
           await supabase
             .from("subscriptions")
             .update({
               status: "active",
               payment_status: "captured",
+              subscription_tier: subscriptionTier,
               current_period_start: new Date(
                 subscriptionEntity.current_start * 1000
               ),

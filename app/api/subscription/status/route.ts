@@ -21,7 +21,7 @@ export async function GET() {
       .from("subscriptions")
       .select("*")
       .eq("user_id", user.id)
-      .eq("status", "active")
+      .neq("status", "unpaid")
       .order("current_period_end", { ascending: false })
       .limit(1)
       .single();

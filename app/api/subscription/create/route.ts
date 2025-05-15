@@ -1,5 +1,5 @@
 /**
- * @file API route for creating Razorpay subscriptions
+ * @file API route for creating Razorpay subscriptions. If a user subscription exists with the plan, returns the existing subscription instead of creating a new one.
  */
 
 import { NextResponse } from "next/server";
@@ -9,6 +9,7 @@ import {
 } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { getPlanDetails } from "@/lib/plans";
+import { getSubscriptionTierFromPlanId } from "@/config/quota";
 
 export async function POST(req: Request) {
   try {
@@ -22,6 +23,47 @@ export async function POST(req: Request) {
     }
 
     const { planId } = await req.json();
+
+    // Check if a subscription already exists for this user and plan
+    const { data: existingSubscriptions, error: existingError } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("plan_id", planId)
+      .limit(1);
+
+    if (existingError) {
+      console.error("Error checking existing subscription:", existingError);
+      return NextResponse.json(
+        {
+          error:
+            existingError.message || "Failed to check existing subscription",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (existingSubscriptions && existingSubscriptions.length > 0) {
+      // If the subscription is active, throw an error
+      if (
+        existingSubscriptions[0].status !== "unpaid" &&
+        existingSubscriptions[0].status !== "cancelled"
+      ) {
+        return NextResponse.json(
+          {
+            subscription: existingSubscriptions[0],
+            error: "Subscription is already active for this user and plan.",
+          },
+          { status: 400 }
+        );
+      }
+      // Subscription exists but is not active, return it
+      return NextResponse.json({
+        subscription: existingSubscriptions[0],
+        subscription_id: existingSubscriptions[0].provider_subscription_id,
+        message: "Subscription already exists for this user and plan.",
+      });
+    }
 
     // Get plan details from your database or config
     const plan = await getPlanDetails(planId);
@@ -47,9 +89,11 @@ export async function POST(req: Request) {
       await razorpayServer.subscriptions.create(subscriptionOptions);
 
     // Store subscription details in your database
+    const subscriptionTier = getSubscriptionTierFromPlanId(planId);
     const { data, error } = await supabase.from("subscriptions").insert({
       user_id: user.id,
       plan_id: planId,
+      subscription_tier: subscriptionTier,
       status: "unpaid",
       payment_provider: "razorpay",
       provider_subscription_id: subscription.id,

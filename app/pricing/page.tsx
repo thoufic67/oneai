@@ -38,7 +38,7 @@ export default function PricingPage() {
     if (isPaymentSuccessful) {
       refreshUser();
     }
-  }, [isPaymentSuccessful, refreshUser]);
+  }, [isPaymentSuccessful]);
 
   const createSubscription = async (planId: string) => {
     try {

@@ -7,6 +7,7 @@ import { verifyRazorpayPayment, getRazorpaySubscription } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import { Subscriptions } from "razorpay/dist/types/subscriptions";
 import { QuotaManager } from "@/lib/quota";
+import { getSubscriptionTierFromPlanId } from "@/config/quota";
 
 export async function POST(req: Request) {
   try {
@@ -66,11 +67,15 @@ export async function POST(req: Request) {
 
     // If subscription doesn't exist, create it
     if (!existingSubscription) {
+      const subscriptionTier = getSubscriptionTierFromPlanId(
+        subscriptionDetails.plan_id
+      );
       const { error: createError } = await supabase
         .from("subscriptions")
         .insert({
           user_id: user.id,
           plan_id: subscriptionDetails.plan_id,
+          subscription_tier: subscriptionTier,
           payment_provider: "razorpay",
           provider_subscription_id: razorpay_subscription_id,
           status: "active",
