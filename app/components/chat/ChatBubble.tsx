@@ -223,10 +223,6 @@ export function ChatBubble({
     return getModelByValue(model);
   }, [model]);
 
-  useEffect(() => {
-    console.log("messageCopied", content);
-  }, [content]);
-
   const copyMessageToClipboard = () => {
     navigator.clipboard.writeText(content);
     setMessageCopied(true);
@@ -282,23 +278,24 @@ export function ChatBubble({
                 {content}
               </Markdown>
             </div>
+          </div>
+          {!isLoading && (
+            <div className="flex gap-2">
+              <Tooltip content="Copy message">
+                <Button
+                  isIconOnly
+                  onPress={copyMessageToClipboard}
+                  variant="flat"
+                  size="sm"
+                  radius="lg"
+                  className="self-start mt-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
+                  aria-label="Copy message"
+                >
+                  {messageCopied ? <Check size={16} /> : <Copy size={16} />}
+                </Button>
+              </Tooltip>
 
-            {isAssistant && !isLoading && (
-              <div className="flex gap-2">
-                <Tooltip content="Copy message">
-                  <Button
-                    isIconOnly
-                    onPress={copyMessageToClipboard}
-                    variant="flat"
-                    size="sm"
-                    radius="lg"
-                    className="self-start mt-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
-                    aria-label="Copy message"
-                  >
-                    {messageCopied ? <Check size={16} /> : <Copy size={16} />}
-                  </Button>
-                </Tooltip>
-
+              {isAssistant && (
                 <Tooltip content="Regenerate message (Coming soon)">
                   <div>
                     <Button
@@ -321,9 +318,9 @@ export function ChatBubble({
                     </Button>
                   </div>
                 </Tooltip>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </motion.div>
       </div>
     </motion.div>
