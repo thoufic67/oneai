@@ -1,0 +1,98 @@
+// This file exports the Image component, which displays an image with the following features:
+// - On click, the image expands into a HeroUI Modal with Framer Motion animation.
+// - On modal close, the image animates back to its original position.
+// - On hover, a download button (using Lucide Download icon and HeroUI Button) appears to download the image.
+// - Uses TailwindCSS for styling, HeroUI for modal/button, Framer Motion for animation, and Lucide for icons.
+
+"use client";
+import { useState } from "react";
+import { Modal, ModalContent, ModalBody } from "@heroui/react";
+import { Button } from "@heroui/button";
+import { Download } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const Image = ({ src, alt }: { src: string; alt: string }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Download handler
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = `${src}?download=aiflo-fgenerated-image.webp`;
+    link.download = alt || "image";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div
+      className="relative inline-block group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <motion.img
+        src={src}
+        alt={alt || "Image"}
+        className="rounded-md max-w-full max-h-[300px] object-contain cursor-pointer transition-shadow group-hover:shadow-lg"
+        onClick={() => setIsOpen(true)}
+        layoutId={`expandable-image-${src}`}
+        whileHover={{ scale: 1.03 }}
+      />
+      {/* Download button on hover */}
+
+      {isHovered && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          transition={{ duration: 0.2 }}
+          className="absolute top-2 right-2 z-10"
+        >
+          <Button
+            isIconOnly
+            size="sm"
+            variant="flat"
+            className="bg-white/80 hover:bg-white/90 shadow border border-gray-200"
+            onPress={handleDownload}
+            aria-label="Download image"
+          >
+            <Download className="w-4 h-4 text-gray-700" />
+          </Button>
+        </motion.div>
+      )}
+
+      {alt && <p className="text-xs text-center text-gray-500 mt-1">{alt}</p>}
+      {/* Modal for expanded image */}
+
+      {isOpen && (
+        <Modal
+          isOpen={isOpen}
+          onOpenChange={setIsOpen}
+          backdrop="blur"
+          size="5xl"
+          className="flex items-center justify-center h-[50vh] sm:h-[90vh]"
+        >
+          <ModalContent>
+            <ModalBody className="flex items-center justify-center p-0">
+              <motion.img
+                src={src}
+                alt={alt || "Image"}
+                className="rounded-lg min-w-[50%] max-w-[80%] w-full object-contain "
+                layoutId={`expandable-image-${src}`}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                style={{ cursor: "zoom-out" }}
+              />
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+export default Image;
+export { Image };

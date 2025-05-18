@@ -174,8 +174,8 @@ export class OpenRouterService {
         reader.releaseLock();
       }
     } catch (error) {
+      console.error("OpenRouter API error:", JSON.stringify(error));
       if (error instanceof Error) {
-        console.error("OpenRouter API error:", error);
         throw new Error(`OpenRouter API error: ${error.message}`);
       }
       throw error;

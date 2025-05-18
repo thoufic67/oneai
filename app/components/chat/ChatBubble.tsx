@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, Button, Image, Tooltip } from "@heroui/react";
+import { Avatar, Button, Tooltip } from "@heroui/react";
 import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -8,7 +8,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, RefreshCcw } from "lucide-react";
 import React from "react";
 import { useAuth } from "@/app/components/auth-provider";
-import { models } from "@/app/components/chat/Chat";
+import { getModelByValue, Model } from "@/lib/models";
+import Image from "@/app/components/chat-image";
 
 interface ChatBubbleProps {
   isReadonly: boolean;
@@ -57,20 +58,6 @@ const Link = ({ href, children }: any) => {
     >
       {children}
     </a>
-  );
-};
-
-// Image component
-const ImageComponent = ({ src, alt }: any) => {
-  return (
-    <div className="my-3">
-      <img
-        src={src}
-        alt={alt || "Image"}
-        className="rounded-md max-w-full max-h-[300px] object-contain"
-      />
-      {alt && <p className="text-xs text-center text-gray-500 mt-1">{alt}</p>}
-    </div>
   );
 };
 
@@ -203,7 +190,7 @@ const MarkdownComponents = {
   blockquote: BlockQuote,
   p: Paragraph,
   a: Link,
-  img: ImageComponent,
+  img: Image,
   hr: HorizontalRule,
   pre: ({ children }: any) => CodeBlock({ children, inline: false }),
   code: ({ children }: any) => CodeBlock({ children, inline: true }),
@@ -226,8 +213,9 @@ export function ChatBubble({
 }: ChatBubbleProps) {
   const [messageCopied, setMessageCopied] = useState(false);
   const { user } = useAuth();
-  const modelDetails = useMemo(() => {
-    return models.find((m) => m.value === model);
+  const modelDetails = useMemo<Model | undefined>(() => {
+    if (!model) return undefined;
+    return getModelByValue(model);
   }, [model]);
 
   useEffect(() => {
@@ -317,7 +305,7 @@ export function ChatBubble({
                       className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
                       aria-label="Regenerate message"
                     >
-                      <Image
+                      <img
                         src={modelDetails?.logo}
                         alt={modelDetails?.name}
                         width={16}

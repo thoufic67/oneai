@@ -41,6 +41,8 @@ interface ChatInputProps {
   onKeyDown?: (e: React.KeyboardEvent) => void;
   onWebSearchToggle?: (enabled: boolean) => void;
   webSearchEnabled?: boolean;
+  onImageGenToggle?: (enabled: boolean) => void;
+  imageGenEnabled?: boolean;
   modelOptions?: ModelOption[];
   selectedModel?: string;
   onModelChange?: (model: string) => void;
@@ -59,6 +61,8 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       onKeyDown,
       onWebSearchToggle,
       webSearchEnabled = false,
+      onImageGenToggle,
+      imageGenEnabled = false,
       modelOptions = [],
       selectedModel,
       onModelChange,
@@ -66,12 +70,29 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
       useState(webSearchEnabled);
+    const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
 
     const toggleWebSearch = () => {
+      if (isImageGenEnabled) {
+        setIsImageGenEnabled(false);
+        onImageGenToggle && onImageGenToggle(false);
+      }
       const newState = !isWebSearchEnabled;
       setIsWebSearchEnabled(newState);
       if (onWebSearchToggle) {
         onWebSearchToggle(newState);
+      }
+    };
+
+    const toggleImageGen = () => {
+      if (isWebSearchEnabled) {
+        setIsWebSearchEnabled(false);
+        onWebSearchToggle && onWebSearchToggle(false);
+      }
+      const newState = !isImageGenEnabled;
+      setIsImageGenEnabled(newState);
+      if (onImageGenToggle) {
+        onImageGenToggle(newState);
       }
     };
 
@@ -141,15 +162,16 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                 </div>
               </Tooltip>
 
-              <Tooltip content="Image generation (Coming soon)">
+              <Tooltip content="Image generation">
                 <div>
                   <Button
-                    isDisabled
-                    onPress={toggleWebSearch}
+                    onPress={toggleImageGen}
                     isIconOnly
                     size="sm"
                     className={`flex rounded-full border border-default-300  ${
-                      false ? "bg-primary text-white " : "text-default-500"
+                      isImageGenEnabled
+                        ? "bg-primary text-white "
+                        : "text-default-500"
                     } transition-colors duration-300`}
                   >
                     <ImageIcon className="h-4 w-4" />

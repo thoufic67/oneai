@@ -23,6 +23,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@heroui/skeleton";
+import { getChatModels, getImageModels, ModelType } from "@/lib/models";
+import { Island_Moments } from "next/font/google";
 
 // Add utility functions for session storage with expiration
 const storeWithExpiry = (key: string, value: any) => {
@@ -64,75 +66,10 @@ const getWithExpiry = (key: string, defaultValue: any) => {
   }
 };
 
-type ModelType =
-  | "openai/gpt-4.1"
-  | "anthropic/claude-3.7-sonnet"
-  | "mistral/ministral-8b"
-  | "x-ai/grok-3-mini-beta"
-  | "deepseek/deepseek-chat-v3-0324"
-  | "deepseek/deepseek-r1-zero:free"
-  | "perplexity/sonar"
-  | "google/gemini-2.0-flash-001"
-  | "meta-llama/llama-4-maverick";
-
-interface Model {
-  name: string;
-  value: ModelType;
-  logo: string;
-}
-
 interface ChatProps {
   initialMessages?: ChatMessage[];
   initialConversation?: Conversation;
 }
-
-export const models: Model[] = [
-  {
-    name: "Gemini",
-    value: "google/gemini-2.0-flash-001",
-    logo: "/logos/gemini.svg",
-  },
-  {
-    name: "ChatGPT",
-    value: "openai/gpt-4.1",
-    logo: "/logos/openai.svg",
-  },
-  {
-    name: "Claude",
-    value: "anthropic/claude-3.7-sonnet",
-    logo: "/logos/anthropic.svg",
-  },
-  {
-    name: "Mistral",
-    value: "mistral/ministral-8b",
-    logo: "/logos/mistral.svg",
-  },
-  {
-    name: "Grok",
-    value: "x-ai/grok-3-mini-beta",
-    logo: "/logos/grok.svg",
-  },
-  {
-    name: "Perplexity",
-    value: "perplexity/sonar",
-    logo: "/logos/perplexity.svg",
-  },
-  {
-    name: "DeepSeek",
-    value: "deepseek/deepseek-chat-v3-0324",
-    logo: "/logos/deepseek.svg",
-  },
-  {
-    name: "Llama",
-    value: "meta-llama/llama-4-maverick",
-    logo: "/logos/llama.svg",
-  },
-  // {
-  //   name: "DeepSeek-R1-Zero",
-  //   value: "deepseek/deepseek-r1-zero:free",
-  //   logo: "/logos/deepseek-r1.svg",
-  // },
-];
 
 export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const router = useRouter();
@@ -150,10 +87,13 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
 
   // Load initial values from session storage with expiration
   const [selectedModel, setSelectedModel] = useState<ModelType>(() =>
-    getWithExpiry("aiflo_selected_model", models[0].value)
+    getWithExpiry("aiflo_selected_model", getChatModels()[0].value)
   );
   const [webSearchEnabled, setWebSearchEnabled] = useState(() =>
     getWithExpiry("aiflo_web_search_enabled", false)
+  );
+  const [imageGenEnabled, setImageGenEnabled] = useState(() =>
+    getWithExpiry("aiflo_image_gen_enabled", false)
   );
 
   const [currentChatId, setCurrentChatId] = useState<string | null>(
@@ -169,6 +109,14 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const animateVideoRef = useRef<HTMLVideoElement>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [tempUserName, setTempUserName] = useState("");
+  const models = useMemo(() => {
+    if (imageGenEnabled) {
+      setSelectedModel(getImageModels()[0].value);
+      return getImageModels();
+    }
+    setSelectedModel(getChatModels()[0].value);
+    return getChatModels();
+  }, [imageGenEnabled]);
 
   useEffect(() => {
     console.log(quotaData);
@@ -183,9 +131,13 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     storeWithExpiry("aiflo_web_search_enabled", webSearchEnabled);
   }, [webSearchEnabled]);
 
+  useEffect(() => {
+    storeWithExpiry("aiflo_image_gen_enabled", imageGenEnabled);
+  }, [imageGenEnabled]);
+
   useLayoutEffect(() => {
     if (animateVideoRef.current) {
-      if (isLoading) {
+      if (isLoading && !imageGenEnabled) {
         animateVideoRef.current?.play();
       } else {
         animateVideoRef.current?.pause();
@@ -196,7 +148,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         animateVideoRef.current.pause();
       }
     };
-  }, [isLoading, animateVideoRef.current]);
+  }, [isLoading, animateVideoRef.current, imageGenEnabled]);
 
   useEffect(() => {
     scrollToBottom();
@@ -210,10 +162,10 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   };
 
   const handleSubmit = async () => {
+    setIsLoading(true);
     if (inputMessage.trim().length === 0) return;
 
     try {
-      setIsLoading(true);
       setError(null);
 
       // Add user message to UI for immediate feedback
@@ -232,6 +184,39 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
 
       // Prepare message history for API call
       const messageHistory: Message[] = updatedMessages;
+
+      // If image generation is enabled, call API for image
+      if (imageGenEnabled) {
+        const response = await chatService.createChatCompletion({
+          messages: messageHistory,
+          model: selectedModel,
+          image: true,
+          conversationId: currentChatId || undefined,
+        });
+
+        if (response?.conversationId && !currentChatId) {
+          router.push(`/c/${response.conversationId}?`);
+        }
+
+        if (response?.choices[0].message.content) {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              id: "",
+              conversation_id: currentChatId || "",
+              user_id: user?.id || "",
+              model_id: selectedModel,
+              created_at: new Date().toISOString(),
+              role: "assistant",
+              content: response.choices[0].message.content,
+            },
+          ]);
+        } else if (response?.error) {
+          setError(response.error);
+        }
+        setIsLoading(false);
+        return;
+      }
 
       // Initialize streaming message
       setStreamingMessage({ role: "assistant", content: "" });
@@ -336,6 +321,12 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     storeWithExpiry("aiflo_web_search_enabled", enabled);
   };
 
+  // Handle image generation toggle and save to session storage
+  const handleImageGenToggle = (enabled: boolean) => {
+    setImageGenEnabled(enabled);
+    storeWithExpiry("aiflo_image_gen_enabled", enabled);
+  };
+
   // Combine regular messages with streaming message for display
   const displayMessages = useMemo(() => {
     return messages;
@@ -372,6 +363,8 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         onModelChange={handleModelChange}
         webSearchEnabled={webSearchEnabled}
         onWebSearchToggle={handleWebSearchToggle}
+        imageGenEnabled={imageGenEnabled}
+        onImageGenToggle={handleImageGenToggle}
       />
     </div>
   );
@@ -497,39 +490,12 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
                     isReadonly={true}
                   />
                 )}
-                {/* <Image
-                  src="/loading-animation.svg"
-                  alt="logo"
-                  width={100}
-                  height={100}
-                  className={`w-8 h-8 ${isLoading ? "animate-spin" : ""} border border-100 border-gray-900`}
-                /> */}
-                <div className={`relative w-10 h-10 rounded-full pb-52`}>
-                  {/* <div
-                    className={`absolute rounded-full w-8 h-8 bg-gradient-to-r from-primary-400/50 to-primary-600/50 ${isLoading ? "animate-pulse" : ""}`}
-                  ></div>
-                  <div
-                    className={`absolute rounded-full w-8 h-8 bg-gradient-to-r from-default-400/40 to-default-600/40 ${isLoading ? "animate-pulse" : ""}`}
-                  ></div>
-                  <div
-                    className={`absolute top-2 left-2 rounded-full w-5 h-5 bg-gradient-to-r from-green-400/80 to-green-600/80 blur-lg ${isLoading ? "animate-pulse" : ""}`}
-                  ></div>
-                  <div
-                    className={`absolute top-2 left-2 rounded-full w-5 h-5 bg-gradient-to-r from-red-400/50 to-red-600/50 blur-lg ${isLoading ? "animate-pulse" : ""}`}
-                  ></div>
-                  <div
-                    className={`absolute bottom-2 right-2 rounded-full w-5 h-5 bg-gradient-to-r from-default-400/40 to-primary-600/40 blur-sm ${isLoading ? "animate-pulse" : ""}`}
-                  ></div> */}
-                  {/*
-                  <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                     <Image
-                      src="/logos/oneai.svg"
-                      alt="logo"
-                      width={100}
-                      height={100}
-                    /> 
+                {imageGenEnabled && isLoading && (
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="w-[20rem] h-[20rem] rounded-lg" />
                   </div>
-                    */}
+                )}
+                <div className={`relative w-10 h-10 rounded-full pb-52`}>
                   <video
                     ref={animateVideoRef}
                     src="/loading animation.mp4"

@@ -19,6 +19,7 @@ interface ChatCompletionRequest {
   stream?: boolean;
   web?: boolean;
   conversationId?: string;
+  image?: boolean;
 }
 
 // API response interfaces
@@ -77,6 +78,11 @@ class ChatService {
     onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
     try {
+      if (request.image) {
+        // Image generation: no streaming, expect images in response
+        const response = await api.post(`${this.baseUrl}/chat/stream`, request);
+        return response.data;
+      }
       if (request.stream) {
         return this.handleStreamingRequest(request, onChunk, onFinal);
       } else {

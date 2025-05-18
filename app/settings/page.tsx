@@ -208,7 +208,7 @@ function SettingsPage() {
                 <div>
                   {quotaData &&
                     Object.entries(quotaData.quotas)
-                      .filter(([key]) => key === "small_messages")
+                      .filter(([key]) => key !== "large_messages")
                       .map(([key, quota]) => {
                         const resetDays = formatResetDate(quota.resetsAt);
                         return (

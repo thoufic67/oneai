@@ -8,6 +8,16 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { QuotaManager } from "@/lib/quota";
 import { QuotaExceededError } from "@/config/quota";
+import { OpenAIImageService } from "@/lib/services/openaiImage";
+import { MidjourneyImageService } from "@/lib/services/midjourneyImage";
+import { ImageGenerationParams } from "@/types";
+import {
+  validateRequest,
+  checkQuota,
+  createConversationIfNeeded,
+  saveMessage,
+  incrementQuota,
+} from "@/lib/aiWorkflow";
 
 interface Message extends OpenRouterMessage {
   sequence_number?: number;
@@ -30,77 +40,6 @@ interface StreamResponse {
   };
 }
 
-async function createConversation(title: string) {
-  try {
-    const cookieStore = await cookies();
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/conversations`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: cookieStore.toString(),
-        },
-        body: JSON.stringify({ title }),
-      }
-    );
-    console.log(
-      "Creating conversation response",
-      response.status,
-      response.statusText
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data.conversation;
-  } catch (error) {
-    console.error("Error creating conversation:", error);
-    return null;
-  }
-}
-
-async function saveMessage(
-  conversationId: string,
-  content: string,
-  role: string,
-  tokensUsed: number,
-  model_id: string,
-  sequence_number: number
-) {
-  try {
-    const cookieStore = await cookies();
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/conversations/${conversationId}/messages`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          cookie: cookieStore.toString(),
-        },
-        body: JSON.stringify({
-          content,
-          role,
-          metadata: { tokens_used: tokensUsed },
-          model_id,
-          sequence_number,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Error saving message:", error);
-    return false;
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
@@ -121,107 +60,149 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { messages, model, web, conversationId } = body;
+    let { messages, model, web, conversationId, image } = body;
 
-    // Validate request
-    if (!Array.isArray(messages) || messages.length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: "Messages array is required and cannot be empty",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
+    // --- IMAGE GENERATION LOGIC ---
+    if (image) {
+      try {
+        // 1. Validate request
+        validateRequest("image", body);
+        // 2. Check quota
+        await checkQuota(session.user.id, "image");
+        // 3. Generate image prompt using OpenRouterService (gpt-4o-mini)
+        // Analyze all user messages, with more weight on the last couple
+        const userMessages = messages.filter((msg: any) => msg.role === "user");
+        // Compose a system prompt to instruct the model to generate an image prompt
+        const imagePromptSystemPrompt = `You are an expert prompt engineer. Given the following conversation, 
+          generate a single, concise, and detailed prompt for an AI image generator. 
+          Focus on the user's intent, giving more weight to the last two user messages. 
+          Only output the prompt, nothing else.
+          The user's intent is: ${userMessages[userMessages.length - 1].content}
+          The conversation is: ${messages.map((msg: any) => msg.content).join("\n")}
+          
+          Don't try to be too creative, just generate a prompt that is clear and concise based on user's intent.
+          `;
+        // Prepare messages for OpenRouterService
+        const promptMessages = [
+          { role: "system", content: imagePromptSystemPrompt },
+          ...messages,
+        ];
+        // Call OpenRouterService with gpt-4o-mini to get the image prompt
+        const promptResponse = await openRouterService.createChatCompletion({
+          messages: promptMessages,
+          model: "openai/gpt-4.1-nano",
+          stream: false,
+        });
+        const generatedPrompt = promptResponse.content.trim();
+        console.log("Generated prompt:", generatedPrompt);
+        // 3b. Create conversation if needed using the generated prompt
+        conversationId = await createConversationIfNeeded(
+          conversationId,
+          generatedPrompt
+        );
+        const sequence_number = messages.length + 1;
+        // 4. Save the user's last message as user message
+        const userMsgSeq = sequence_number - 1;
+        const [providerKey, modelName] = model.split("/");
+        await saveMessage(
+          conversationId,
+          userMessages[userMessages.length - 1].content,
+          "user",
+          0,
+          model,
+          userMsgSeq
+        );
+        // 5. Call image provider with generated prompt
+        const imageProviders: Record<string, any> = {
+          openai: new OpenAIImageService(),
+          midjourney: new MidjourneyImageService(),
+        };
+        const imageProvider = imageProviders[providerKey];
+        if (!imageProvider) {
+          return new Response(
+            JSON.stringify({
+              error: `Unknown image provider for model: ${model}`,
+            }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
         }
-      );
+        const params: ImageGenerationParams = {
+          prompt: generatedPrompt,
+          ...body, // allow n, size, user, etc. to be passed
+          model: modelName,
+          conversationId: conversationId,
+        };
+        const result = await imageProvider.generateImage(params);
+        // 6. Save AI response (sequence 2)
+        await saveMessage(
+          conversationId,
+          JSON.stringify(result.choices[0].message.content),
+          "assistant",
+          result.usage?.response_tokens || 0,
+          model,
+          sequence_number,
+          {
+            image_prompt: generatedPrompt,
+          }
+        );
+        // 7. Increment quota
+        await incrementQuota(session.user.id, "image");
+        return new Response(JSON.stringify({ ...result, conversationId }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (error: any) {
+        return new Response(
+          JSON.stringify({ error: error.message || "Image generation failed" }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
     }
+    // --- END IMAGE GENERATION LOGIC ---
 
-    // Check quota before processing
+    // --- CHAT LOGIC ---
     try {
-      await quotaManager.checkQuota(session.user.id, "small_messages", 1);
-    } catch (error) {
-      if (error instanceof QuotaExceededError) {
-        return new Response(
-          JSON.stringify({
-            error: "Quota exceeded for small messages",
-            details: error.message,
-          }),
-          {
-            status: 429,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-      throw error;
-    }
-
-    const isValidMessage = (msg: any): msg is Message => {
-      return (
-        msg &&
-        typeof msg === "object" &&
-        ["user", "assistant", "system"].includes(msg.role) &&
-        typeof msg.content === "string" &&
-        msg.content.trim().length > 0
+      // 1. Validate request
+      validateRequest("chat", body);
+      // 2. Check quota
+      await checkQuota(session.user.id, "chat");
+      // 3. Create conversation if needed
+      const userMessage = messages.find((msg: any) => msg.role === "user");
+      conversationId = await createConversationIfNeeded(
+        conversationId,
+        userMessage?.content || ""
       );
-    };
-
-    if (!messages.every(isValidMessage)) {
+    } catch (error: any) {
       return new Response(
-        JSON.stringify({
-          error:
-            "Invalid message format. Each message must have a valid role and non-empty content",
-        }),
+        JSON.stringify({ error: error.message || "Invalid chat request" }),
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
     }
-
-    let conversationCreationFailed = false;
-
-    // Create a new conversation if no conversationId is provided
-    if (!conversationId) {
-      const userMessage = messages.find((msg: Message) => msg.role === "user");
-      if (!userMessage) {
-        return new Response(
-          JSON.stringify({
-            error: "No user message found to create conversation",
-          }),
-          {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-
-      const conversation = await createConversation(
-        userMessage.content.slice(0, 100)
-      );
-
-      if (conversation) {
-        conversationId = conversation.id;
-      } else {
-        conversationCreationFailed = true;
-      }
-    }
+    // --- END CHAT LOGIC ---
 
     // Create response stream
     const stream = new TransformStream();
     const writer = stream.writable.getWriter();
     const encoder = new TextEncoder();
 
-    // Helper function to send SSE data
+    // Helper function to send SSE data, but don't let it interrupt processing
     const sendSSE = async (data: StreamResponse) => {
-      await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      try {
+        await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      } catch (err) {
+        // Client likely disconnected; ignore, but continue processing
+        // Intentionally preserving logs for debugging and auditing
+        console.log("Client disconnected during SSE write:", err);
+      }
     };
 
     // Start streaming response
@@ -243,20 +224,19 @@ export async function POST(req: NextRequest) {
             responseUsage = usage;
           }
 
+          // Try to send, but ignore errors
           sendSSE({
             content: chunk,
             conversationId,
             usage: responseUsage,
             failures: {
-              ...(conversationCreationFailed
-                ? { conversationCreation: true }
-                : {}),
               ...(quotaIncrementFailed ? { quotaExceeded: true } : {}),
             },
           });
         }
       )
       .then(async (response) => {
+        console.log("Complete response from OpenRouter", response);
         // Get final usage data if available
         if (response.usage && !responseUsage) {
           responseUsage = response.usage;
@@ -310,30 +290,46 @@ export async function POST(req: NextRequest) {
           quotaIncrementFailed = true;
         }
 
-        // Send final SSE with completion status
+        // Try to send final SSE, but ignore errors
         await sendSSE({
           content: "",
           conversationId,
           usage: responseUsage,
           done: true,
           failures: {
-            ...(conversationCreationFailed
-              ? { conversationCreation: true }
-              : {}),
             ...(messageSavingFailed ? { messageSaving: true } : {}),
             ...(quotaIncrementFailed ? { quotaExceeded: true } : {}),
           },
         });
 
-        await writer.close();
+        try {
+          await writer.close();
+        } catch (err) {
+          // Ignore if already closed
+          console.log("Writer already closed", err);
+        }
+
+        // Intentionally preserving logs for debugging and auditing
+        if (messageSavingFailed) {
+          console.error(
+            "Message saving failed for conversation:",
+            conversationId
+          );
+        }
+        if (quotaIncrementFailed) {
+          console.error("Quota increment failed for user:", session.user.id);
+        }
       })
       .catch(async (error) => {
+        // Intentionally preserving logs for debugging and auditing
         console.error("Error in chat completion:", error);
         await sendSSE({
           error: error.message || "An error occurred during chat completion",
           done: true,
         });
-        await writer.close();
+        try {
+          await writer.close();
+        } catch (err) {}
       });
 
     return new Response(stream.readable, {
