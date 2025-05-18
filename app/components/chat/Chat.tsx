@@ -24,7 +24,20 @@ import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@heroui/skeleton";
 import { getChatModels, getImageModels, ModelType } from "@/lib/models";
-import { Island_Moments } from "next/font/google";
+
+const imageGenLoadingText = [
+  "Me trying to draw what's in my head... but with AI superpowers! 🎨",
+  "Cooking the image for you... 🍳",
+  "Teaching AI to paint like Bob Ross... Happy little pixels incoming! 🎨",
+  "Me trying to draw what's in my head... but with AI superpowers! 🎨",
+  "Hold on tight, I'm creating a masterpiece for you! 🎨",
+  "I'm drawing a picture of your dream... just a sec! 🎨",
+  "Unleashing my inner Picasso... with a digital twist! 🎨",
+  "Teaching robots to finger paint... almost there! 🤖",
+  "Making art faster than you can say 'abstract expressionism'! 🖼️",
+  "Pixel by pixel, creating magic... beep boop! ✨",
+  "My AI crayons are working overtime! 🖍️",
+];
 
 // Add utility functions for session storage with expiration
 const storeWithExpiry = (key: string, value: any) => {
@@ -95,6 +108,11 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const [imageGenEnabled, setImageGenEnabled] = useState(() =>
     getWithExpiry("aiflo_image_gen_enabled", false)
   );
+  const imageLoadingText = useMemo(() => {
+    return imageGenLoadingText[
+      Math.floor(Math.random() * imageGenLoadingText.length)
+    ];
+  }, [isLoading, imageGenEnabled]);
 
   const [currentChatId, setCurrentChatId] = useState<string | null>(
     initialConversation?.id || null
@@ -491,8 +509,11 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
                   />
                 )}
                 {imageGenEnabled && isLoading && (
-                  <div className="flex flex-col gap-2">
-                    <Skeleton className="w-[20rem] h-[20rem] rounded-lg" />
+                  <div className="relative  gap-2 w-fit">
+                    <p className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-sm text-gray-500 z-50">
+                      {imageLoadingText}
+                    </p>
+                    <Skeleton className="w-[20rem] h-[20rem] rounded-lg"></Skeleton>
                   </div>
                 )}
                 <div className={`relative w-10 h-10 rounded-full pb-52`}>

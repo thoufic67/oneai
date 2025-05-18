@@ -90,9 +90,10 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
                     isIconOnly
                     size="sm"
                     variant="flat"
+                    className="bg-white/50"
                     onPress={handleDownload}
                   >
-                    <Download className="" />
+                    <Download className="w-4 h-4" />
                   </Button>
                 </Tooltip>
                 <Tooltip content="Close">
@@ -101,9 +102,10 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
                     size="sm"
                     variant="flat"
                     color="default"
+                    className="bg-white/50 "
                     onPress={() => setIsOpen(false)}
                   >
-                    <X className="" />
+                    <X className="w-4 h-4" />
                   </Button>
                 </Tooltip>
               </div>
