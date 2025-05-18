@@ -6,9 +6,15 @@
 
 "use client";
 import { useState } from "react";
-import { Modal, ModalContent, ModalBody } from "@heroui/react";
+import {
+  Modal,
+  ModalContent,
+  ModalBody,
+  ModalHeader,
+  Tooltip,
+} from "@heroui/react";
 import { Button } from "@heroui/button";
-import { Download } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const Image = ({ src, alt }: { src: string; alt: string }) => {
@@ -49,16 +55,18 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
           transition={{ duration: 0.2 }}
           className="absolute top-2 right-2 z-10"
         >
-          <Button
-            isIconOnly
-            size="sm"
-            variant="flat"
-            className="bg-white/80 hover:bg-white/90 shadow border border-gray-200"
-            onPress={handleDownload}
-            aria-label="Download image"
-          >
-            <Download className="w-4 h-4 text-gray-700" />
-          </Button>
+          <Tooltip content="Download image">
+            <Button
+              isIconOnly
+              size="sm"
+              variant="flat"
+              className="backdrop-blur-lg bg-white/50 hover:bg-white/30 shadow "
+              onPress={handleDownload}
+              aria-label="Download image"
+            >
+              <Download className="w-4 h-4 text-gray-700" />
+            </Button>
+          </Tooltip>
         </motion.div>
       )}
 
@@ -70,10 +78,36 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
           isOpen={isOpen}
           onOpenChange={setIsOpen}
           backdrop="blur"
-          size="5xl"
+          size="full"
+          hideCloseButton
           className="flex items-center justify-center h-[50vh] sm:h-[90vh]"
         >
-          <ModalContent>
+          <ModalContent className="backdrop-blur-xl bg-white/30 shadow ">
+            <ModalHeader className="w-full flex items-center justify-end p-4">
+              <div className="flex items-center gap-4">
+                <Tooltip content="Download image">
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    onPress={handleDownload}
+                  >
+                    <Download className="" />
+                  </Button>
+                </Tooltip>
+                <Tooltip content="Close">
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    color="default"
+                    onPress={() => setIsOpen(false)}
+                  >
+                    <X className="" />
+                  </Button>
+                </Tooltip>
+              </div>
+            </ModalHeader>
             <ModalBody className="flex items-center justify-center p-0">
               <motion.img
                 src={src}
