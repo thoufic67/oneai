@@ -180,6 +180,11 @@ const ListItem = ({ children }: any) => {
   );
 };
 
+// Image component
+const ImageComponent = ({ src, alt }: any) => {
+  return <Image src={src} alt={alt} />;
+};
+
 const MarkdownComponents = {
   h1: ({ children }: any) => <Heading level={1}>{children}</Heading>,
   h2: ({ children }: any) => <Heading level={2}>{children}</Heading>,
@@ -190,7 +195,7 @@ const MarkdownComponents = {
   blockquote: BlockQuote,
   p: Paragraph,
   a: Link,
-  img: Image,
+  img: ImageComponent,
   hr: HorizontalRule,
   pre: ({ children }: any) => CodeBlock({ children, inline: false }),
   code: ({ children }: any) => CodeBlock({ children, inline: true }),
