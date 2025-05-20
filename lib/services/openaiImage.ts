@@ -22,11 +22,11 @@ export class OpenAIImageService implements ImageGenerationProvider {
     const body = {
       prompt: params.prompt,
       n: params.n || 1,
-      size: params.size || "1024x1024",
+      size: params.size || "auto",
       user: params.user,
       model: params.model || "gpt-image-1",
       background: params.background || "auto",
-      quality: "medium",
+      quality: "auto",
       output_compression: 50,
       output_format: "webp",
       // Add any other params as needed

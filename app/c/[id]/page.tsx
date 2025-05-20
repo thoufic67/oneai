@@ -50,6 +50,7 @@ export default async function ConversationPage({
     }
     const msgData = await msgRes.json();
     messages = msgData.data;
+    console.log("messages", messages);
   } catch (e: any) {
     error = e?.message || "Failed to load conversation";
   }

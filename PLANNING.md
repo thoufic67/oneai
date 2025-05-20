@@ -301,7 +301,9 @@ CREATE TABLE chat_messages (
     -- Ensure unique sequence in conversation
     CONSTRAINT unique_message_sequence UNIQUE (conversation_id, sequence_number),
     -- Ensure proper revision ordering
-    CONSTRAINT unique_revision_sequence UNIQUE (original_message_id, revision_number)
+    CONSTRAINT unique_revision_sequence UNIQUE (original_message_id, revision_number),
+    -- Add attachments column
+    attachments JSONB
 );
 
 -- Index for loading conversation messages efficiently
@@ -1241,3 +1243,15 @@ export const handleRazorpayError = (error: any) => {
    - Invalid signatures
    - Network errors
    - Timeout handling
+
+### Image & Attachment Upload (New)
+
+- Users can upload images as part of their chat messages.
+- Images are compressed to webp format and must be under 200kb before upload.
+- Images are uploaded to Supabase Storage at the path: c/{conversationId}/attachments/{randomId}.webp
+- The chat_messages table has a new `attachments` JSONB column:
+  - Example: [{ "attachment_type": "image", "attachment_url": "https://.../c/{conversationId}/attachments/{randomId}.webp" }]
+- When sending to OpenRouter, if a message has an image attachment, the message is structured as:
+  - { "role": "user", "content": [ { "type": "text", "text": "User's message" }, { "type": "image_url", "image_url": { "url": "..." } } ] }
+- The UI shows a preview of the image in the chat input and in the chat bubble after sending.
+- Only image uploads are supported for now; the design is extensible for future file types.

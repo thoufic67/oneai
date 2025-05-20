@@ -136,6 +136,8 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     return getChatModels();
   }, [imageGenEnabled]);
 
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+
   useEffect(() => {
     console.log(quotaData);
   }, [quotaData]);
@@ -383,6 +385,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         onWebSearchToggle={handleWebSearchToggle}
         imageGenEnabled={imageGenEnabled}
         onImageGenToggle={handleImageGenToggle}
+        onImageSelected={setSelectedImageFiles}
       />
     </div>
   );

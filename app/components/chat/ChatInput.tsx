@@ -7,14 +7,19 @@ import {
   Button,
   Image,
   Tooltip,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { forwardRef, useState } from "react";
+import { forwardRef, useState, useRef } from "react";
 import {
   Image as ImageIcon,
   ChevronDown,
   Globe,
   Paperclip,
+  X,
 } from "lucide-react";
 
 interface ModelOption {
@@ -46,6 +51,7 @@ interface ChatInputProps {
   modelOptions?: ModelOption[];
   selectedModel?: string;
   onModelChange?: (model: string) => void;
+  onImageSelected?: (files: File[]) => void;
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -66,11 +72,18 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       modelOptions = [],
       selectedModel,
       onModelChange,
+      onImageSelected,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
       useState(webSearchEnabled);
     const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [openPreviewIdx, setOpenPreviewIdx] = useState<number | undefined>(
+      undefined
+    );
 
     const toggleWebSearch = () => {
       if (isImageGenEnabled) {
@@ -96,6 +109,32 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       }
     };
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      let newFiles = [...selectedImages, ...files];
+      // Only allow up to 5 images
+      if (newFiles.length > 5) newFiles = newFiles.slice(0, 5);
+      setSelectedImages(newFiles);
+      setImagePreviewUrls(newFiles.map((file) => URL.createObjectURL(file)));
+      onImageSelected && onImageSelected(newFiles);
+      // Reset input value so user can re-select the same file if needed
+      e.target.value = "";
+    };
+
+    const handleRemoveImage = (index: number) => {
+      const newFiles = selectedImages.filter((_, i) => i !== index);
+      const newUrls = imagePreviewUrls.filter((_, i) => i !== index);
+      setSelectedImages(newFiles);
+      setImagePreviewUrls(newUrls);
+      onImageSelected && onImageSelected(newFiles);
+    };
+
+    const handleFileButtonClick = () => {
+      if (selectedImages.length < 5 && !disabled) {
+        fileInputRef.current?.click();
+      }
+    };
+
     const selectedModelData = modelOptions.find(
       (model) => model.value === selectedModel
     );
@@ -110,6 +149,69 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             : "opacity-100 cursor-pointer"
         }`}
       >
+        {imagePreviewUrls.length > 0 && (
+          <div className="relative left-2 top-2 z-20 flex items-center gap-2">
+            {imagePreviewUrls.map((url, idx) => (
+              <div
+                key={idx}
+                className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
+              >
+                <img
+                  src={url}
+                  alt={`Preview ${idx + 1}`}
+                  className="object-cover w-full h-full rounded-md cursor-pointer"
+                  onClick={() => setOpenPreviewIdx(idx)}
+                />
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="solid"
+                  color="default"
+                  radius="full"
+                  onPress={() => handleRemoveImage(idx)}
+                  className="absolute -top-2 -right-2 scale-75"
+                  aria-label="Remove image"
+                >
+                  <X className="w-4 h-4 text-gray-700" />
+                </Button>
+              </div>
+            ))}
+            {/* Modal for enlarged image preview */}
+            {typeof openPreviewIdx === "number" && openPreviewIdx >= 0 && (
+              <Modal
+                isOpen={true}
+                onOpenChange={() => setOpenPreviewIdx(undefined)}
+                backdrop="blur"
+                hideCloseButton
+                className="flex items-center justify-center shadow-none"
+              >
+                <ModalContent className="bg-white/30 sm:bg-transparent overflow-visible p-4">
+                  <Tooltip content="Close">
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="flat"
+                      color="default"
+                      className="hidden sm:flex fixed bg-white/50 top-8 right-8 "
+                      onPress={() => setOpenPreviewIdx(undefined)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </Tooltip>
+
+                  <ModalBody className="flex items-center justify-center p-0">
+                    <img
+                      src={imagePreviewUrls[openPreviewIdx]}
+                      alt={`Preview ${openPreviewIdx + 1}`}
+                      className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[80dvw] sm:max-h-[80dvh] w-full object-contain "
+                      style={{ cursor: "zoom-out" }}
+                    />
+                  </ModalBody>
+                </ModalContent>
+              </Modal>
+            )}
+          </div>
+        )}
         <div
           className={`rounded-lg absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 backdrop-blur-xl ${
             theme === "dark"
@@ -143,19 +245,27 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               variant="underlined"
             />
 
-            {/* Search and Model Options */}
-
             <div className="flex items-center justify-start gap-2 mt-2">
-              <Tooltip content="File upload (Coming soon)">
+              <Tooltip content="Upload image(s)">
                 <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
                   <Button
-                    isDisabled
-                    onPress={toggleWebSearch}
                     isIconOnly
                     size="sm"
                     className={`flex rounded-full border border-default-300  ${
-                      false ? "bg-primary text-white " : "text-default-500"
+                      selectedImages.length > 0
+                        ? "bg-primary text-white "
+                        : "text-default-500"
                     } transition-colors duration-300`}
+                    isDisabled={selectedImages.length >= 5 || disabled}
+                    onPress={handleFileButtonClick}
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>
