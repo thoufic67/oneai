@@ -179,6 +179,22 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     }
   };
 
+  // --- [START] Create image prefix logic ---
+  const IMAGE_PREFIX = "Create image ";
+
+  // Custom onValueChange handler to detect manual prefix removal
+  const handleInputValueChange = (val: string) => {
+    // If imageGen is enabled and user removes the prefix, disable imageGen
+    if (imageGenEnabled && !val.startsWith(IMAGE_PREFIX.slice(0, -1))) {
+      setImageGenEnabled(false);
+      storeWithExpiry("aiflo_image_gen_enabled", false);
+      setInputMessage(val.slice(IMAGE_PREFIX.length - 1)); // Remove prefix
+      return;
+    }
+    setInputMessage(val);
+  };
+  // --- [END] Create image prefix logic ---
+
   const handleSubmit = async () => {
     setIsLoading(true);
     if (inputMessage.trim().length === 0) return;
@@ -343,6 +359,20 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const handleImageGenToggle = (enabled: boolean) => {
     setImageGenEnabled(enabled);
     storeWithExpiry("aiflo_image_gen_enabled", enabled);
+
+    if (enabled) {
+      // Add prefix if not present
+      if (!inputMessage.startsWith(IMAGE_PREFIX)) {
+        setInputMessage((prev) =>
+          prev.trim().length > 0 ? IMAGE_PREFIX + prev : IMAGE_PREFIX
+        );
+      }
+    } else {
+      // Remove prefix if present
+      if (inputMessage.startsWith(IMAGE_PREFIX)) {
+        setInputMessage((prev) => prev.replace(IMAGE_PREFIX, ""));
+      }
+    }
   };
 
   // Combine regular messages with streaming message for display
@@ -357,8 +387,8 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         ref={inputRef}
         disabled={isLoading}
         value={inputMessage}
-        onValueChange={setInputMessage}
-        placeholder="Ask AI anything"
+        onValueChange={handleInputValueChange}
+        placeholder={imageGenEnabled ? "Create image ..." : "Ask AI anything"}
         onKeyDown={(e) => {
           if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();

@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { forwardRef, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import {
   Image as ImageIcon,
   ChevronDown,
@@ -71,6 +71,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
       useState(webSearchEnabled);
     const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
+
+    useEffect(() => {
+      setIsImageGenEnabled(imageGenEnabled);
+    }, [imageGenEnabled]);
 
     const toggleWebSearch = () => {
       if (isImageGenEnabled) {
