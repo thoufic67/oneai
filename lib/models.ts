@@ -9,13 +9,13 @@ export enum ModelVariant {
 
 export type ModelType =
   | "openai/gpt-4.1"
-  | "anthropic/claude-3.7-sonnet"
+  | "anthropic/claude-sonnet-4"
   | "mistralai/mistral-nemo"
   | "x-ai/grok-3-mini-beta"
   | "deepseek/deepseek-chat-v3-0324"
   | "deepseek/deepseek-r1-zero:free"
   | "perplexity/sonar"
-  | "google/gemini-2.0-flash-001"
+  | "google/gemini-2.5-flash-preview-05-20"
   | "meta-llama/llama-4-maverick"
   | "openai/gpt-image-1";
 
@@ -29,7 +29,7 @@ export interface Model {
 const MODELS: Model[] = [
   {
     name: "Gemini",
-    value: "google/gemini-2.0-flash-001",
+    value: "google/gemini-2.5-flash-preview-05-20",
     logo: "/logos/gemini.svg",
     variant: ModelVariant.Chat,
   },
@@ -41,7 +41,7 @@ const MODELS: Model[] = [
   },
   {
     name: "Claude",
-    value: "anthropic/claude-3.7-sonnet",
+    value: "anthropic/claude-sonnet-4",
     logo: "/logos/anthropic.svg",
     variant: ModelVariant.Chat,
   },

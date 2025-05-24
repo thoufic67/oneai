@@ -62,6 +62,32 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     let { messages, model, web, conversationId, image } = body;
 
+    // Extract attachments from the last user message
+    const userMessages = messages.filter((msg: any) => msg.role === "user");
+    const lastUserMessage = userMessages[userMessages.length - 1] || {};
+    const attachments = lastUserMessage.attachments || [];
+
+    // Validate attachments array if present
+    if (
+      attachments &&
+      (!Array.isArray(attachments) ||
+        attachments.some(
+          (att) =>
+            !att.attachment_type ||
+            !att.attachment_url ||
+            typeof att.attachment_type !== "string" ||
+            typeof att.attachment_url !== "string"
+        ))
+    ) {
+      return new Response(
+        JSON.stringify({ error: "Invalid attachments format" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // --- IMAGE GENERATION LOGIC ---
     if (image) {
       try {
@@ -101,7 +127,7 @@ export async function POST(req: NextRequest) {
           generatedPrompt
         );
         const sequence_number = messages.length + 1;
-        // 4. Save the user's last message as user message
+        // 4. Save the user's last message as user message (with attachments)
         const userMsgSeq = sequence_number - 1;
         const [providerKey, modelName] = model.split("/");
         await saveMessage(
@@ -110,7 +136,9 @@ export async function POST(req: NextRequest) {
           "user",
           0,
           model,
-          userMsgSeq
+          userMsgSeq,
+          {},
+          attachments
         );
         // 5. Call image provider with generated prompt
         const imageProviders: Record<string, any> = {
@@ -134,6 +162,7 @@ export async function POST(req: NextRequest) {
           ...body, // allow n, size, user, etc. to be passed
           model: modelName,
           conversationId: conversationId,
+          attachments: attachments,
         };
         const result = await imageProvider.generateImage(params);
         // 6. Save AI response (sequence 2)
@@ -147,6 +176,7 @@ export async function POST(req: NextRequest) {
           {
             image_prompt: generatedPrompt,
           }
+          // attachments
         );
         // 7. Increment quota
         await incrementQuota(session.user.id, "image");
@@ -216,7 +246,9 @@ export async function POST(req: NextRequest) {
     // Process the chat completion with streaming
     openRouterService
       .createChatCompletion(
-        { messages, model, stream: true, web },
+        attachments && attachments.length > 0
+          ? { messages, model, stream: true, web, attachments }
+          : { messages, model, stream: true, web },
         (chunk: string, usage?: Partial<UsageData>) => {
           fullResponse += chunk;
 
@@ -255,7 +287,9 @@ export async function POST(req: NextRequest) {
               "user",
               responseUsage?.prompt_tokens || 0,
               model,
-              sequence_number - 1
+              sequence_number - 1,
+              {},
+              attachments
             );
 
             if (!userMessageSaved) {
@@ -270,7 +304,9 @@ export async function POST(req: NextRequest) {
             "assistant",
             responseUsage?.completion_tokens || 0,
             model,
-            sequence_number
+            sequence_number,
+            {}
+            // attachments
           );
 
           if (!assistantMessageSaved) {

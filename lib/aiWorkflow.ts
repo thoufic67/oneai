@@ -2,6 +2,7 @@
  * aiWorkflow.ts
  * Shared workflow helpers for AI operations (chat, image, etc.).
  * Includes: request validation, quota checks, conversation creation, message saving, and quota incrementing.
+ * Now supports saving attachments array for chat messages.
  */
 import { cookies } from "next/headers";
 import { QuotaManager } from "@/lib/quota";
@@ -75,7 +76,8 @@ export async function saveMessage(
   tokensUsed: number,
   model_id: string,
   sequence_number: number,
-  metadata: any = {}
+  metadata: any = {},
+  attachments?: Array<{ attachment_type: string; attachment_url: string }>
 ) {
   const cookieStore = await cookies();
   const response = await fetch(
@@ -92,6 +94,7 @@ export async function saveMessage(
         metadata: { ...metadata, tokens_used: tokensUsed },
         model_id,
         sequence_number,
+        ...(attachments ? { attachments } : {}),
       }),
     }
   );

@@ -539,16 +539,16 @@
   # Frontend
 
   - [x] Add image upload UI to ChatInput (with preview & remove, matching design)
-  - [ ] On upload, send the raw image file to the backend (to /api/upload/file)
-  - [ ] Allow removal of selected image before sending
-  - [ ] Update Chat.tsx to display image in chat bubble if present in attachments
+  - [x] On upload, send the raw image file to the backend (to /api/upload/file)
+  - [x] Allow removal of selected image before sending
+  - [x] Update Chat.tsx to display image in chat bubble if present in attachments
 
   # Backend/API
 
-  - [ ] Update /api/chat/stream/route.ts to accept/process image attachments (attachment_url from upload endpoint)
-  - [ ] If image is uploaded, store attachment metadata in attachments column
-  - [ ] When sending to OpenRouter, format message as multimodal (text + image_url)
-  - [ ] If no image, send as plain text
+  - [x] Update /api/chat/stream/route.ts to accept/process image a ttachments (attachment_url from upload endpoint)
+  - [x] If image is uploaded, store attachment metadata in attachments column
+  - [x] When sending to OpenRouter, format message as multimodal (text + image_url)
+  - [x] If no image, send as plain text
 
   # Database
 

@@ -11,6 +11,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalBody,
+  Spinner,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { forwardRef, useState, useRef } from "react";
@@ -26,6 +27,16 @@ interface ModelOption {
   name: string;
   value: string;
   logo?: string;
+}
+
+interface UploadedImageMeta {
+  attachment_type: string;
+  attachment_url: string;
+  filePath: string;
+  size: number;
+  localPreviewUrl: string; // for preview
+  loading: boolean;
+  error?: string;
 }
 
 interface ChatInputProps {
@@ -52,6 +63,7 @@ interface ChatInputProps {
   selectedModel?: string;
   onModelChange?: (model: string) => void;
   onImageSelected?: (files: File[]) => void;
+  onImageUploadComplete?: (images: UploadedImageMeta[]) => void;
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -73,6 +85,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       selectedModel,
       onModelChange,
       onImageSelected,
+      onImageUploadComplete,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
@@ -80,6 +93,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+    const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>(
+      []
+    );
+    const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [openPreviewIdx, setOpenPreviewIdx] = useState<number | undefined>(
       undefined
@@ -109,16 +126,85 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       }
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const uploadImage = async (file: File, conversationId?: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "image");
+      if (conversationId) formData.append("conversationId", conversationId);
+      try {
+        const res = await fetch("/api/upload/file", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Upload failed");
+        return data;
+      } catch (err: any) {
+        return { error: err.message || "Upload failed" };
+      }
+    };
+
+    const handleImageChange = async (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
       const files = e.target.files ? Array.from(e.target.files) : [];
       let newFiles = [...selectedImages, ...files];
-      // Only allow up to 5 images
       if (newFiles.length > 5) newFiles = newFiles.slice(0, 5);
       setSelectedImages(newFiles);
       setImagePreviewUrls(newFiles.map((file) => URL.createObjectURL(file)));
       onImageSelected && onImageSelected(newFiles);
       // Reset input value so user can re-select the same file if needed
       e.target.value = "";
+
+      // Upload each new file
+      setUploading(true);
+      const uploads: UploadedImageMeta[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const localPreviewUrl = URL.createObjectURL(file);
+        // Add loading placeholder
+        setUploadedImages((prev) => [
+          ...prev,
+          {
+            attachment_type: "image",
+            attachment_url: "",
+            filePath: "",
+            size: 0,
+            localPreviewUrl,
+            loading: true,
+          },
+        ]);
+        const data = await uploadImage(file);
+        setUploadedImages((prev) => {
+          // Replace the first loading image with the result
+          const idx = prev.findIndex(
+            (img) => img.localPreviewUrl === localPreviewUrl && img.loading
+          );
+          if (idx === -1) return prev;
+          const updated = [...prev];
+          updated[idx] = {
+            ...updated[idx],
+            ...data,
+            loading: false,
+            error: data.error,
+          };
+          return updated;
+        });
+        uploads.push({
+          ...data,
+          localPreviewUrl,
+          loading: false,
+          error: data.error,
+        });
+      }
+      setUploading(false);
+      // Notify parent of all uploaded images (filter out errored ones)
+      onImageUploadComplete &&
+        onImageUploadComplete(
+          [...uploadedImages, ...uploads].filter(
+            (img) => !img.error && img.attachment_url
+          )
+        );
     };
 
     const handleRemoveImage = (index: number) => {
@@ -126,6 +212,15 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       const newUrls = imagePreviewUrls.filter((_, i) => i !== index);
       setSelectedImages(newFiles);
       setImagePreviewUrls(newUrls);
+      setUploadedImages((prev) => {
+        const updated = prev.filter((_, i) => i !== index);
+        // Notify parent
+        onImageUploadComplete &&
+          onImageUploadComplete(
+            updated.filter((img) => !img.error && img.attachment_url)
+          );
+        return updated;
+      });
       onImageSelected && onImageSelected(newFiles);
     };
 
@@ -149,19 +244,30 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             : "opacity-100 cursor-pointer"
         }`}
       >
-        {imagePreviewUrls.length > 0 && (
+        {uploadedImages.length > 0 && (
           <div className="relative left-2 top-2 z-20 flex items-center gap-2">
-            {imagePreviewUrls.map((url, idx) => (
+            {uploadedImages.map((img, idx) => (
               <div
                 key={idx}
                 className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
               >
-                <img
-                  src={url}
+                <Image
+                  src={img.localPreviewUrl}
                   alt={`Preview ${idx + 1}`}
-                  className="object-cover w-full h-full rounded-md cursor-pointer"
+                  className="object-cover w-12 h-12 rounded-md cursor-pointer opacity-90"
                   onClick={() => setOpenPreviewIdx(idx)}
-                />
+                ></Image>
+
+                {img.loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                    <Spinner size="sm" />
+                  </div>
+                )}
+                {img.error && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-100/80">
+                    <span className="text-xs text-red-500">{img.error}</span>
+                  </div>
+                )}
                 <Button
                   isIconOnly
                   size="sm"
@@ -169,7 +275,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                   color="default"
                   radius="full"
                   onPress={() => handleRemoveImage(idx)}
-                  className="absolute -top-2 -right-2 scale-75"
+                  className="absolute -top-2 -right-2 scale-75 z-10"
                   aria-label="Remove image"
                 >
                   <X className="w-4 h-4 text-gray-700" />

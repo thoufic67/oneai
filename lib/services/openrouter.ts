@@ -1,8 +1,12 @@
 import axios from "axios";
 
+export type MultimodalContent =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } };
+
 export interface Message {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: string | MultimodalContent[];
 }
 
 export interface UsageData {
@@ -16,6 +20,7 @@ export interface ChatCompletionRequest {
   model?: string;
   stream?: boolean;
   web?: boolean;
+  attachments?: Array<{ attachment_type: string; attachment_url: string }>;
 }
 
 export interface ChatCompletionResponse {
@@ -42,13 +47,40 @@ export class OpenRouterService {
     request: ChatCompletionRequest,
     onChunk?: (chunk: string, usage?: Partial<UsageData>) => void
   ): Promise<ChatCompletionResponse> {
-    const { messages, model = this.defaultModel, stream = true } = request;
+    let {
+      messages,
+      model = this.defaultModel,
+      stream = true,
+      web,
+      attachments = [],
+    } = request;
 
     // Add system prompt if not already present
     const hasSystemMessage = messages.some((msg) => msg.role === "system");
-    const processedMessages = hasSystemMessage
+    let processedMessages: Message[] = hasSystemMessage
       ? messages
       : [{ role: "system", content: this.defaultSystemPrompt }, ...messages];
+
+    // If attachments are present, transform the all user messages to multimodal format
+
+    processedMessages = processedMessages.map((msg, idx, arr) => {
+      if (msg.role === "user") {
+        // User message: convert to multimodal content
+        const contentArr: MultimodalContent[] = [
+          {
+            type: "text" as const,
+            text: typeof msg.content === "string" ? msg.content : "",
+          },
+          ...attachments.map((att) => ({
+            type: "image_url" as const,
+            image_url: { url: att.attachment_url },
+          })),
+        ];
+        console.log("converted contentArr", contentArr);
+        return { ...msg, content: contentArr };
+      }
+      return msg;
+    });
 
     try {
       const headers: Record<string, string> = {
@@ -56,14 +88,14 @@ export class OpenRouterService {
         Authorization: `Bearer ${this.apiKey}`,
         "X-Version": "1.0.0",
       };
-
-      // Only add headers if they are defined
       if (process.env.NEXT_PUBLIC_API_URL) {
         headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_API_URL;
       }
       if (process.env.NEXT_PUBLIC_SITE_NAME) {
         headers["X-Title"] = process.env.NEXT_PUBLIC_SITE_NAME;
       }
+
+      console.log("processedMessages", processedMessages);
 
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: "POST",
@@ -72,7 +104,7 @@ export class OpenRouterService {
           messages: processedMessages,
           model,
           stream,
-          plugins: request.web ? [{ id: "web" }] : [],
+          plugins: web ? [{ id: "web" }] : [],
         }),
       });
 

@@ -46,8 +46,10 @@ interface ChatMessage {
   created_at: string;
   sequence_number?: number;
   revision_number?: number;
-  attachment_url?: string;
-  attachment_type?: "image" | "video" | "audio" | "document" | "other";
+  attachments?: Array<{
+    attachment_type: "image" | "video" | "audio" | "document" | "other";
+    attachment_url: string;
+  }>;
 }
 
 interface PaginatedResponse<T> {
@@ -337,8 +339,10 @@ class ChatService {
       model_id?: string;
       parent_message_id?: string;
       metadata?: Record<string, any>;
-      attachment_url?: string;
-      attachment_type?: "image" | "video" | "audio" | "document" | "other";
+      attachments?: Array<{
+        attachment_type: "image" | "video" | "audio" | "document" | "other";
+        attachment_url: string;
+      }>;
     } = {}
   ): Promise<ChatMessage> {
     try {

@@ -79,6 +79,17 @@ const getWithExpiry = (key: string, defaultValue: any) => {
   }
 };
 
+// Add type for uploaded image meta (should match ChatInput)
+interface UploadedImageMeta {
+  attachment_type: string;
+  attachment_url: string;
+  filePath: string;
+  size: number;
+  localPreviewUrl: string;
+  loading: boolean;
+  error?: string;
+}
+
 interface ChatProps {
   initialMessages?: ChatMessage[];
   initialConversation?: Conversation;
@@ -137,6 +148,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   }, [imageGenEnabled]);
 
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>([]);
 
   useEffect(() => {
     console.log(quotaData);
@@ -197,10 +209,24 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         conversation_id: currentChatId || "",
         user_id: user?.id || "",
         created_at: new Date().toISOString(),
+        attachments:
+          uploadedImages.length > 0
+            ? uploadedImages.map((img) => ({
+                attachment_type: img.attachment_type as
+                  | "image"
+                  | "video"
+                  | "audio"
+                  | "document"
+                  | "other",
+                attachment_url: img.attachment_url,
+              }))
+            : [],
       };
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInputMessage("");
+      setUploadedImages([]);
+      setSelectedImageFiles([]);
 
       // Prepare message history for API call
       const messageHistory: Message[] = updatedMessages;
@@ -386,6 +412,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         imageGenEnabled={imageGenEnabled}
         onImageGenToggle={handleImageGenToggle}
         onImageSelected={setSelectedImageFiles}
+        onImageUploadComplete={setUploadedImages}
       />
     </div>
   );
@@ -500,6 +527,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
                     isLoading={message === streamingMessage && isLoading}
                     model={message.model_id}
                     isReadonly={false}
+                    attachments={message.attachments}
                   />
                 ))}
                 {streamingMessage && (

@@ -78,7 +78,7 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
           isOpen={isOpen}
           onOpenChange={setIsOpen}
           backdrop="blur"
-          size="full"
+          // size="full"
           hideCloseButton
           className="flex items-center justify-center h-[50vh] sm:h-[90vh]"
         >
@@ -114,7 +114,7 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
               <motion.img
                 src={src}
                 alt={alt || "Image"}
-                className="rounded-lg min-w-[90%] max-w-[95%] sm:min-w-[50%] sm:max-w-[90%] w-full object-contain "
+                className="rounded-lg min-w-[90%] max-w-[95%] sm:min-w-[50%] sm:max-w-[90%] w-full object-contain"
                 layoutId={`expandable-image-${src}`}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
