@@ -14,7 +14,7 @@ import {
   Spinner,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { forwardRef, useState, useRef } from "react";
+import { forwardRef, useEffect, useState, useRef } from "react";
 import {
   Image as ImageIcon,
   ChevronDown,
@@ -91,6 +91,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
       useState(webSearchEnabled);
     const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
+
+    useEffect(() => {
+      setIsImageGenEnabled(imageGenEnabled);
+    }, [imageGenEnabled]);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
     const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>(

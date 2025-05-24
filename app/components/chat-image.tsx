@@ -78,13 +78,12 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
           isOpen={isOpen}
           onOpenChange={setIsOpen}
           backdrop="blur"
-          // size="full"
           hideCloseButton
-          className="flex items-center justify-center h-[50vh] sm:h-[90vh]"
+          className="flex items-center justify-center shadow-none p-4"
         >
-          <ModalContent className="backdrop-blur-xl bg-white/30 shadow ">
-            <ModalHeader className="w-full flex items-center justify-end p-4">
-              <div className="flex items-center gap-4">
+          <ModalContent className="bg-transparent overflow-visible">
+            <ModalHeader className="w-full flex items-center justify-end py-4 px-0">
+              <div className="flex items-center gap-4 sm:-mr-8">
                 <Tooltip content="Download image">
                   <Button
                     isIconOnly
@@ -114,7 +113,7 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
               <motion.img
                 src={src}
                 alt={alt || "Image"}
-                className="rounded-lg min-w-[90%] max-w-[95%] sm:min-w-[50%] sm:max-w-[90%] w-full object-contain"
+                className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[90dvw] sm:max-h-[90dvh] w-full object-contain "
                 layoutId={`expandable-image-${src}`}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
