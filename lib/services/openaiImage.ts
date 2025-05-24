@@ -73,6 +73,89 @@ export class OpenAIImageService implements ImageGenerationProvider {
       throw error;
     }
   }
+
+  /**
+   * Streams image generation using OpenAI's API, yielding partial images/events as they arrive.
+   * @param params ImageGenerationParams
+   * @param onEvent Callback for each event (partial image, progress, final image)
+   */
+  async generateImageStream(
+    params: ImageGenerationParams,
+    onEvent: (event: any) => Promise<void> | void
+  ): Promise<void> {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error("Missing OpenAI API key");
+    const openai = new OpenAI({ apiKey });
+
+    let previous_response_id = params.previous_response_id || undefined;
+    const request: any = {
+      input: params.prompt,
+      model: "gpt-4o",
+      user: params.user,
+      previous_response_id: previous_response_id,
+      stream: true,
+      tools: [
+        {
+          type: "image_generation",
+          background: params.background || "auto",
+          quality: "auto",
+          output_compression: 50,
+          output_format: "webp",
+          size: params.size || "auto",
+          partial_images: 1, // Request partial images
+        },
+      ],
+    };
+    Object.keys(request).forEach(
+      (key) => request[key] === undefined && delete request[key]
+    );
+
+    // Stream events from OpenAI
+    const stream = await openai.responses.create(request);
+    let finalResponse: OpenAIResponse | null = null;
+    for await (const event of stream as any) {
+      // Partial image event
+      if (event.type === "response.image_generation_call.partial_image") {
+        console.log("Partial image event", event);
+        const idx = event.partial_image_index;
+        const imageBase64 = event.partial_image_b64;
+        let imageUrl = null;
+        if (imageBase64 && params.conversationId) {
+          // Upload to Supabase
+          const id = uuidv4();
+          const filePath = `conversationid/${params.conversationId}/partial_${idx}.webp`;
+          const buffer = Buffer.from(imageBase64, "base64");
+          imageUrl = await uploadImageToBucket(buffer, filePath);
+        }
+        await onEvent({
+          type: "partial_image",
+          index: idx,
+          imageUrl: imageUrl
+            ? imageUrl
+            : `data:image/webp;base64,${imageBase64}`,
+        });
+      }
+      // Final response event (per OpenAI docs)
+      else if (event.type === "response") {
+        console.log("Final response event", event);
+        finalResponse = event;
+        // Convert to OpenRouter format
+        const result = await openAIImageToOpenRouterResponse(
+          event,
+          params.model,
+          params.conversationId
+        );
+        await onEvent({
+          type: "final_image",
+          ...result,
+        });
+      }
+      // Optionally handle completed event for progress
+      else if (event.type === "response.image_generation_call.completed") {
+        // (Optional: can be used for progress, but not for the final image)
+      }
+    }
+  }
 }
 
 /**

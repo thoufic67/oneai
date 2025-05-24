@@ -276,34 +276,56 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
           .find((msg) => msg.role === "assistant" && msg.metadata?.response_id);
         const previous_response_id =
           lastAssistantMessage?.metadata?.response_id || "";
-        const response = await chatService.createChatCompletion({
-          messages: messageHistory,
-          model: selectedModel,
-          image: true,
-          conversationId: currentChatId || undefined,
-          previous_response_id, // Pass previous_response_id for image chaining
-        });
 
-        if (response?.conversationId && !currentChatId) {
-          router.push(`/c/${response.conversationId}?`);
-        }
-
-        if (response?.choices[0].message.content) {
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            {
-              id: "",
-              conversation_id: currentChatId || "",
-              user_id: user?.id || "",
-              model_id: selectedModel,
-              created_at: new Date().toISOString(),
-              role: "assistant",
-              content: response.choices[0].message.content,
-            },
-          ]);
-        } else if (response?.error) {
-          throw new Error(response.error);
-        }
+        // --- Streaming image generation ---
+        setStreamingMessage({ role: "assistant", content: "" });
+        let partialImageChunks: string[] = [];
+        let finalImageContent: string = "";
+        let finalConvId: string | null = null;
+        await chatService.createChatCompletion(
+          {
+            messages: messageHistory,
+            model: selectedModel,
+            image: true,
+            stream: true,
+            conversationId: currentChatId || undefined,
+            previous_response_id,
+          },
+          (chunk, convId) => {
+            // Each chunk is a partial image markdown or progress
+            partialImageChunks.push(chunk);
+            setStreamingMessage((prev) =>
+              prev
+                ? { ...prev, content: partialImageChunks.join("\n") }
+                : { role: "assistant", content: chunk }
+            );
+            if (convId && !currentChatId) {
+              setCurrentChatId(convId);
+            }
+          },
+          (finalText, convId) => {
+            finalImageContent = finalText;
+            finalConvId = convId;
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                id: "",
+                conversation_id: currentChatId || "",
+                user_id: user?.id || "",
+                model_id: selectedModel,
+                created_at: new Date().toISOString(),
+                role: "assistant",
+                content: finalText,
+              },
+            ]);
+            setStreamingMessage(null);
+            if (convId && currentChatId !== convId) {
+              setCurrentChatId(convId);
+              router.push(`/c/${convId}?`);
+            }
+            inputRef.current?.focus();
+          }
+        );
         setIsLoading(false);
         return;
       }

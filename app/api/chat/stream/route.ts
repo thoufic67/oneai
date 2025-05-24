@@ -75,44 +75,48 @@ export async function POST(req: NextRequest) {
 
     // --- IMAGE GENERATION LOGIC ---
     if (image) {
+      // Create response stream for SSE
+      const stream = new TransformStream();
+      const writer = stream.writable.getWriter();
+      const encoder = new TextEncoder();
+      const sendSSE = async (data: StreamResponse) => {
+        try {
+          await writer.write(
+            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+          );
+        } catch (err) {
+          console.log("Client disconnected during SSE write (image):", err);
+        }
+      };
       try {
         // 1. Validate request
         validateRequest("image", body);
         // 2. Check quota
         await checkQuota(session.user.id, "image");
         // 3. Generate image prompt using OpenRouterService (gpt-4o-mini)
-        // Analyze all user messages, with more weight on the last couple
         const userMessages = messages.filter((msg: any) => msg.role === "user");
-        // Compose a system prompt to instruct the model to generate an image prompt
         const imagePromptSystemPrompt = `You are an expert prompt engineer. Given the following conversation, 
           generate a single, concise, and detailed prompt for an AI image generator. 
           Focus on the user's intent, giving more weight to the last two user messages. 
           Only output the prompt, nothing else.
           The user's intent is: ${userMessages[userMessages.length - 1].content}
           The conversation is: ${messages.map((msg: any) => msg.content).join("\n")}
-          
-          Don't try to be too creative, just generate a prompt that is clear and concise based on user's intent.
-          `;
-        // Prepare messages for OpenRouterService
+          \nDon't try to be too creative, just generate a prompt that is clear and concise based on user's intent.`;
         const promptMessages = [
           { role: "system", content: imagePromptSystemPrompt },
           ...messages,
         ];
-        // Call OpenRouterService with gpt-4o-mini to get the image prompt
         const promptResponse = await openRouterService.createChatCompletion({
           messages: promptMessages,
           model: "openai/gpt-4.1-nano",
           stream: false,
         });
         const generatedPrompt = promptResponse.content.trim();
-        console.log("Generated prompt:", generatedPrompt);
-        // 3b. Create conversation if needed using the generated prompt
         conversationId = await createConversationIfNeeded(
           conversationId,
           generatedPrompt
         );
         const sequence_number = messages.length + 1;
-        // 4. Save the user's last message as user message (with attachments)
         const userMsgSeq = sequence_number - 1;
         const [providerKey, modelName] = model.split("/");
         await saveMessage(
@@ -125,53 +129,81 @@ export async function POST(req: NextRequest) {
           {},
           attachments
         );
-        // 5. Call image provider with generated prompt
+        // 5. Call image provider with streaming
         const imageProviders: Record<string, any> = {
           openai: new OpenAIImageService(),
           midjourney: new MidjourneyImageService(),
         };
         const imageProvider = imageProviders[providerKey];
         if (!imageProvider) {
-          return new Response(
-            JSON.stringify({
-              error: `Unknown image provider for model: ${model}`,
-            }),
-            {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            }
-          );
+          await sendSSE({
+            error: `Unknown image provider for model: ${model}`,
+          });
+          await writer.close();
+          return new Response(stream.readable, {
+            status: 400,
+            headers: { "Content-Type": "text/event-stream" },
+          });
         }
         const params: ImageGenerationParams = {
           prompt: lastUserMessage.content,
-          ...body, // allow n, size, user, etc. to be passed
+          ...body,
           model: modelName,
           conversationId: conversationId,
           attachments: attachments,
           previous_response_id,
         };
-        const result = await imageProvider.generateImage(params);
-        // 6. Save AI response (sequence 2)
-        await saveMessage(
-          conversationId,
-          JSON.stringify(result.choices[0].message.content),
-          "assistant",
-          result.usage?.response_tokens || 0,
-          model,
-          sequence_number,
-          {
-            image_prompt: generatedPrompt,
-            response_id: result.response_id,
+        let finalResult: any = null;
+        let messageSavingFailed = false;
+        let quotaIncrementFailed = false;
+        await imageProvider.generateImageStream(params, async (event: any) => {
+          if (event.type === "partial_image") {
+            // Stream partial image event
+            await sendSSE({
+              content: `![Partial Image](${event.imageUrl})`,
+              conversationId,
+            });
+          } else if (event.type === "final_image") {
+            finalResult = event;
+            // Stream final image event
+            await sendSSE({
+              content: event.choices[0].message.content,
+              conversationId,
+              usage: event.usage,
+              done: true,
+            });
           }
-          // attachments
-        );
-        // 7. Increment quota
-        await incrementQuota(session.user.id, "image");
-        return new Response(JSON.stringify({ ...result, conversationId }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
+        });
+        // Save AI response (final image)
+        if (finalResult) {
+          try {
+            await saveMessage(
+              conversationId,
+              JSON.stringify(finalResult.choices[0].message.content),
+              "assistant",
+              finalResult.usage?.response_tokens || 0,
+              model,
+              sequence_number,
+              {
+                image_prompt: generatedPrompt,
+                response_id: finalResult.response_id,
+              }
+            );
+            await incrementQuota(session.user.id, "image");
+          } catch (err) {
+            messageSavingFailed = true;
+          }
+        }
+        await writer.close();
+        return new Response(stream.readable, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            Connection: "keep-alive",
+            "Cache-Control": "no-cache, no-transform",
+          },
         });
       } catch (error: any) {
+        await writer.close();
         return new Response(
           JSON.stringify({ error: error.message || "Image generation failed" }),
           {

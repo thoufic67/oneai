@@ -33,6 +33,10 @@ class ChatService {
     onFinal?: (final: string, conversationId: string, title?: string) => void
   ) {
     try {
+      if (request.image && request.stream) {
+        // Image generation with streaming
+        return this.handleStreamingRequest(request, onChunk, onFinal);
+      }
       if (request.image) {
         // Image generation: no streaming, expect images in response
         const response = await api.post(`${this.baseUrl}/chat/stream`, request);
