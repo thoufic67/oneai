@@ -17,15 +17,7 @@ import { Button } from "@heroui/button";
 import { Download, X } from "lucide-react";
 import { motion } from "framer-motion";
 
-const Image = ({
-  src,
-  alt,
-  className,
-}: {
-  src: string;
-  alt: string;
-  className: string;
-}) => {
+const Image = ({ src, alt }: { src: string; alt: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
