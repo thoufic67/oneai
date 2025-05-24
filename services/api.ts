@@ -17,6 +17,7 @@ interface ChatCompletionRequest {
   web?: boolean;
   conversationId?: string;
   image?: boolean;
+  previous_response_id?: string;
 }
 
 class ChatService {

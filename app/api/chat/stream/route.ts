@@ -44,7 +44,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    let { messages, model, web, conversationId, image } = body;
+    let { messages, model, web, conversationId, image, previous_response_id } =
+      body;
 
     // Extract attachments from the last user message
     const userMessages = messages.filter((msg: any) => msg.role === "user");
@@ -142,11 +143,12 @@ export async function POST(req: NextRequest) {
           );
         }
         const params: ImageGenerationParams = {
-          prompt: generatedPrompt,
+          prompt: lastUserMessage.content,
           ...body, // allow n, size, user, etc. to be passed
           model: modelName,
           conversationId: conversationId,
           attachments: attachments,
+          previous_response_id,
         };
         const result = await imageProvider.generateImage(params);
         // 6. Save AI response (sequence 2)
@@ -159,6 +161,7 @@ export async function POST(req: NextRequest) {
           sequence_number,
           {
             image_prompt: generatedPrompt,
+            response_id: result.response_id,
           }
           // attachments
         );

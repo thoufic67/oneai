@@ -72,6 +72,7 @@ interface ChatInputProps {
   onImageSelected?: (files: File[]) => void;
   onImageUploadComplete?: (images: UploadedImageMeta[]) => void;
   onImageCleanup?: () => void;
+  selectedImages?: File[];
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -95,6 +96,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       onImageSelected,
       onImageUploadComplete,
       onImageCleanup,
+      selectedImages: controlledSelectedImages,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
@@ -114,6 +116,16 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const [openPreviewIdx, setOpenPreviewIdx] = useState<number | undefined>(
       undefined
     );
+
+    useEffect(() => {
+      if (controlledSelectedImages) {
+        imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+        setSelectedImages(controlledSelectedImages);
+        setImagePreviewUrls(
+          controlledSelectedImages.map((file) => URL.createObjectURL(file))
+        );
+      }
+    }, [controlledSelectedImages]);
 
     const toggleWebSearch = () => {
       if (isImageGenEnabled) {

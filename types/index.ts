@@ -7,9 +7,12 @@ export type IconSvgProps = SVGProps<SVGSVGElement> & {
 // Image generation types and provider interface
 export interface ImageGenerationParams {
   prompt: string;
+  messages?: Message[];
   n?: number; // number of images
   size?: string; // e.g., '1024x1024'
   user?: string;
+  response_id?: string; // For OpenAI followup support
+  followup?: boolean; // For OpenAI followup support
   [key: string]: any; // for provider-specific params
 }
 
@@ -20,7 +23,9 @@ export interface ImageGenerationResult {
     native_finish_reason: string;
     message: {
       role: string;
-      content: string;
+      content: string; // Markdown with image and optional description
+      imageUrl?: string | null; // Direct URL or Supabase URL if uploaded
+      description?: string; // Optional image description from model
     };
   }>;
   usage: {
@@ -111,3 +116,55 @@ export interface UploadedImageMeta {
 
 // --- ModelType re-export ---
 export type { ModelType } from "@/lib/models";
+
+// --- OpenAI Multi-turn Image Generation Types ---
+export type OpenAIImageResponseOutput =
+  | {
+      type: "image_generation_call";
+      id: string;
+      result: string | null; // base64 image
+      status: string;
+    }
+  | {
+      type: "message";
+      id: string;
+      status: string;
+      role: string;
+      content: Array<{
+        type: "output_text";
+        text: string;
+        annotations: any[];
+      }>;
+    };
+
+export interface OpenAIImageResponse {
+  id: string;
+  object: string;
+  created_at: number;
+  status: string;
+  model: string;
+  output: OpenAIImageResponseOutput[];
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    [key: string]: any;
+  };
+  metadata: Record<string, any>;
+  // Optional fields for flexibility and linter compatibility
+  error?: any;
+  incomplete_details?: any;
+  instructions?: any;
+  max_output_tokens?: any;
+  parallel_tool_calls?: boolean;
+  previous_response_id?: string | null;
+  reasoning?: any;
+  store?: boolean;
+  temperature?: number;
+  text?: any;
+  tool_choice?: string;
+  tools?: any[];
+  top_p?: number;
+  truncation?: string;
+  user?: string | null;
+}

@@ -10,7 +10,7 @@ export enum ModelVariant {
 export type ModelType =
   | "openai/gpt-4.1"
   | "anthropic/claude-sonnet-4"
-  | "mistralai/mistral-nemo"
+  | "mistralai/mistral-large-2411"
   | "x-ai/grok-3-mini-beta"
   | "deepseek/deepseek-chat-v3-0324"
   | "deepseek/deepseek-r1-zero:free"
@@ -47,7 +47,7 @@ const MODELS: Model[] = [
   },
   {
     name: "Mistral",
-    value: "mistralai/mistral-nemo",
+    value: "mistralai/mistral-large-2411",
     logo: "/logos/mistral.svg",
     variant: ModelVariant.Chat,
   },

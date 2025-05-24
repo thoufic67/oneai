@@ -92,7 +92,10 @@ export class OpenRouterService {
         headers["X-Title"] = process.env.NEXT_PUBLIC_SITE_NAME;
       }
 
-      console.log("processedMessages", processedMessages);
+      console.log(
+        "processedMessages in openrouter",
+        JSON.stringify(processedMessages)
+      );
 
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: "POST",

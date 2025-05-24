@@ -17,7 +17,15 @@ import { Button } from "@heroui/button";
 import { Download, X } from "lucide-react";
 import { motion } from "framer-motion";
 
-const Image = ({ src, alt }: { src: string; alt: string }) => {
+const Image = ({
+  src,
+  alt,
+  className,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -40,7 +48,7 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
       <motion.img
         src={src}
         alt={alt || "Image"}
-        className="rounded-md max-w-full max-h-[300px] object-contain cursor-pointer transition-shadow group-hover:shadow-lg"
+        className={`rounded-md max-w-full max-h-[300px] object-contain cursor-pointer transition-shadow group-hover:shadow-lg`}
         onClick={() => setIsOpen(true)}
         layoutId={`expandable-image-${src}`}
         whileHover={{ scale: 1.03 }}
