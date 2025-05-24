@@ -1,18 +1,17 @@
 import axios from "axios";
+import type { Message as BaseMessage, UsageData } from "@/types";
 
 export type MultimodalContent =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
-export interface Message {
-  role: "user" | "assistant" | "system";
+// Extend the base Message type for OpenRouter-specific multimodal support
+export interface Message extends Omit<BaseMessage, "content"> {
   content: string | MultimodalContent[];
-}
-
-export interface UsageData {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
+  attachments?: Array<{
+    attachment_type: "image" | "video" | "audio" | "document" | "other";
+    attachment_url: string;
+  }>;
 }
 
 export interface ChatCompletionRequest {
@@ -61,22 +60,20 @@ export class OpenRouterService {
       ? messages
       : [{ role: "system", content: this.defaultSystemPrompt }, ...messages];
 
-    // If attachments are present, transform the all user messages to multimodal format
-
-    processedMessages = processedMessages.map((msg, idx, arr) => {
-      if (msg.role === "user") {
+    // If attachments are present, transform all user messages to multimodal format
+    processedMessages = processedMessages.map((msg) => {
+      if (msg.role === "user" && msg.attachments) {
         // User message: convert to multimodal content
         const contentArr: MultimodalContent[] = [
           {
             type: "text" as const,
             text: typeof msg.content === "string" ? msg.content : "",
           },
-          ...attachments.map((att) => ({
+          ...msg.attachments.map((att) => ({
             type: "image_url" as const,
             image_url: { url: att.attachment_url },
           })),
         ];
-        console.log("converted contentArr", contentArr);
         return { ...msg, content: contentArr };
       }
       return msg;

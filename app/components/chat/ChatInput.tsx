@@ -22,6 +22,14 @@ import {
   Paperclip,
   X,
 } from "lucide-react";
+import type {
+  Message,
+  ChatMessage,
+  Conversation,
+  StreamResponse,
+  UploadedImageMeta as BaseUploadedImageMeta,
+  ModelType,
+} from "@/types";
 
 interface ModelOption {
   name: string;
@@ -29,11 +37,10 @@ interface ModelOption {
   logo?: string;
 }
 
-interface UploadedImageMeta {
+interface UploadedImageMeta extends BaseUploadedImageMeta {
   attachment_type: string;
   attachment_url: string;
   filePath: string;
-  size: number;
   localPreviewUrl: string; // for preview
   loading: boolean;
   error?: string;
@@ -64,6 +71,7 @@ interface ChatInputProps {
   onModelChange?: (model: string) => void;
   onImageSelected?: (files: File[]) => void;
   onImageUploadComplete?: (images: UploadedImageMeta[]) => void;
+  onImageCleanup?: () => void;
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -86,6 +94,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       onModelChange,
       onImageSelected,
       onImageUploadComplete,
+      onImageCleanup,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
@@ -170,10 +179,15 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         setUploadedImages((prev) => [
           ...prev,
           {
+            url: "",
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            width: undefined,
+            height: undefined,
             attachment_type: "image",
             attachment_url: "",
             filePath: "",
-            size: 0,
             localPreviewUrl,
             loading: true,
           },
@@ -214,6 +228,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const handleRemoveImage = (index: number) => {
       const newFiles = selectedImages.filter((_, i) => i !== index);
       const newUrls = imagePreviewUrls.filter((_, i) => i !== index);
+      // Revoke the object URL for the image being removed
+      if (imagePreviewUrls[index]) {
+        URL.revokeObjectURL(imagePreviewUrls[index]);
+      }
       setSelectedImages(newFiles);
       setImagePreviewUrls(newUrls);
       setUploadedImages((prev) => {

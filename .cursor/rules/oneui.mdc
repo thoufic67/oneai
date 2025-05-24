@@ -19,7 +19,7 @@ Important:
 * Whenever you are creating new file add a file comment describing what the file does, whenever file changes update the description of the file
 * Always use the createClient from `"@/lib/supabase/server";` for supabase client in api routes
 * Ensure you are cleaning up any screenshot taken
-
+* Always whenever creating types that will be used in multiple files create them in types/ folder and reuse, if it's only used locally then create it within the file
 
 
 localhost url: http://localhost:3001/

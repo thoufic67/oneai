@@ -10,6 +10,14 @@ import React from "react";
 import { useAuth } from "@/app/components/auth-provider";
 import { getModelByValue, Model } from "@/lib/models";
 import Image from "@/app/components/chat-image";
+import type {
+  Message,
+  ChatMessage,
+  Conversation,
+  StreamResponse,
+  UploadedImageMeta,
+  ModelType,
+} from "@/types";
 
 interface ChatBubbleProps {
   isReadonly: boolean;

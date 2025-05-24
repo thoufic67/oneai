@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import {
   OpenRouterService,
   Message as OpenRouterMessage,
-  UsageData,
 } from "@/lib/services/openrouter";
+import { UsageData } from "@/types";
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { QuotaManager } from "@/lib/quota";
@@ -18,27 +18,11 @@ import {
   saveMessage,
   incrementQuota,
 } from "@/lib/aiWorkflow";
-
-interface Message extends OpenRouterMessage {
-  sequence_number?: number;
-}
+import type { Message, StreamResponse } from "@/types";
 
 const openRouterService = new OpenRouterService();
 
 export const runtime = "edge";
-
-interface StreamResponse {
-  content?: string;
-  conversationId?: string;
-  usage?: Partial<UsageData>;
-  error?: string;
-  done?: boolean;
-  failures?: {
-    conversationCreation?: boolean;
-    messageSaving?: boolean;
-    quotaExceeded?: boolean;
-  };
-}
 
 export async function POST(req: NextRequest) {
   try {

@@ -24,6 +24,20 @@ import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@heroui/skeleton";
 import { getChatModels, getImageModels, ModelType } from "@/lib/models";
+import type {
+  StreamResponse,
+  UploadedImageMeta as BaseUploadedImageMeta,
+} from "@/types";
+
+// Extend UploadedImageMeta for UI-specific fields
+interface UploadedImageMeta extends BaseUploadedImageMeta {
+  attachment_type: string;
+  attachment_url: string;
+  filePath: string;
+  localPreviewUrl: string;
+  loading: boolean;
+  error?: string;
+}
 
 const imageGenLoadingText = [
   "Me trying to draw what's in my head... but with AI superpowers! 🎨",
@@ -78,17 +92,6 @@ const getWithExpiry = (key: string, defaultValue: any) => {
     return defaultValue;
   }
 };
-
-// Add type for uploaded image meta (should match ChatInput)
-interface UploadedImageMeta {
-  attachment_type: string;
-  attachment_url: string;
-  filePath: string;
-  size: number;
-  localPreviewUrl: string;
-  loading: boolean;
-  error?: string;
-}
 
 interface ChatProps {
   initialMessages?: ChatMessage[];
@@ -149,6 +152,22 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
 
   const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
   const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>([]);
+
+  // Cleanup function to revoke object URLs
+  const cleanupImagePreviews = () => {
+    // Clean up preview URLs from uploadedImages
+    uploadedImages.forEach((img) => {
+      if (img.localPreviewUrl) {
+        URL.revokeObjectURL(img.localPreviewUrl);
+      }
+    });
+    // Clean up preview URLs from selectedImageFiles
+    selectedImageFiles.forEach((file) => {
+      try {
+        URL.revokeObjectURL(URL.createObjectURL(file));
+      } catch {}
+    });
+  };
 
   useEffect(() => {
     console.log(quotaData);
@@ -243,6 +262,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
       setInputMessage("");
       setUploadedImages([]);
       setSelectedImageFiles([]);
+      cleanupImagePreviews();
 
       // Prepare message history for API call
       const messageHistory: Message[] = updatedMessages;
@@ -443,6 +463,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         onImageGenToggle={handleImageGenToggle}
         onImageSelected={setSelectedImageFiles}
         onImageUploadComplete={setUploadedImages}
+        onImageCleanup={cleanupImagePreviews}
       />
     </div>
   );
