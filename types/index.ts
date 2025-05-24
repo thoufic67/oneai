@@ -90,6 +90,7 @@ export interface StreamResponse {
     messageSaving?: boolean;
     quotaExceeded?: boolean;
   };
+  keepAlive?: boolean; // Optional keep-alive flag for SSE
 }
 
 export interface UsageData {

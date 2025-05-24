@@ -276,34 +276,81 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
           .find((msg) => msg.role === "assistant" && msg.metadata?.response_id);
         const previous_response_id =
           lastAssistantMessage?.metadata?.response_id || "";
-        const response = await chatService.createChatCompletion({
-          messages: messageHistory,
-          model: selectedModel,
-          image: true,
-          conversationId: currentChatId || undefined,
-          previous_response_id, // Pass previous_response_id for image chaining
-        });
 
-        if (response?.conversationId && !currentChatId) {
-          router.push(`/c/${response.conversationId}?`);
-        }
-
-        if (response?.choices[0].message.content) {
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            {
-              id: "",
-              conversation_id: currentChatId || "",
-              user_id: user?.id || "",
-              model_id: selectedModel,
-              created_at: new Date().toISOString(),
-              role: "assistant",
-              content: response.choices[0].message.content,
-            },
-          ]);
-        } else if (response?.error) {
-          throw new Error(response.error);
-        }
+        // --- Streaming image generation ---
+        setStreamingMessage({ role: "assistant", content: "" });
+        let imageContent = "";
+        let keepAliveActive = false;
+        const response = await chatService.createChatCompletion(
+          {
+            messages: messageHistory,
+            model: selectedModel,
+            image: true,
+            conversationId: currentChatId || undefined,
+            previous_response_id, // Pass previous_response_id for image chaining
+          },
+          (chunkOrObj: string | StreamResponse, convId) => {
+            // Handle keep-alive and content
+            if (
+              typeof chunkOrObj !== "string" &&
+              chunkOrObj &&
+              (chunkOrObj as StreamResponse).keepAlive
+            ) {
+              // Received keep-alive event
+              keepAliveActive = true;
+              setIsLoading(true);
+              return;
+            }
+            // If it's a string, treat as content
+            if (typeof chunkOrObj === "string") {
+              imageContent += chunkOrObj;
+              setStreamingMessage((prev) =>
+                prev
+                  ? { ...prev, content: prev.content + chunkOrObj }
+                  : { role: "assistant", content: chunkOrObj }
+              );
+            }
+            // If we got a new conversation ID and we didn't have one before, update it
+            if (convId && !currentChatId) {
+              setCurrentChatId(convId);
+            }
+          },
+          (finalObj: string | StreamResponse, convId) => {
+            // Final image result
+            if (convId && currentChatId !== convId) {
+              setCurrentChatId(convId);
+              router.push(`/c/${convId}?`);
+            }
+            // If finalObj is an object with choices, treat as image result
+            let content = "";
+            const hasChoices = (obj: any): obj is { choices: any[] } =>
+              obj && Array.isArray(obj.choices);
+            if (
+              typeof finalObj !== "string" &&
+              finalObj &&
+              hasChoices(finalObj)
+            ) {
+              content = finalObj.choices[0]?.message?.content || "";
+            } else if (typeof finalObj === "string") {
+              content = finalObj;
+            }
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                id: "",
+                conversation_id: currentChatId || "",
+                user_id: user?.id || "",
+                model_id: selectedModel,
+                created_at: new Date().toISOString(),
+                role: "assistant",
+                content: content,
+              },
+            ]);
+            setStreamingMessage(null);
+            setIsLoading(false);
+            inputRef.current?.focus();
+          }
+        );
         setIsLoading(false);
         return;
       }
