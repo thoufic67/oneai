@@ -10,6 +10,14 @@ import React from "react";
 import { useAuth } from "@/app/components/auth-provider";
 import { getModelByValue, Model } from "@/lib/models";
 import Image from "@/app/components/chat-image";
+import type {
+  Message,
+  ChatMessage,
+  Conversation,
+  StreamResponse,
+  UploadedImageMeta,
+  ModelType,
+} from "@/types";
 
 interface ChatBubbleProps {
   isReadonly: boolean;
@@ -18,6 +26,10 @@ interface ChatBubbleProps {
   isLoading?: boolean;
   onRegenerate?: () => void;
   model?: string;
+  attachments?: Array<{
+    attachment_type: "image" | "video" | "audio" | "document" | "other";
+    attachment_url: string;
+  }>;
 }
 
 // Heading components for different levels
@@ -208,6 +220,8 @@ const MarkdownComponents = {
   li: ListItem,
 };
 
+// File: app/components/chat/ChatBubble.tsx
+// Description: Chat bubble for displaying a single chat message, including support for multiple image attachments above the message content if present.
 export function ChatBubble({
   isReadonly,
   isAssistant,
@@ -215,6 +229,7 @@ export function ChatBubble({
   isLoading,
   onRegenerate,
   model,
+  attachments = [],
 }: ChatBubbleProps) {
   const [messageCopied, setMessageCopied] = useState(false);
   const { user } = useAuth();
@@ -252,6 +267,24 @@ export function ChatBubble({
             isAssistant ? "items-start" : "items-end"
           }`}
         >
+          {/* Display all image attachments if present */}
+          {attachments && attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {attachments
+                .filter((att) => att.attachment_type === "image")
+                .map((att, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg max-w-24 max-h-24 object-contain background-center  border-default-200 shadow overflow-hidden"
+                  >
+                    <Image
+                      src={att.attachment_url}
+                      alt={`Chat attachment ${idx + 1}`}
+                    />
+                  </div>
+                ))}
+            </div>
+          )}
           {!isAssistant && (
             <Avatar
               src={
@@ -307,12 +340,14 @@ export function ChatBubble({
                       className="self-start mt-1 p-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-all"
                       aria-label="Regenerate message"
                     >
-                      <img
-                        src={modelDetails?.logo}
-                        alt={modelDetails?.name}
-                        width={16}
-                        height={16}
-                      />
+                      {modelDetails?.logo && (
+                        <img
+                          src={modelDetails.logo}
+                          alt={modelDetails.name}
+                          width={16}
+                          height={16}
+                        />
+                      )}
                       {modelDetails?.name}
                       <RefreshCcw size={16} />
                     </Button>

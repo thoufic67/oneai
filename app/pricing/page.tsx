@@ -5,7 +5,6 @@
 "use client";
 
 import { title } from "@/app/components/primitives";
-import PostHogClient from "@/posthog";
 import {
   Button,
   Card,
@@ -26,10 +25,11 @@ import { motion } from "framer-motion";
 import Script from "next/script";
 import Confetti from "react-confetti"; // Confetti animation for payment success
 import { PLANS, Plan } from "@/lib/plans";
+import { usePostHog } from "posthog-js/react";
 
 export default function PricingPage() {
   const { user, refreshUser } = useAuth();
-  const posthog = PostHogClient();
+  const posthog = usePostHog();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isPaymentSuccessful, setPaymentSuccessful] = useState(false);
@@ -125,7 +125,7 @@ export default function PricingPage() {
   const handleSubscribe = async (plan: Plan) => {
     try {
       setIsLoading(true);
-      posthog.capture({
+      posthog?.capture?.("pricing_page_subscribe", {
         distinctId: user?.id || "anonymous",
         event: "pricing_page_subscribe",
         properties: {

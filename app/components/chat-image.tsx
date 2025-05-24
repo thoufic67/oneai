@@ -40,7 +40,7 @@ const Image = ({ src, alt }: { src: string; alt: string }) => {
       <motion.img
         src={src}
         alt={alt || "Image"}
-        className="rounded-md max-w-full max-h-[300px] object-contain cursor-pointer transition-shadow group-hover:shadow-lg"
+        className={`rounded-md max-w-full max-h-[300px] object-contain cursor-pointer transition-shadow group-hover:shadow-lg`}
         onClick={() => setIsOpen(true)}
         layoutId={`expandable-image-${src}`}
         whileHover={{ scale: 1.03 }}

@@ -7,20 +7,43 @@ import {
   Button,
   Image,
   Tooltip,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  Spinner,
 } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useEffect, useState, useRef } from "react";
 import {
   Image as ImageIcon,
   ChevronDown,
   Globe,
   Paperclip,
+  X,
 } from "lucide-react";
+import type {
+  Message,
+  ChatMessage,
+  Conversation,
+  StreamResponse,
+  UploadedImageMeta as BaseUploadedImageMeta,
+  ModelType,
+} from "@/types";
 
 interface ModelOption {
   name: string;
   value: string;
   logo?: string;
+}
+
+interface UploadedImageMeta extends BaseUploadedImageMeta {
+  attachment_type: string;
+  attachment_url: string;
+  filePath: string;
+  localPreviewUrl: string; // for preview
+  loading: boolean;
+  error?: string;
 }
 
 interface ChatInputProps {
@@ -46,6 +69,10 @@ interface ChatInputProps {
   modelOptions?: ModelOption[];
   selectedModel?: string;
   onModelChange?: (model: string) => void;
+  onImageSelected?: (files: File[]) => void;
+  onImageUploadComplete?: (images: UploadedImageMeta[]) => void;
+  onImageCleanup?: () => void;
+  selectedImages?: File[];
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -66,6 +93,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       modelOptions = [],
       selectedModel,
       onModelChange,
+      onImageSelected,
+      onImageUploadComplete,
+      onImageCleanup,
+      selectedImages: controlledSelectedImages,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
@@ -75,6 +106,26 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     useEffect(() => {
       setIsImageGenEnabled(imageGenEnabled);
     }, [imageGenEnabled]);
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
+    const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+    const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>(
+      []
+    );
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [openPreviewIdx, setOpenPreviewIdx] = useState<number | undefined>(
+      undefined
+    );
+
+    useEffect(() => {
+      if (controlledSelectedImages) {
+        imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+        setSelectedImages(controlledSelectedImages);
+        setImagePreviewUrls(
+          controlledSelectedImages.map((file) => URL.createObjectURL(file))
+        );
+      }
+    }, [controlledSelectedImages]);
 
     const toggleWebSearch = () => {
       if (isImageGenEnabled) {
@@ -100,6 +151,119 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       }
     };
 
+    const uploadImage = async (file: File, conversationId?: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", "image");
+      if (conversationId) formData.append("conversationId", conversationId);
+      try {
+        const res = await fetch("/api/upload/file", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Upload failed");
+        return data;
+      } catch (err: any) {
+        return { error: err.message || "Upload failed" };
+      }
+    };
+
+    const handleImageChange = async (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      let newFiles = [...selectedImages, ...files];
+      if (newFiles.length > 5) newFiles = newFiles.slice(0, 5);
+      setSelectedImages(newFiles);
+      setImagePreviewUrls(newFiles.map((file) => URL.createObjectURL(file)));
+      onImageSelected && onImageSelected(newFiles);
+      // Reset input value so user can re-select the same file if needed
+      e.target.value = "";
+
+      // Upload each new file
+      setUploading(true);
+      const uploads: UploadedImageMeta[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const localPreviewUrl = URL.createObjectURL(file);
+        // Add loading placeholder
+        setUploadedImages((prev) => [
+          ...prev,
+          {
+            url: "",
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            width: undefined,
+            height: undefined,
+            attachment_type: "image",
+            attachment_url: "",
+            filePath: "",
+            localPreviewUrl,
+            loading: true,
+          },
+        ]);
+        const data = await uploadImage(file);
+        setUploadedImages((prev) => {
+          // Replace the first loading image with the result
+          const idx = prev.findIndex(
+            (img) => img.localPreviewUrl === localPreviewUrl && img.loading
+          );
+          if (idx === -1) return prev;
+          const updated = [...prev];
+          updated[idx] = {
+            ...updated[idx],
+            ...data,
+            loading: false,
+            error: data.error,
+          };
+          return updated;
+        });
+        uploads.push({
+          ...data,
+          localPreviewUrl,
+          loading: false,
+          error: data.error,
+        });
+      }
+      setUploading(false);
+      // Notify parent of all uploaded images (filter out errored ones)
+      onImageUploadComplete &&
+        onImageUploadComplete(
+          [...uploadedImages, ...uploads].filter(
+            (img) => !img.error && img.attachment_url
+          )
+        );
+    };
+
+    const handleRemoveImage = (index: number) => {
+      const newFiles = selectedImages.filter((_, i) => i !== index);
+      const newUrls = imagePreviewUrls.filter((_, i) => i !== index);
+      // Revoke the object URL for the image being removed
+      if (imagePreviewUrls[index]) {
+        URL.revokeObjectURL(imagePreviewUrls[index]);
+      }
+      setSelectedImages(newFiles);
+      setImagePreviewUrls(newUrls);
+      setUploadedImages((prev) => {
+        const updated = prev.filter((_, i) => i !== index);
+        // Notify parent
+        onImageUploadComplete &&
+          onImageUploadComplete(
+            updated.filter((img) => !img.error && img.attachment_url)
+          );
+        return updated;
+      });
+      onImageSelected && onImageSelected(newFiles);
+    };
+
+    const handleFileButtonClick = () => {
+      if (selectedImages.length < 5 && !disabled) {
+        fileInputRef.current?.click();
+      }
+    };
+
     const selectedModelData = modelOptions.find(
       (model) => model.value === selectedModel
     );
@@ -114,6 +278,80 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
             : "opacity-100 cursor-pointer"
         }`}
       >
+        {uploadedImages.length > 0 && (
+          <div className="relative left-2 top-2 z-20 flex items-center gap-2">
+            {uploadedImages.map((img, idx) => (
+              <div
+                key={idx}
+                className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
+              >
+                <Image
+                  src={img.localPreviewUrl}
+                  alt={`Preview ${idx + 1}`}
+                  className="object-cover w-12 h-12 rounded-md cursor-pointer opacity-90"
+                  onClick={() => setOpenPreviewIdx(idx)}
+                ></Image>
+
+                {img.loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                    <Spinner size="sm" />
+                  </div>
+                )}
+                {img.error && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-100/80">
+                    <span className="text-xs text-red-500">{img.error}</span>
+                  </div>
+                )}
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="solid"
+                  color="default"
+                  radius="full"
+                  onPress={() => handleRemoveImage(idx)}
+                  className="absolute -top-2 -right-2 scale-75 z-10"
+                  aria-label="Remove image"
+                >
+                  <X className="w-4 h-4 text-gray-700" />
+                </Button>
+              </div>
+            ))}
+            {/* Modal for enlarged image preview */}
+            {typeof openPreviewIdx === "number" && openPreviewIdx >= 0 && (
+              <Modal
+                isOpen={true}
+                onOpenChange={() => setOpenPreviewIdx(undefined)}
+                backdrop="blur"
+                hideCloseButton
+                className="flex items-center justify-center shadow-none"
+              >
+                <ModalContent className="bg-white/30 sm:bg-transparent overflow-visible p-4">
+                  <Tooltip content="Close">
+                    <Button
+                      isIconOnly
+                      size="sm"
+                      variant="flat"
+                      color="default"
+                      className="hidden sm:flex fixed bg-white/50 top-8 right-8 "
+                      onPress={() => setOpenPreviewIdx(undefined)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </Tooltip>
+
+                  <ModalBody className="flex items-center justify-center p-0">
+                    <img
+                      src={imagePreviewUrls[openPreviewIdx]}
+                      alt={`Preview ${openPreviewIdx + 1}`}
+                      className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[80dvw] sm:max-h-[80dvh] w-full object-contain "
+                      style={{ cursor: "zoom-out" }}
+                    />
+                  </ModalBody>
+                </ModalContent>
+              </Modal>
+            )}
+          </div>
+        )}
         <div
           className={`rounded-lg absolute -inset-1 bg-gradient-to-r from-red-600 to-violet-600 backdrop-blur-xl ${
             theme === "dark"
@@ -147,19 +385,27 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               variant="underlined"
             />
 
-            {/* Search and Model Options */}
-
             <div className="flex items-center justify-start gap-2 mt-2">
-              <Tooltip content="File upload (Coming soon)">
+              <Tooltip content="Upload image(s)">
                 <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
                   <Button
-                    isDisabled
-                    onPress={toggleWebSearch}
                     isIconOnly
                     size="sm"
                     className={`flex rounded-full border border-default-300  ${
-                      false ? "bg-primary text-white " : "text-default-500"
+                      selectedImages.length > 0
+                        ? "bg-primary text-white "
+                        : "text-default-500"
                     } transition-colors duration-300`}
+                    isDisabled={selectedImages.length >= 5 || disabled}
+                    onPress={handleFileButtonClick}
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>

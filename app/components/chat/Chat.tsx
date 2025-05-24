@@ -24,6 +24,20 @@ import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@heroui/skeleton";
 import { getChatModels, getImageModels, ModelType } from "@/lib/models";
+import type {
+  StreamResponse,
+  UploadedImageMeta as BaseUploadedImageMeta,
+} from "@/types";
+
+// Extend UploadedImageMeta for UI-specific fields
+interface UploadedImageMeta extends BaseUploadedImageMeta {
+  attachment_type: string;
+  attachment_url: string;
+  filePath: string;
+  localPreviewUrl: string;
+  loading: boolean;
+  error?: string;
+}
 
 const imageGenLoadingText = [
   "Me trying to draw what's in my head... but with AI superpowers! 🎨",
@@ -45,7 +59,7 @@ const storeWithExpiry = (key: string, value: any) => {
 
   const item = {
     value: value,
-    expiry: new Date().getTime() + 24 * 60 * 60 * 1000, // 1 day expiry
+    expiry: new Date().getTime() + 24 * 60 * 60 * 1000 * 365, // 1 day expiry
   };
   sessionStorage.setItem(key, JSON.stringify(item));
 };
@@ -132,9 +146,30 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
       setSelectedModel(getImageModels()[0].value);
       return getImageModels();
     }
-    setSelectedModel(getChatModels()[0].value);
+    setSelectedModel(
+      getWithExpiry("aiflo_selected_model", getChatModels()[0].value)
+    );
     return getChatModels();
   }, [imageGenEnabled]);
+
+  const [selectedImageFiles, setSelectedImageFiles] = useState<File[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>([]);
+
+  // Cleanup function to revoke object URLs
+  const cleanupImagePreviews = () => {
+    // Clean up preview URLs from uploadedImages
+    uploadedImages.forEach((img) => {
+      if (img.localPreviewUrl) {
+        URL.revokeObjectURL(img.localPreviewUrl);
+      }
+    });
+    // Clean up preview URLs from selectedImageFiles
+    selectedImageFiles.forEach((file) => {
+      try {
+        URL.revokeObjectURL(URL.createObjectURL(file));
+      } catch {}
+    });
+  };
 
   useEffect(() => {
     console.log(quotaData);
@@ -180,24 +215,23 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   };
 
   // --- [START] Create image prefix logic ---
-  const IMAGE_PREFIX = "Create image ";
+  // const IMAGE_PREFIX = "Create image ";
 
   // Custom onValueChange handler to detect manual prefix removal
   const handleInputValueChange = (val: string) => {
-    // If imageGen is enabled and user removes the prefix, disable imageGen
-    if (imageGenEnabled && !val.startsWith(IMAGE_PREFIX.slice(0, -1))) {
-      setImageGenEnabled(false);
-      storeWithExpiry("aiflo_image_gen_enabled", false);
-      setInputMessage(val.slice(IMAGE_PREFIX.length - 1)); // Remove prefix
-      return;
-    }
     setInputMessage(val);
   };
   // --- [END] Create image prefix logic ---
 
   const handleSubmit = async () => {
-    setIsLoading(true);
     if (inputMessage.trim().length === 0) return;
+    setIsLoading(true);
+
+    // Store previous state for potential revert
+    const prevMessages = [...messages];
+    const prevInputMessage = inputMessage;
+    const prevUploadedImages = [...uploadedImages];
+    const prevSelectedImageFiles = [...selectedImageFiles];
 
     try {
       setError(null);
@@ -211,21 +245,43 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         conversation_id: currentChatId || "",
         user_id: user?.id || "",
         created_at: new Date().toISOString(),
+        attachments:
+          uploadedImages.length > 0
+            ? uploadedImages.map((img) => ({
+                attachment_type: img.attachment_type as
+                  | "image"
+                  | "video"
+                  | "audio"
+                  | "document"
+                  | "other",
+                attachment_url: img.attachment_url,
+              }))
+            : [],
       };
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInputMessage("");
+      setUploadedImages([]);
+      setSelectedImageFiles([]);
+      cleanupImagePreviews();
 
       // Prepare message history for API call
       const messageHistory: Message[] = updatedMessages;
 
       // If image generation is enabled, call API for image
       if (imageGenEnabled) {
+        // Find the last assistant message and use its metadata.response_id as previous_response_id if present
+        const lastAssistantMessage = [...messages]
+          .reverse()
+          .find((msg) => msg.role === "assistant" && msg.metadata?.response_id);
+        const previous_response_id =
+          lastAssistantMessage?.metadata?.response_id || "";
         const response = await chatService.createChatCompletion({
           messages: messageHistory,
           model: selectedModel,
           image: true,
           conversationId: currentChatId || undefined,
+          previous_response_id, // Pass previous_response_id for image chaining
         });
 
         if (response?.conversationId && !currentChatId) {
@@ -246,7 +302,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
             },
           ]);
         } else if (response?.error) {
-          setError(response.error);
+          throw new Error(response.error);
         }
         setIsLoading(false);
         return;
@@ -321,6 +377,20 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
       setError(error instanceof Error ? error.message : "An error occurred");
       console.error("Chat error:", error);
       setStreamingMessage(null);
+      // Revert all states to previous if this was the first message (optimistic update failed)
+      setMessages(prevMessages);
+      setInputMessage(prevInputMessage);
+      setUploadedImages(prevUploadedImages);
+      setSelectedImageFiles(prevSelectedImageFiles);
+      // Clean up any new previews and restore previous previews
+      cleanupImagePreviews();
+      // Restore previews for previous uploaded images
+      prevUploadedImages.forEach((img) => {
+        if (img.localPreviewUrl) {
+          // Recreate object URL if needed (browser will handle duplicates)
+          URL.createObjectURL(new File([], img.filePath));
+        }
+      });
     } finally {
       setIsLoading(false);
     }
@@ -359,20 +429,6 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const handleImageGenToggle = (enabled: boolean) => {
     setImageGenEnabled(enabled);
     storeWithExpiry("aiflo_image_gen_enabled", enabled);
-
-    if (enabled) {
-      // Add prefix if not present
-      if (!inputMessage.startsWith(IMAGE_PREFIX)) {
-        setInputMessage((prev) =>
-          prev.trim().length > 0 ? IMAGE_PREFIX + prev : IMAGE_PREFIX
-        );
-      }
-    } else {
-      // Remove prefix if present
-      if (inputMessage.startsWith(IMAGE_PREFIX)) {
-        setInputMessage((prev) => prev.replace(IMAGE_PREFIX, ""));
-      }
-    }
   };
 
   // Combine regular messages with streaming message for display
@@ -413,6 +469,10 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         onWebSearchToggle={handleWebSearchToggle}
         imageGenEnabled={imageGenEnabled}
         onImageGenToggle={handleImageGenToggle}
+        onImageSelected={setSelectedImageFiles}
+        onImageUploadComplete={setUploadedImages}
+        onImageCleanup={cleanupImagePreviews}
+        selectedImages={selectedImageFiles}
       />
     </div>
   );
@@ -429,7 +489,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     >
       <div className="flex flex-col  flex-1 max-w-4xl w-full h-full">
         {currentChatId && messages.length > 0 && (
-          <p className="hidden  sm:block sm:max-w-sm lg:max-w-xl  mx-auto z-50 fixed top-5 left-0 right-0 text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
+          <p className="hidden  md:block sm:max-w-sm lg:max-w-xl  mx-auto z-50 fixed top-5 left-0 right-0 text-sm sm:text-lg font-bold text-center w-full sm:max-w-2xl text-ellipsis overflow-hidden whitespace-nowrap">
             {currentConversation?.title || "..."}
           </p>
         )}
@@ -527,6 +587,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
                     isLoading={message === streamingMessage && isLoading}
                     model={message.model_id}
                     isReadonly={false}
+                    attachments={message.attachments}
                   />
                 ))}
                 {streamingMessage && (

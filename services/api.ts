@@ -1,17 +1,14 @@
 import axios from "axios";
 import api from "./axiosSetup";
 import { authService } from "./authService";
-
-interface UsageData {
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-}
-
-interface Message {
-  role: "user" | "assistant" | "system";
-  content: string;
-}
+import type {
+  Message,
+  ChatMessage,
+  Conversation,
+  StreamResponse,
+  UsageData,
+  PaginatedResponse,
+} from "@/types";
 
 interface ChatCompletionRequest {
   messages: Message[];
@@ -20,49 +17,7 @@ interface ChatCompletionRequest {
   web?: boolean;
   conversationId?: string;
   image?: boolean;
-}
-
-// API response interfaces
-interface Conversation {
-  id: string;
-  user_id: string;
-  title: string;
-  created_at: string;
-  updated_at: string;
-  last_message_at: string;
-  metadata?: Record<string, any>;
-}
-
-interface ChatMessage {
-  id: string;
-  conversation_id: string;
-  user_id: string;
-  role: "user" | "assistant" | "system";
-  model_id: string;
-  content: string;
-  tokens_used?: number;
-  parent_message_id?: string;
-  metadata?: Record<string, any>;
-  created_at: string;
-  sequence_number?: number;
-  revision_number?: number;
-  attachment_url?: string;
-  attachment_type?: "image" | "video" | "audio" | "document" | "other";
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-interface StreamResponse {
-  content?: string;
-  conversationId?: string;
-  usage?: Partial<UsageData>;
-  error?: string;
-  done?: boolean;
+  previous_response_id?: string;
 }
 
 class ChatService {
@@ -337,8 +292,10 @@ class ChatService {
       model_id?: string;
       parent_message_id?: string;
       metadata?: Record<string, any>;
-      attachment_url?: string;
-      attachment_type?: "image" | "video" | "audio" | "document" | "other";
+      attachments?: Array<{
+        attachment_type: "image" | "video" | "audio" | "document" | "other";
+        attachment_url: string;
+      }>;
     } = {}
   ): Promise<ChatMessage> {
     try {

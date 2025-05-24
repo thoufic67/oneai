@@ -518,3 +518,50 @@
 // Discovered During Work
 
 - [TODO] Review webhook and DB sync for cancellations to ensure consistency if user cancels via Razorpay portal.
+
+- [x] File Upload Endpoint
+
+  - [x] Create /api/upload/file endpoint (POST, multipart/form-data)
+  - [x] Accept file and type param (e.g., 'image') in the request
+  - [x] If type is 'image', validate file type and size, compress to webp, ensure ≤ 200kb
+  - [x] Generate random filename: c/{conversationId}/attachments/{randomId}.webp
+  - [x] Upload to Supabase Storage using service role key
+  - [x] Return public URL and metadata (attachment_type, attachment_url)
+  - [x] Only allow authenticated users
+  - [x] Clean up temp files after upload
+
+// Discovered During Work
+
+- [TODO] Revisit type handling for formidable in the upload endpoint to resolve TypeScript linter errors cleanly.
+
+- [ ] Image Upload in Chat
+
+  # Frontend
+
+  - [x] Add image upload UI to ChatInput (with preview & remove, matching design)
+  - [x] On upload, send the raw image file to the backend (to /api/upload/file)
+  - [x] Allow removal of selected image before sending
+  - [x] Update Chat.tsx to display image in chat bubble if present in attachments
+
+  # Backend/API
+
+  - [x] Update /api/chat/stream/route.ts to accept/process image a ttachments (attachment_url from upload endpoint)
+  - [x] If image is uploaded, store attachment metadata in attachments column
+  - [x] When sending to OpenRouter, format message as multimodal (text + image_url)
+  - [x] If no image, send as plain text
+
+  # Database
+
+  - [ ] Add attachments column to chat_messages table (JSONB)
+  - [ ] Store attachment_type and attachment_url for image messages
+
+  # Testing
+
+  - [ ] Test uploading, previewing, and removing images in chat input
+  - [ ] Test sending image+text to backend and receiving a response
+  - [ ] Test image display in chat history
+  - [ ] Test edge cases: large file, invalid type, network error, etc.
+
+  # Documentation
+
+  - [ ] Update README and docs to describe image upload feature
