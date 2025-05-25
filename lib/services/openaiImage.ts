@@ -14,6 +14,7 @@ import { uploadImageToBucket } from "@/lib/supabase/uploadImageToBucket";
 import { v4 as uuidv4 } from "uuid";
 import OpenAI from "openai";
 import type { Response as OpenAIResponse } from "openai/resources/responses/responses";
+import axios from "axios";
 
 export class OpenAIImageService implements ImageGenerationProvider {
   /**
@@ -34,17 +35,59 @@ export class OpenAIImageService implements ImageGenerationProvider {
       let previous_response_id = params.previous_response_id || undefined;
       console.log("previous_response_id", previous_response_id);
 
+      // --- Attachment/multimodal logic with type enforcement and base64 conversion ---
+      let input: any = params.prompt;
+      if (Array.isArray(params.attachments) && params.attachments.length > 0) {
+        // Type guard for attachment
+        const isValidImageAttachment = (
+          att: any
+        ): att is { attachment_type: string; attachment_url: string } => {
+          return (
+            att &&
+            typeof att === "object" &&
+            att.attachment_type === "image" &&
+            typeof att.attachment_url === "string" &&
+            att.attachment_url.length > 0
+          );
+        };
+        // Only include valid image attachments
+        const imageAttachments = params.attachments.filter(
+          isValidImageAttachment
+        );
+        if (imageAttachments.length > 0) {
+          // Convert all attachments to base64 data URLs (if not already)
+          const base64ImagePromises = imageAttachments.map(async (att) => {
+            const dataUrl = await toBase64DataUrl(att.attachment_url);
+            return {
+              type: "input_image",
+              image_url: dataUrl,
+            };
+          });
+          const base64Images = await Promise.all(base64ImagePromises);
+          // Official OpenAI syntax: input is an array with one object: { role: 'user', content: [...] }
+          input = [
+            {
+              role: "user",
+              content: [
+                { type: "input_text", text: params.prompt },
+                ...base64Images,
+              ],
+            },
+          ];
+        }
+      }
+
       // Build request body for the responses API
       const request: any = {
-        input: params.prompt,
-        model: "gpt-4o",
+        input,
+        model: "gpt-4o-mini",
         user: params.user,
         previous_response_id: previous_response_id,
         tools: [
           {
             type: "image_generation",
             background: params.background || "auto",
-            quality: "auto",
+            quality: "low",
             output_compression: 50,
             output_format: "webp",
             size: params.size || "auto",
@@ -60,7 +103,10 @@ export class OpenAIImageService implements ImageGenerationProvider {
       // Use the SDK to call the responses endpoint
       const data: OpenAIResponse = await openai.responses.create(request);
       // const data = sampleOpenAIResponse;
-      console.log("Response from OpenAI image generation (SDK)", data);
+      console.log(
+        "Response from OpenAI image generation (SDK)",
+        redactBase64InOpenAIResponse(data)
+      );
       const result = await openAIImageToOpenRouterResponse(
         data,
         params.model,
@@ -73,6 +119,23 @@ export class OpenAIImageService implements ImageGenerationProvider {
       throw error;
     }
   }
+}
+
+/**
+ * Converts an image URL (remote or local) to a base64-encoded data URL.
+ * If the input is already a base64 data URL, returns it as-is.
+ * @param url - The image URL to convert
+ * @returns Promise<string> - The base64-encoded data URL
+ */
+export async function toBase64DataUrl(url: string): Promise<string> {
+  // Helper to check if a string is a base64 data URL
+  const isBase64DataUrl = (url: string) =>
+    /^data:image\/(png|jpeg|jpg|webp);base64,/.test(url);
+  if (isBase64DataUrl(url)) return url;
+  const response = await axios.get(url, { responseType: "arraybuffer" });
+  const contentType = response.headers["content-type"] || "image/jpeg";
+  const base64 = Buffer.from(response.data, "binary").toString("base64");
+  return `data:${contentType};base64,${base64}`;
 }
 
 /**
@@ -149,4 +212,20 @@ export async function openAIImageToOpenRouterResponse(
     console.error("Error in openAIImageToOpenRouterResponse:", error);
     throw error;
   }
+}
+
+function redactBase64InOpenAIResponse(data: any) {
+  if (!data?.output) return data;
+  return {
+    ...data,
+    output: data.output.map((item: any) => {
+      if (item.type === "image_generation_call" && item.result) {
+        return {
+          ...item,
+          result: `[base64 image, length: ${item.result.length}]`,
+        };
+      }
+      return item;
+    }),
+  };
 }

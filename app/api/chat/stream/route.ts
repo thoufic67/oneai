@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
 
     // --- IMAGE GENERATION LOGIC ---
     if (image) {
+      console.log("IMAGE GENERATION LOGIC");
       // Create response stream for image generation
       const stream = new TransformStream();
       const writer = stream.writable.getWriter();
@@ -116,16 +117,17 @@ export async function POST(req: NextRequest) {
             { role: "system", content: imagePromptSystemPrompt },
             ...messages,
           ];
-          const promptResponse = await openRouterService.createChatCompletion({
-            messages: promptMessages,
-            model: "openai/gpt-4.1-nano",
-            stream: false,
-          });
-          const generatedPrompt = promptResponse.content.trim();
-          console.log("Generated prompt:", generatedPrompt);
+          // const promptResponse = await openRouterService.createChatCompletion({
+          //   messages: promptMessages,
+          //   model: "openai/gpt-4.1-nano",
+          //   stream: false,
+          // });
+          // const generatedPrompt = promptResponse.content.trim();
+          // console.log("Generated prompt:", generatedPrompt);
           conversationId = await createConversationIfNeeded(
             conversationId,
-            generatedPrompt
+            lastUserMessage.content || ""
+            // generatedPrompt
           );
           const sequence_number = messages.length + 1;
           const userMsgSeq = sequence_number - 1;
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
             model,
             sequence_number,
             {
-              image_prompt: generatedPrompt,
+              // image_prompt: generatedPrompt,
               response_id: result.response_id,
             }
             // attachments
@@ -204,6 +206,7 @@ export async function POST(req: NextRequest) {
 
     // --- CHAT LOGIC ---
     try {
+      console.log("CHAT LOGIC");
       // 1. Validate request
       validateRequest("chat", body);
       // 2. Check quota
