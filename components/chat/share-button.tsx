@@ -20,6 +20,7 @@ import { ShareResponse } from "@/types/share";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Code } from "@heroui/code";
+import { Spinner } from "@heroui/react";
 
 interface ShareButtonProps {
   conversationId: string;
@@ -183,7 +184,7 @@ export function ShareButton({ conversationId }: ShareButtonProps) {
                   disabled={isLoading}
                   className="w-full"
                 >
-                  {isLoading ? "Creating link..." : "Generate share link"}
+                  {isLoading ? <Spinner /> : "Generate share link"}
                 </Button>
               ) : (
                 <div className="flex flex-col gap-4">
