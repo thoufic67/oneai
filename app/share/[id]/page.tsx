@@ -62,11 +62,13 @@ export default async function SharedConversationPage({
             {messages.map((message: any) => (
               <ChatBubble
                 isReadonly
+                isShare
                 key={message.id}
                 isAssistant={message.role === "assistant"}
                 content={message.content}
                 isLoading={false}
                 model={message.model_id}
+                attachments={message.attachments}
               />
             ))}
           </div>

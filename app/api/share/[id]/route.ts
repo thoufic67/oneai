@@ -41,7 +41,8 @@ export async function GET(
             model_id,
             created_at,
             sequence_number,
-            is_latest
+            is_latest,
+            attachments
           )
         )
       `
@@ -49,6 +50,8 @@ export async function GET(
       .eq("share_id", id)
       .eq("is_active", true)
       .single();
+
+    console.log("Share data", share, shareError);
 
     if (shareError || !share) {
       console.error("Share not found", shareError);

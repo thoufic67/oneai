@@ -20,6 +20,7 @@ import type {
 } from "@/types";
 
 interface ChatBubbleProps {
+  isShare?: boolean;
   isReadonly: boolean;
   isAssistant: boolean;
   content: string;
@@ -230,6 +231,7 @@ export function ChatBubble({
   onRegenerate,
   model,
   attachments = [],
+  isShare,
 }: ChatBubbleProps) {
   const [messageCopied, setMessageCopied] = useState(false);
   const { user } = useAuth();
@@ -285,7 +287,8 @@ export function ChatBubble({
                 ))}
             </div>
           )}
-          {!isAssistant && (
+          {/* Only show Avatar if not assistant and not isShare */}
+          {!isAssistant && !isShare && (
             <Avatar
               src={
                 user?.user_metadata?.avatar_url ||
@@ -312,7 +315,8 @@ export function ChatBubble({
               </Markdown>
             </div>
           </div>
-          {!isLoading && (
+          {/* Only show copy and regenerate options if not isShare */}
+          {!isLoading && !isShare && (
             <div className="flex gap-2">
               <Tooltip content="Copy message">
                 <Button
@@ -328,7 +332,8 @@ export function ChatBubble({
                 </Button>
               </Tooltip>
 
-              {isAssistant && (
+              {/* Only show regenerate if not isShare */}
+              {isAssistant && !isShare && (
                 <Tooltip content="Regenerate message (Coming soon)">
                   <div>
                     <Button
