@@ -270,6 +270,82 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     const selectedModelName = selectedModelData?.name || "Select Model";
     const selectedModelLogo = selectedModelData?.logo;
 
+    // --- Paste image support ---
+    const handlePaste = async (e: React.ClipboardEvent<Element>) => {
+      if (disabled) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === "file" && item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
+      if (imageFiles.length === 0) return;
+      e.preventDefault(); // Prevent default paste behavior for images
+      // Limit to 5 images total
+      let newFiles = [...selectedImages, ...imageFiles];
+      if (newFiles.length > 5) newFiles = newFiles.slice(0, 5);
+      setSelectedImages(newFiles);
+      setImagePreviewUrls(newFiles.map((file) => URL.createObjectURL(file)));
+      onImageSelected && onImageSelected(newFiles);
+      // Upload each new file (only the pasted ones)
+      setUploading(true);
+      const uploads: UploadedImageMeta[] = [];
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
+        const localPreviewUrl = URL.createObjectURL(file);
+        setUploadedImages((prev) => [
+          ...prev,
+          {
+            url: "",
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            width: undefined,
+            height: undefined,
+            attachment_type: "image",
+            attachment_url: "",
+            filePath: "",
+            localPreviewUrl,
+            loading: true,
+          },
+        ]);
+        const data = await uploadImage(file);
+        setUploadedImages((prev) => {
+          const idx = prev.findIndex(
+            (img) => img.localPreviewUrl === localPreviewUrl && img.loading
+          );
+          if (idx === -1) return prev;
+          const updated = [...prev];
+          updated[idx] = {
+            ...updated[idx],
+            ...data,
+            loading: false,
+            error: data.error,
+          };
+          return updated;
+        });
+        uploads.push({
+          ...data,
+          localPreviewUrl,
+          loading: false,
+          error: data.error,
+        });
+      }
+      setUploading(false);
+      // Notify parent of all uploaded images (filter out errored ones)
+      onImageUploadComplete &&
+        onImageUploadComplete(
+          [...uploadedImages, ...uploads].filter(
+            (img) => !img.error && img.attachment_url
+          )
+        );
+    };
+    // --- End paste image support ---
+
     return (
       <div
         className={`relative group  bg-transparent transition-opacity duration-300 ${
@@ -377,6 +453,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               disabled={disabled}
               placeholder={placeholder}
               onKeyDown={onKeyDown}
+              onPaste={handlePaste}
               endContent={
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   {endContent}
