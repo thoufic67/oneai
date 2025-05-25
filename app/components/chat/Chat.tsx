@@ -23,7 +23,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useParams } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { Skeleton } from "@heroui/skeleton";
-import { getChatModels, getImageModels, ModelType } from "@/lib/models";
+import {
+  getChatModels,
+  getImageModels,
+  ModelType,
+  getModelByValue,
+  ModelVariant,
+} from "@/lib/models";
 import type {
   StreamResponse,
   UploadedImageMeta as BaseUploadedImageMeta,
@@ -98,6 +104,13 @@ interface ChatProps {
   initialConversation?: Conversation;
 }
 
+// Helper to get model variant key
+const getModelStorageKey = (modelValue: string) => {
+  const model = getModelByValue(modelValue);
+  const variant = model?.variant || "chat";
+  return `aiflo_selected_model_${variant}`;
+};
+
 export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const router = useRouter();
 
@@ -113,9 +126,22 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const [inputMessage, setInputMessage] = useState("");
 
   // Load initial values from session storage with expiration
-  const [selectedModel, setSelectedModel] = useState<ModelType>(() =>
-    getWithExpiry("aiflo_selected_model", getChatModels()[0].value)
-  );
+  const [selectedModel, setSelectedModel] = useState<ModelType>(() => {
+    // Try chat first, then image, fallback to chat default
+    const chatDefault = getChatModels()[0].value;
+    const imageDefault = getImageModels()[0].value;
+    const chatStored = getWithExpiry(
+      getModelStorageKey(chatDefault),
+      chatDefault
+    );
+    const imageStored = getWithExpiry(
+      getModelStorageKey(imageDefault),
+      imageDefault
+    );
+    // If imageGenEnabled is true, use imageStored, else chatStored
+    // But at init, we don't know imageGenEnabled yet, so default to chatStored
+    return chatStored;
+  });
   const [webSearchEnabled, setWebSearchEnabled] = useState(() =>
     getWithExpiry("aiflo_web_search_enabled", false)
   );
@@ -143,12 +169,22 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const [tempUserName, setTempUserName] = useState("");
   const models = useMemo(() => {
     if (imageGenEnabled) {
-      setSelectedModel(getImageModels()[0].value);
+      const imageDefault = getImageModels()[0].value;
+      setSelectedModel((prev) => {
+        // If already an image model, keep it, else use default
+        const prevModel = getModelByValue(prev);
+        if (prevModel?.variant === ModelVariant.Image) return prev;
+        return getWithExpiry(getModelStorageKey(imageDefault), imageDefault);
+      });
       return getImageModels();
     }
-    setSelectedModel(
-      getWithExpiry("aiflo_selected_model", getChatModels()[0].value)
-    );
+    const chatDefault = getChatModels()[0].value;
+    setSelectedModel((prev) => {
+      // If already a chat model, keep it, else use default
+      const prevModel = getModelByValue(prev);
+      if (prevModel?.variant === ModelVariant.Chat) return prev;
+      return getWithExpiry(getModelStorageKey(chatDefault), chatDefault);
+    });
     return getChatModels();
   }, [imageGenEnabled]);
 
@@ -177,7 +213,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
 
   // Persist preferences to session storage when they change
   useEffect(() => {
-    storeWithExpiry("aiflo_selected_model", selectedModel);
+    storeWithExpiry(getModelStorageKey(selectedModel), selectedModel);
   }, [selectedModel]);
 
   useEffect(() => {
@@ -463,7 +499,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   // Handle model change and save to session storage
   const handleModelChange = (model: string) => {
     setSelectedModel(model as ModelType);
-    storeWithExpiry("aiflo_selected_model", model);
+    storeWithExpiry(getModelStorageKey(model), model);
   };
 
   // Handle web search toggle and save to session storage
