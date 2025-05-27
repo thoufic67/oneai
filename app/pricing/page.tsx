@@ -175,7 +175,7 @@ export default function PricingPage() {
                 <h2 className="text-2xl font-bold">{plan.name}</h2>
                 <p className="text-default-600">Best for casual use.</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">₹{plan.price}</span>
+                  <span className="text-4xl font-bold">${plan.price}</span>
                   <span className="text-default-600">/month</span>
                 </div>
               </CardHeader>

@@ -20,8 +20,8 @@ export interface Feature {
 export const PLANS: Plan[] = [
   {
     name: "Basic",
-    price: 999,
-    currency: "INR",
+    price: 12,
+    currency: "USD",
     id:
       process.env.NODE_ENV === "development"
         ? "plan_QTWQY2cqBWZ2ma"
@@ -38,9 +38,7 @@ export const PLANS: Plan[] = [
       },
       {
         heading: "Generate images",
-        comingSoon: true,
-        subheading:
-          "Gpt Image, Midjourney, Dall-E, Stable Diffusion, Recraft & FLUX",
+        subheading: "OpenAI Gpt Image",
       },
       {
         heading: "Unlimited text messages",
