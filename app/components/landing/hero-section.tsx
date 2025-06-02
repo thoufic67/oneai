@@ -30,7 +30,7 @@ export default function HeroSection() {
           className="mx-auto"
         />
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          All the World's Best AI Models.{" "}
+          All the World&apos;s Best AI Models.{" "}
           <span className="text-primary">One Platform.</span>
         </h1>
         <p className="text-lg text-default-600 max-w-2xl mx-auto">
