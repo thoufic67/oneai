@@ -79,7 +79,7 @@ export default function FeatureHighlights() {
               <h3 className="font-semibold text-lg mt-3 mb-1 group-hover:text-primary-700 transition-colors duration-300">
                 {feature.title}
               </h3>
-              <p className="text-default-600 text-sm mb-4 group-hover:text-primary-600 transition-colors duration-300">
+              <p className="text-default-600 text-xs mb-4 group-hover:text-primary-600 transition-colors duration-300">
                 {feature.desc}
               </p>
               <div className="w-full flex-1 flex items-center justify-center  transition-opacity duration-300">
