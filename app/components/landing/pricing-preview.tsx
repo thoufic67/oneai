@@ -11,7 +11,10 @@ import Link from "next/link";
 export default function PricingPreview() {
   const plan = PLANS[0];
   return (
-    <section className="min-h-screen w-full flex items-center justify-center animate-blur-in-up">
+    <section className="min-h-screen w-full flex flex-col gap-8 items-center justify-center animate-blur-in-up">
+      <div className="flex flex-col items-center justify-center text-primary font-semibold text-xs rounded-full px-4 py-2 mb-2 shadow-sm bg-primary/10">
+        Aiflo Features
+      </div>
       <div className="w-full max-w-lg mx-auto">
         <h2 className="text-2xl font-bold text-center mb-6">
           Simple, Transparent Pricing

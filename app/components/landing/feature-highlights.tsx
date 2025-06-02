@@ -48,7 +48,10 @@ const features = [
 
 export default function FeatureHighlights() {
   return (
-    <section className="min-h-screen w-full flex items-center justify-center animate-blur-in-up">
+    <section className="min-h-screen w-full flex flex-col gap-8 items-center justify-center animate-blur-in-up">
+      <div className="flex flex-col items-center justify-center text-primary font-semibold text-xs rounded-full px-4 py-2 mb-2 shadow-sm bg-primary/10">
+        Aiflo Features
+      </div>
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-8 mx-auto">
         {features.map((feature, i) => (
           <motion.div
