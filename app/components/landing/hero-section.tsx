@@ -18,10 +18,6 @@ export default function HeroSection() {
   ];
   return (
     <div className="flex flex-col justify-center items-center min-h-screen w-full text-center space-y-8 max-w-4xl mx-auto">
-      <div className="bg-primary/10 text-primary font-semibold text-xs md:text-md rounded-full px-4 py-2 mb-2 shadow-sm">
-        All the World&apos;s Best AI Models.{" "}
-        <span className="text-primary">One Platform.</span>
-      </div>
       <div className="space-y-4 animate-blur-in-up">
         <Image
           src="/favicon.svg"
@@ -30,6 +26,10 @@ export default function HeroSection() {
           height={80}
           className="mx-auto"
         />
+        <div className="w-fit mx-auto bg-primary/10 text-primary font-semibold text-xs md:text-md rounded-full px-4 py-2 mb-2 shadow-sm">
+          All the World&apos;s Best AI Models.{" "}
+          <span className="text-primary">One Platform.</span>
+        </div>
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
           <span className="text-danger line-through">Stop paying $20</span> for
           each AI model.{" "}
