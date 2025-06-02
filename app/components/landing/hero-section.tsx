@@ -18,8 +18,9 @@ export default function HeroSection() {
   ];
   return (
     <div className="flex flex-col justify-center items-center min-h-screen w-full text-center space-y-8 max-w-4xl mx-auto">
-      <div className="bg-primary/10 text-primary font-semibold text-md md:text-md rounded-full px-4 py-2 mb-2 shadow-sm">
-        Stop paying $20 for each AI model—save $100+ with Aiflo.
+      <div className="bg-primary/10 text-primary font-semibold text-xs md:text-md rounded-full px-4 py-2 mb-2 shadow-sm">
+        All the World&apos;s Best AI Models.{" "}
+        <span className="text-primary">One Platform.</span>
       </div>
       <div className="space-y-4 animate-blur-in-up">
         <Image
@@ -30,8 +31,9 @@ export default function HeroSection() {
           className="mx-auto"
         />
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-          All the World&apos;s Best AI Models.{" "}
-          <span className="text-primary">One Platform.</span>
+          <span className="text-danger line-through">Stop paying $20</span> for
+          each AI model.{" "}
+          <span className="text-primary">Save $100+ with Aiflo.</span>
         </h1>
       </div>
       <div className="animate-blur-in-down delay-500">
