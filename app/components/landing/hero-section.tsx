@@ -18,6 +18,9 @@ export default function HeroSection() {
   ];
   return (
     <div className="flex flex-col justify-center items-center min-h-screen w-full text-center space-y-8 max-w-4xl mx-auto">
+      <div className="bg-primary/10 text-primary font-semibold text-lg md:text-xl rounded px-4 py-2 mb-2 shadow-sm">
+        Stop paying $20 for each AI model—save $100+ with Aiflo.
+      </div>
       <div className="space-y-4 animate-blur-in-up">
         <Image
           src="/favicon.svg"
@@ -26,11 +29,11 @@ export default function HeroSection() {
           height={80}
           className="mx-auto"
         />
-        <h1 className="text-2xl sm:text-4xl md:text-6xl font-bold tracking-tight">
+        <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
           All the World's Best AI Models.{" "}
           <span className="text-primary">One Platform.</span>
         </h1>
-        <p className="text-sm sm:text-lg text-default-600 max-w-2xl mx-auto">
+        <p className="text-lg text-default-600 max-w-2xl mx-auto">
           Chat with GPT-4, Gemini, Claude, DALL-E, and more—seamlessly, with a
           single subscription. Switch models, generate images, and manage
           conversations—all in one place.
