@@ -1,92 +1,67 @@
 /**
  * @file page.tsx
- * @description Landing page component that showcases the AI model access platform with pricing and features
- *
- * Now also sets the page description and title dynamically using siteConfig.
+ * @description Highly converting landing page for Aiflo, showcasing unified AI access, top features, pricing preview, and trust signals. Reuses pricing components, model logos, and plan data. Follows HeroUI, Tailwind, and Framer Motion patterns.
  */
 import Image from "next/image";
 import LandingPageButton from "./components/landing-page-button";
 import { Metadata } from "next";
 import { siteConfig } from "@/config/site";
+import { Card, CardHeader, CardBody } from "@heroui/react";
+import {
+  Check,
+  ShieldCheck,
+  Sparkles,
+  ImageIcon,
+  History,
+  Share2,
+  FileUp,
+  MessageSquare,
+} from "lucide-react";
+import { PLANS } from "@/lib/plans";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import HeroSection from "./components/landing/hero-section";
+import FeatureHighlights from "./components/landing/feature-highlights";
+import PricingPreview from "./components/landing/pricing-preview";
+import SecurityBanner from "./components/landing/security-banner";
+
+const sections = [
+  { id: "hero", label: "Home" },
+  { id: "features", label: "Features" },
+  { id: "pricing", label: "Pricing" },
+  { id: "security", label: "Security" },
+];
 
 export default function Home() {
-  const aiModels = [
-    {
-      name: "Gemini",
-      logo: "/logos/gemini.svg",
-    },
-    {
-      name: "ChatGPT",
-      logo: "/logos/openai.svg",
-    },
-    {
-      name: "Claude",
-      logo: "/logos/anthropic.svg",
-    },
-    {
-      name: "Mistral",
-      logo: "/logos/mistral.svg",
-    },
-    {
-      name: "Grok",
-      logo: "/logos/grok.svg",
-    },
-    {
-      name: "Perplexity",
-      logo: "/logos/perplexity.svg",
-    },
-    {
-      name: "DeepSeek",
-      logo: "/logos/deepseek.svg",
-    },
-  ];
-
   return (
-    <main className="flex max-h-[100dvh] h-full flex-col items-center justify-center p-8 md:p-24 animate-blur-in">
-      <div className="text-center space-y-8 max-w-4xl">
-        {/* Logo and Title */}
-        <div className="space-y-4 animate-blur-in-up">
-          <Image
-            src="/favicon.svg"
-            alt="Aiflo Logo"
-            width={80}
-            height={80}
-            className="mx-auto"
+    <main className="flex flex-col items-center justify-center p-0 m-0 w-full scroll-smooth relative p-4">
+      {/* Vertical navigation dots/buttons */}
+      <nav className="fixed right-4 top-1/2 z-50 flex flex-col gap-4 -translate-y-1/2 md:right-8">
+        {/* {sections.map((section) => (
+          <button
+            key={section.id}
+            aria-label={`Go to ${section.label}`}
+            onClick={() => {
+              document
+                .getElementById(section.id)
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="w-4 h-4 rounded-full border-2 border-primary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary bg-default-200"
           />
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            AI Flo
-          </h1>
-        </div>
-
-        {/* AI Models Grid */}
-        <div className="animate-blur-in-down delay-500">
-          <p className="text-lg mb-4">Get access to</p>
-          <div className="flex flex-wrap justify-center gap-4 overflow-wrap-anywhere max-w-xl">
-            {aiModels.map((model) => (
-              <div
-                key={model.name}
-                className="flex flex-row items-center gap-2 p-1 px-2 bg-default-100 rounded-full w-fit h-8 box-border"
-              >
-                <Image
-                  src={model.logo}
-                  alt={`${model.name} logo`}
-                  width={20}
-                  height={20}
-                />
-                <p className="text-xs w-fit">{model.name}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-4 text-muted-foreground overflow-hidden whitespace-nowrap  animate-typewriter animate-blink inline-block">
-            in one place for price of a 🍕
-          </p>
-        </div>
-
-        {/* CTA Button */}
-        <div className="animate-blur-in-down delay-1000">
-          <LandingPageButton />
-        </div>
-      </div>
+        ))} */}
+      </nav>
+      <section id="hero" className="w-full">
+        <HeroSection />
+      </section>
+      <section id="features" className="w-full">
+        <FeatureHighlights />
+      </section>
+      <section id="pricing" className="w-full">
+        <PricingPreview />
+      </section>
+      <section id="security" className="w-full">
+        <SecurityBanner />
+      </section>
     </main>
   );
 }
