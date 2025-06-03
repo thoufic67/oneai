@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "noreply@aiflo.space",
+        from: "contact@updates.aiflo.space",
         to: ["thoufic@achieveit.ai"],
         subject: `New Feedback: ${issueType}`,
         html: `<h2>New Feedback Received</h2>

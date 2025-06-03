@@ -192,7 +192,7 @@ export default function ContactPage() {
           />
         </div>
         {/* File Upload */}
-        <div>
+        {/* <div>
           <label
             htmlFor="attachment"
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -232,7 +232,7 @@ export default function ContactPage() {
               </a>
             )}
           </div>
-        </div>
+        </div> */}
         {/* Email */}
         <div>
           <label
