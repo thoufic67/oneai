@@ -16,6 +16,9 @@ import { Modal, ModalContent } from "@heroui/react";
 import { cn } from "@/lib/utils";
 import "./command-menu.css";
 import { BackgroundGradient } from "../background-gradient";
+import { debounce } from "lodash";
+
+const SKIP_SEARCH_CONVERSATIONS = ["Go to Home⌘H", "New Chat⌘N"];
 
 interface CommandKProps {
   isOpen: boolean;
@@ -35,39 +38,54 @@ export function CommandK({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
 
-  // Fetch conversations when the modal opens
-  const fetchConversations = useCallback(async () => {
-    if (!isOpen) return;
+  // Debounced fetch for search
+  const fetchConversations = useCallback(
+    debounce(async (searchValue: string) => {
+      console.log("fetchConversations", searchValue);
+      if (!isOpen) return;
+      try {
+        setLoadingHistory(true);
+        setHistoryError(null);
 
-    try {
-      setLoadingHistory(true);
-      setHistoryError(null);
-      const data = await chatService.getConversations({ limit: 15 });
-      setConversations(data.data || []);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load chat history";
-      setHistoryError(errorMessage);
-      console.error("Error loading conversations:", err);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
+        const data = await chatService.getConversations({
+          limit: 500,
+          search:
+            searchValue && !SKIP_SEARCH_CONVERSATIONS.includes(searchValue)
+              ? searchValue
+              : "",
+        });
+        setConversations(data.data || []);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load chat history";
+        setHistoryError(errorMessage);
+        console.error("Error loading conversations:", err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    }, 300),
+    [isOpen]
+  );
 
   // Focus the input when modal opens
   useEffect(() => {
     if (isOpen) {
+      fetchConversations("");
       // Small delay to ensure modal is mounted
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 50);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        fetchConversations.cancel();
+      };
     }
   }, [isOpen]);
+
+  const handleInputValueChange = (value: string) => {
+    // setSearch(value);
+    // fetchConversations(value);
+  };
 
   const handleSelectChat = (chatId: string) => {
     console.log("handleSelectChat", chatId);
@@ -86,15 +104,6 @@ export function CommandK({
       command();
     },
     [onOpenChange]
-  );
-
-  // Filter conversations based on search term
-  const filteredConversations = conversations.filter(
-    (conversation) =>
-      !search ||
-      (conversation.title || "Untitled Conversation")
-        .toLowerCase()
-        .includes(search.toLowerCase())
   );
 
   return (
@@ -118,6 +127,7 @@ export function CommandK({
                 ref={inputRef}
                 placeholder="Type a command or search..."
                 className="placeholder:text-gray-500"
+                onValueChange={handleInputValueChange}
               />
             </div>
             <Command.List>
@@ -165,7 +175,7 @@ export function CommandK({
               {/* Show conversations group if there are conversations or loading */}
               <Command.Group
                 heading="Recent Conversations"
-                className="command-group"
+                className="command-group max-h-[50dvh] overflow-y-scroll "
               >
                 {loadingHistory && (
                   <div className="flex items-center justify-center py-4">
