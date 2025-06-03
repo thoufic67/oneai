@@ -8,7 +8,8 @@ class AuthService {
   // Redirect to Google login page
   async initiateGoogleLogin() {
     try {
-      const redirectAfterLogin = sessionStorage.getItem("redirectAfterLogin");
+      const redirectAfterLogin =
+        sessionStorage.getItem("redirectAfterLogin") || "new";
       const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`;
 
       console.log("redirectTo", redirectTo);

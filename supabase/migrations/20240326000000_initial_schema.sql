@@ -192,6 +192,33 @@ CREATE TABLE shared_conversations (
         ON DELETE CASCADE
 );
 
+-- Feedback Table for contact form submissions
+create table public.feedback (
+  id uuid default uuid_generate_v4() primary key,
+  issue_type text not null,
+  description text not null,
+  email text not null,
+  file_url text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Index for faster queries (optional)
+create index idx_feedback_email on public.feedback(email, created_at);
+
+-- Enable RLS
+alter table public.feedback enable row level security;
+
+-- Allow anyone to insert (for public contact form)
+drop policy if exists "Allow insert for all" on public.feedback;
+create policy "Allow insert for all" on public.feedback
+  for insert
+  with check (true);
+
+-- Allow admin to select (customize as needed)
+create policy "Allow select for admin" on public.feedback
+  for select
+  using (true);
+
 -- Indexes
 
 -- Subscriptions indexes
