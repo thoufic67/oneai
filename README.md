@@ -71,3 +71,8 @@ Licensed under the [MIT license](https://github.com/heroui-inc/next-app-template
   - Plan selection, upgrade, and payment
   - **User-initiated subscription cancellation from Settings page**
   - Backend API integration for Razorpay subscription cancel
+
+## SEO
+
+- Includes `robots.txt` and `sitemap.xml` in `public/` for search engine indexing.
+- Open Graph and Twitter Card meta tags are set in `app/layout.tsx` for rich social sharing and SEO.

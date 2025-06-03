@@ -44,7 +44,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        {/* SEO: Open Graph & Twitter Card */}
+        <meta property="og:title" content={siteConfig.name} />
+        <meta property="og:description" content={siteConfig.description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://aiflo.space/" />
+        <meta property="og:image" content="/favicon.svg" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={siteConfig.name} />
+        <meta name="twitter:description" content={siteConfig.description} />
+        <meta name="twitter:image" content="/favicon.svg" />
+        <link rel="canonical" href="https://aiflo.space/" />
+      </head>
       <body className={`${inter.className} font-sans antialiased `}>
         <Toaster />
         <Providers>

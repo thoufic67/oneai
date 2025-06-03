@@ -1,0 +1,5 @@
+# robots.txt for Aiflo
+User-agent: *
+Allow: /
+
+Sitemap: https://aiflo.space/sitemap.xml 

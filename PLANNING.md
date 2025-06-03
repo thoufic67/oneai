@@ -212,6 +212,11 @@ Conversation Example:
 /public
   /images            # Static images
   /icons            # Site icons
+
+# SEO
+- `robots.txt` and `sitemap.xml` are present in `public/` for search engine indexing.
+- Open Graph and Twitter Card meta tags are set in `app/layout.tsx`.
+- When adding new public pages, update `public/sitemap.xml` accordingly.
 ```
 
 ## Database Schema (Supabase)

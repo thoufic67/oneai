@@ -565,3 +565,8 @@
   # Documentation
 
   - [ ] Update README and docs to describe image upload feature
+
+## Completed Tasks
+
+- [x] SEO optimization: Added robots.txt, sitemap.xml, and Open Graph/Twitter Card meta tags for better search engine indexing and social sharing. (2024-06-09)
+  - Note: Update sitemap.xml if new public pages are added.
