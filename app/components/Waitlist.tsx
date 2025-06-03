@@ -8,14 +8,14 @@ export default function Waitlist() {
   return (
     <>
       <h1 className={title({ class: "text-center" })}>
-        We&apos;re actively expanding to new regions.
+        We&apos;re actively expanding to new countries.
       </h1>
       <p
         className={subtitle({
           class: "text-center text-gray-500 dark:text-gray-400",
         })}
       >
-        Please join the waitlist to be notified when we launch in your region.
+        Please join the waitlist to be notified when we launch in your country.
       </p>
 
       <Button
