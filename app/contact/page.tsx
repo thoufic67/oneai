@@ -142,22 +142,26 @@ export default function ContactPage() {
       >
         {/* Issue Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="issue-type"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Issue type
           </label>
           <Dropdown>
             <DropdownTrigger>
               <Button
-                variant="bordered"
                 className="w-full justify-between"
+                id="issue-type"
                 type="button"
+                variant="bordered"
               >
                 {issueType ? issueType : "Please select an issue type"}
               </Button>
             </DropdownTrigger>
             <DropdownMenu
-              className="w-full"
               aria-label="Issue type"
+              className="w-full"
               onAction={(key) => setIssueType(key as string)}
             >
               <DropdownItem key="Feature request">Feature request</DropdownItem>
@@ -172,37 +176,46 @@ export default function ContactPage() {
         </div>
         {/* Issue Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="issue-description"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Issue description <span className="text-red-500">*</span>
           </label>
           <Textarea
-            value={description}
+            id="issue-description"
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Please tell us what you were trying to do, what unexpected behavior you noticed, and whether you saw any error messages along the way."
             required
             rows={6}
+            value={description}
           />
         </div>
         {/* File Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="attachment"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Attachment
           </label>
           <div className="flex items-center gap-3">
             <button
-              type="button"
-              className="border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center w-24 h-24 bg-gray-50 hover:bg-gray-100"
-              onClick={() => fileInputRef.current?.click()}
               aria-label="Upload file"
+              className="border border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center w-24 h-24 bg-gray-50 hover:bg-gray-100"
+              id="attachment"
+              onClick={() => fileInputRef.current?.click()}
+              type="button"
             >
               <UploadCloud className="w-6 h-6 text-gray-400" />
             </button>
             <input
+              accept="image/*,application/pdf,.doc,.docx,.txt"
+              className="hidden"
+              id="attachment-input"
+              onChange={handleFileChange}
               ref={fileInputRef}
               type="file"
-              className="hidden"
-              onChange={handleFileChange}
-              accept="image/*,application/pdf,.doc,.docx,.txt"
             />
             {file && <span className="text-sm text-gray-700">{file.name}</span>}
             {fileUploading && (
@@ -210,10 +223,10 @@ export default function ContactPage() {
             )}
             {fileUrl && !fileUploading && (
               <a
-                href={fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="text-xs text-blue-600 underline"
+                href={fileUrl}
+                rel="noopener noreferrer"
+                target="_blank"
               >
                 View file
               </a>
@@ -222,15 +235,19 @@ export default function ContactPage() {
         </div>
         {/* Email */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Your email
           </label>
           <Input
-            type="email"
-            value={email}
+            id="email"
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
+            type="email"
+            value={email}
           />
         </div>
         {/* Error/Success */}
