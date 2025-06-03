@@ -51,27 +51,28 @@ const features = [
     desc: "Create public, read-only links for any conversation. Secure and owner-controlled.",
     Demo: ShareableLinksDemo,
   },
-  {
-    icon: <MessageSquare className="w-6 h-6 text-primary" />,
-    title: "Unlimited Messaging",
-    desc: "Fair usage policy applies. Enjoy seamless, real-time chat.",
-    Demo: UnlimitedMessagingDemo,
-  },
+  // {
+  //   icon: <MessageSquare className="w-6 h-6 text-primary" />,
+  //   title: "Unlimited Messaging",
+  //   desc: "Fair usage policy applies. Enjoy seamless, real-time chat.",
+  //   Demo: UnlimitedMessagingDemo,
+  // },
 ];
 
 export default function FeatureHighlights() {
   return (
-    <section className="min-h-screen w-full flex flex-col gap-8 items-center justify-center animate-blur-in-up">
-      <div className="flex flex-col items-center justify-center text-primary font-semibold text-xs rounded-full px-4 py-2 mb-2 shadow-sm bg-primary/10">
+    <section className=" w-full flex flex-col items-center justify-center py-16 px-4">
+      <div className="flex flex-col items-center justify-center text-primary font-semibold text-xs rounded-full px-4 py-2 mb-8 shadow-sm bg-primary/10">
         Aiflo Features
       </div>
-      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-8 mx-auto">
+      <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12 mx-auto">
         {features.map((feature, i) => {
           const Demo = feature.Demo;
+          const cardColSpan = i === 0 ? "md:col-span-2" : "";
           return (
             <Card
               key={feature.title}
-              className="group flex flex-col items-center text-center bg-default-50 rounded-xl p-6 shadow-md border border-default-200 transition-colors duration-300 hover:bg-primary/10 hover:border-primary cursor-pointer"
+              className={`group flex flex-col items-center text-center bg-default-50/10 backdrop-blur-sm rounded-xl p-6 shadow-md border border-default-200 transition-colors duration-300 hover:bg-primary/10 hover:border-primary cursor-pointer ${cardColSpan}`}
             >
               <div className="transition-colors duration-300 group-hover:text-primary-700">
                 {feature.icon}

@@ -42,7 +42,7 @@ export default function HeroSection() {
           {aiModels.map((model) => (
             <div
               key={model.name}
-              className="flex flex-row items-center gap-2 p-1 px-2 bg-default-100 rounded-full w-fit h-8 box-border"
+              className="flex flex-row items-center gap-2 p-1 px-2 bg-default-100 rounded-full w-fit h-8 box-border active:border-primary select-none cursor-pointer"
             >
               <Image
                 src={model.logo}
