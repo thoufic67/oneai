@@ -35,6 +35,7 @@ interface ModelOption {
   name: string;
   value: string;
   logo?: string;
+  displayName?: string; // Underlying model display name
 }
 
 interface UploadedImageMeta extends BaseUploadedImageMeta {
@@ -269,6 +270,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     );
     const selectedModelName = selectedModelData?.name || "Select Model";
     const selectedModelLogo = selectedModelData?.logo;
+    const selectedModelDisplayName = selectedModelData?.displayName;
 
     // --- Paste image support ---
     const handlePaste = async (e: React.ClipboardEvent<Element>) => {
@@ -543,6 +545,9 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                         </div>
                       )}
                       {selectedModelName}
+                      <span className="text-xs text-gray-400 font-normal leading-tight">
+                        {selectedModelDisplayName}
+                      </span>
                       <ChevronDown className="h-3 w-3" />
                     </Button>
                   </DropdownTrigger>
@@ -552,29 +557,50 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
                       onModelChange && onModelChange(key.toString())
                     }
                   >
-                    {modelOptions.map((model) => (
-                      <DropdownItem
-                        key={model.value}
-                        className={
-                          selectedModel === model.value ? "text-violet-600" : ""
-                        }
-                        startContent={
-                          model.logo && (
-                            <div className="relative w-4 h-4 bg-white-300">
-                              <Image
-                                src={model.logo}
-                                alt={model.name}
-                                width={16}
-                                height={16}
-                                className="w-full h-full"
-                              />
-                            </div>
-                          )
-                        }
-                      >
-                        {model.name}
-                      </DropdownItem>
-                    ))}
+                    {modelOptions.map((model) => {
+                      // Prefer model.displayName, fallback to value lookup
+                      let displayName = model.displayName;
+                      if (!displayName && typeof window !== "undefined") {
+                        try {
+                          // Dynamically import getModelByValue only if needed (should be present in modelOptions ideally)
+                          const { getModelByValue } = require("@/lib/models");
+                          const found = getModelByValue(model.value);
+                          displayName = found?.displayName;
+                        } catch {}
+                      }
+                      return (
+                        <DropdownItem
+                          key={model.value}
+                          className={
+                            selectedModel === model.value
+                              ? "text-violet-600"
+                              : ""
+                          }
+                          startContent={
+                            model.logo && (
+                              <div className="relative w-4 h-4 bg-white-300">
+                                <Image
+                                  src={model.logo}
+                                  alt={model.name}
+                                  width={16}
+                                  height={16}
+                                  className="w-full h-full"
+                                />
+                              </div>
+                            )
+                          }
+                        >
+                          <div className="flex flex-col items-start">
+                            <span>{model.name}</span>
+                            {displayName && (
+                              <span className="text-xs text-gray-400 font-normal leading-tight">
+                                {displayName}
+                              </span>
+                            )}
+                          </div>
+                        </DropdownItem>
+                      );
+                    })}
                   </DropdownMenu>
                 </Dropdown>
               )}
