@@ -47,7 +47,7 @@ export default function Login() {
               class: "text-center text-gray-500 dark:text-gray-400",
             })}
           >
-            Welcome back! Sign in to continue.
+            Welcome! Sign in to continue.
           </p>
           <Button
             onClick={() => authService.initiateGoogleLogin()}

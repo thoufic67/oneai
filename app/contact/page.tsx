@@ -23,11 +23,7 @@ export default function ContactPage() {
       <p className="text-lg text-gray-700 mb-2">
         Have a question? Get in touch with us using your preferred method.
       </p>
-      <p className="text-base text-gray-600 mb-8 max-w-2xl">
-        We are a French company in Paris, super enthusiastic about the future of
-        Artificial Intelligence. We aim to develop a big platform to cover many
-        use cases for consumers.
-      </p>
+      <p className="text-base text-gray-600 mb-8 max-w-2xl"></p>
       <div className="flex flex-col md:flex-row gap-6  justify-center">
         {/* Email Card */}
         <div className="flex-1 border border-neutral-200 rounded-xl p-6 flex flex-col items-start shadow-sm min-w-96">
