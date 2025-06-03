@@ -144,7 +144,7 @@ function SettingsPage() {
                     as={Link}
                     href={
                       subscriptionData?.subscription?.metadata?.short_url ||
-                      "https://aiflo.space"
+                      "/pricing"
                     }
                     variant="bordered"
                     size="md"
@@ -154,18 +154,20 @@ function SettingsPage() {
                     MANAGE SUBSCRIPTION
                   </Button>
                   {/* Cancel Subscription Button */}
-                  <Button
-                    variant="ghost"
-                    color="danger"
-                    size="md"
-                    radius="lg"
-                    className="mt-2"
-                    onClick={handleCancelSubscription}
-                    isLoading={cancelLoading}
-                    disabled={cancelLoading}
-                  >
-                    Cancel Subscription
-                  </Button>
+                  {subscriptionData?.subscription?.status === "active" && (
+                    <Button
+                      variant="ghost"
+                      color="danger"
+                      size="md"
+                      radius="lg"
+                      className="mt-2"
+                      onClick={handleCancelSubscription}
+                      isLoading={cancelLoading}
+                      disabled={cancelLoading}
+                    >
+                      Cancel Subscription
+                    </Button>
+                  )}
                 </>
               )}
             </CardBody>

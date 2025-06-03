@@ -26,6 +26,12 @@ export async function GET() {
       .limit(1)
       .single();
 
+    console.log("Subscription details", {
+      userid: user.id,
+      subscription,
+      error,
+    });
+
     if (error && error.code !== "PGRST116") {
       // PGRST116: No rows found
       return NextResponse.json({ error: error.message }, { status: 500 });
