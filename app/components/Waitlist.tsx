@@ -1,8 +1,6 @@
 // Waitlist.tsx - Placeholder for waitlist shown to users from other countries in Login page.
 import React from "react";
 import { title, subtitle } from "../components/primitives";
-import { Helmet } from "react-helmet";
-import { authService } from "@/services/authService";
 import { Button } from "@heroui/button";
 import Link from "next/link";
 
