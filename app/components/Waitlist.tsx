@@ -8,7 +8,7 @@ export default function Waitlist() {
   return (
     <>
       <h1 className={title({ class: "text-center" })}>
-        We're actively expanding to new regions.
+        We&apos;re actively expanding to new regions.
       </h1>
       <p
         className={subtitle({
