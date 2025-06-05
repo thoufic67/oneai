@@ -59,6 +59,12 @@ export const Footer = () => {
             >
               Pricing
             </Link>
+            <Link
+              href="/blog"
+              className="text-sm hover:underline focus:underline"
+            >
+              Blog
+            </Link>
           </nav>
         </div>
       </footer>

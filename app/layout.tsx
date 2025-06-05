@@ -57,7 +57,7 @@ export default function RootLayout({
         <meta name="twitter:image" content="/favicon.svg" />
         <link rel="canonical" href="https://aiflo.space/" />
       </head>
-      <body className={`${inter.className} font-sans antialiased `}>
+      <body className={inter.className + " antialiased"}>
         <Toaster />
         <Providers>
           <BackgroundGradient />

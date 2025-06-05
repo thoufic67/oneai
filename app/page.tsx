@@ -34,7 +34,7 @@ const sections = [
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center justify-center p-0 m-0 w-full scroll-smooth relative p-4">
+    <main className="flex flex-col gap-24 items-center justify-center py-24 m-0 w-full scroll-smooth relative p-4">
       {/* Vertical navigation dots/buttons */}
       <nav className="fixed right-4 top-1/2 z-50 flex flex-col gap-4 -translate-y-1/2 md:right-8">
         {/* {sections.map((section) => (
@@ -50,13 +50,13 @@ export default function Home() {
           />
         ))} */}
       </nav>
-      <section id="hero" className="w-full">
+      <section id="hero" className="w-full ">
         <HeroSection />
       </section>
-      <section id="features" className="w-full">
+      <section id="features" className="w-full animate-blur-in-down">
         <FeatureHighlights />
       </section>
-      <section id="pricing" className="w-full">
+      <section id="pricing" className="w-full animate-blur-in-down">
         <PricingPreview />
       </section>
       <section id="security" className="w-full">

@@ -17,7 +17,7 @@ export default function HeroSection() {
     { name: "Llama", logo: "/logos/llama.svg" },
   ];
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen w-full text-center space-y-8 max-w-4xl mx-auto">
+    <div className="flex flex-col justify-center items-center  w-full text-center space-y-8 max-w-4xl mx-auto">
       <div className="space-y-4 animate-blur-in-up">
         <Image
           src="/favicon.svg"

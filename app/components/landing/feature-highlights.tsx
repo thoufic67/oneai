@@ -63,7 +63,7 @@ export default function FeatureHighlights() {
   return (
     <section className=" w-full flex flex-col items-center justify-center py-16 px-4">
       <div className="flex flex-col items-center justify-center text-primary font-semibold text-xs rounded-full px-4 py-2 mb-8 shadow-sm bg-primary/10">
-        Aiflo Features
+        Features
       </div>
       <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-12 mx-auto">
         {features.map((feature, i) => {
