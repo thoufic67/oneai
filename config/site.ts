@@ -77,6 +77,7 @@ export const publicRoutes = [
   "/about",
   "/docs",
   "/blog",
+  "/changelog",
   "/privacy",
   "/terms",
   "/contact",

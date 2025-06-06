@@ -570,3 +570,8 @@
 
 - [x] SEO optimization: Added robots.txt, sitemap.xml, and Open Graph/Twitter Card meta tags for better search engine indexing and social sharing. (2024-06-09)
   - Note: Update sitemap.xml if new public pages are added.
+
+## [2024-06-09] Created Changelog Page
+
+- Added a new changelog page at /changelog using HeroUI, Tailwind, and Lucide icons. Lists all major releases and updates. [COMPLETED]
+- [TODO] Ensure changelog is linked from the footer for user accessibility. [COMPLETED]

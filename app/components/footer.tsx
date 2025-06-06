@@ -65,6 +65,12 @@ export const Footer = () => {
             >
               Blog
             </Link>
+            <Link
+              href="/changelog"
+              className="text-sm hover:underline focus:underline"
+            >
+              Changelog
+            </Link>
           </nav>
         </div>
       </footer>

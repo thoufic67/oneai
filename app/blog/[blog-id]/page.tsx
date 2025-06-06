@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import fs from "fs/promises";
+import { MarkdownRenderer } from "@/app/components/shared/MarkdownRenderer";
 
 export default async function BlogDetailPage({
   params,
@@ -73,7 +74,7 @@ export default async function BlogDetailPage({
           </div>
         </div>
         <article className="prose prose-neutral max-w-none dark:prose-invert text-base">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+          <MarkdownRenderer content={content} />
         </article>
       </div>
       {/* ToC */}
