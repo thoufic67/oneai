@@ -2,8 +2,6 @@
 
 import { Avatar, Button, Tooltip } from "@heroui/react";
 import { motion } from "framer-motion";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, RefreshCcw } from "lucide-react";
 import React from "react";
@@ -18,6 +16,7 @@ import type {
   UploadedImageMeta,
   ModelType,
 } from "@/types";
+import { MarkdownRenderer } from "@/app/components/shared/MarkdownRenderer";
 
 interface ChatBubbleProps {
   isShare?: boolean;
@@ -307,12 +306,7 @@ export function ChatBubble({
             }`}
           >
             <div className="prose prose-sm dark:prose-invert w-full max-w-full overflow-x-auto overflow-y-hidden whitespace-pre-wrap markdown-content">
-              <Markdown
-                remarkPlugins={[remarkGfm]}
-                components={MarkdownComponents}
-              >
-                {content}
-              </Markdown>
+              <MarkdownRenderer content={content} />
             </div>
           </div>
           {/* Only show copy and regenerate options if not isShare */}
