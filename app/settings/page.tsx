@@ -321,11 +321,13 @@ export default function ProtectedSettingsPage() {
   };
 
   return (
-    <div className="flex h-full max-w-6xl mx-auto p-8">
+    <div className="flex flex-col md:flex-row h-full max-w-6xl mx-auto p-2 md:p-8 gap-4 md:gap-0">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-gray-200 dark:border-gray-800 flex flex-col py-6 px-4 h-fit bg-default-100/10 backdrop-blur-sm rounded-lg">
-        <h2 className="text-2xl font-bold mb-8">Settings</h2>
-        <nav className="flex flex-col gap-1 text-base">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 flex md:flex-col flex-row md:py-6 py-2 md:px-4 px-2 h-fit bg-default-100/10 backdrop-blur-sm rounded-lg overflow-x-auto md:overflow-x-visible">
+        <h2 className="text-2xl font-bold mb-4 md:mb-8 hidden md:block">
+          Settings
+        </h2>
+        <nav className="flex md:flex-col flex-row gap-2 md:gap-4 text-base w-full">
           {sidebarOptions.map((opt) => (
             <SidebarItem
               key={opt.label}
@@ -338,7 +340,7 @@ export default function ProtectedSettingsPage() {
         </nav>
       </aside>
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-start p-8 animate-blur-in-down">
+      <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-8 animate-blur-in-down w-full">
         {selected === "Overview" && (
           <section className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-md p-8 mb-8 flex flex-col gap-8">
             {/* User Card */}
@@ -573,20 +575,12 @@ function SidebarItem({
 }) {
   return (
     <Button
-      variant="ghost"
+      variant="flat"
       size="sm"
-      className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-        selected
-          ? "bg-gray-100 dark:bg-gray-800 text-primary font-semibold"
-          : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-      }`}
+      color={selected ? "primary" : "default"}
       onPress={onClick}
+      startContent={icon}
     >
-      {/* Replace with Lucide icons as needed */}
-      <span className="w-4 h-4">
-        {/* Placeholder for icon, replace with <IconName /> from Lucide if desired */}
-        {icon}
-      </span>
       {label}
     </Button>
   );
