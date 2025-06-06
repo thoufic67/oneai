@@ -548,8 +548,9 @@ export default function ProtectedSettingsPage() {
               </Button>
             </div>
             <p className="text-gray-500 text-sm mt-2">
-              For best results, select the language you mainly speak. If it's
-              not listed, it may still be supported via auto-detection.
+              For best results, select the language you mainly speak. If
+              it&apos;s not listed, it may still be supported via
+              auto-detection.
             </p>
           </section>
         )}
