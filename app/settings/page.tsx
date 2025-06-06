@@ -572,13 +572,15 @@ function SidebarItem({
   onClick?: () => void;
 }) {
   return (
-    <div
+    <Button
+      variant="ghost"
+      size="sm"
       className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
         selected
           ? "bg-gray-100 dark:bg-gray-800 text-primary font-semibold"
           : "hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
       }`}
-      onClick={onClick}
+      onPress={onClick}
     >
       {/* Replace with Lucide icons as needed */}
       <span className="w-4 h-4">
@@ -586,6 +588,6 @@ function SidebarItem({
         {icon}
       </span>
       {label}
-    </div>
+    </Button>
   );
 }
