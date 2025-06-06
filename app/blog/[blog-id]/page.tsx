@@ -11,9 +11,10 @@ import fs from "fs/promises";
 export default async function BlogDetailPage({
   params,
 }: {
-  params: { "blog-id": string };
+  params: Promise<{ "blog-id": string }>;
 }) {
-  const post = blogPosts.find((p) => p.id === params["blog-id"]);
+  const { "blog-id": blogId } = await params;
+  const post = blogPosts.find((p) => p.id === blogId);
   if (!post) return notFound();
 
   let content = post.content || "";

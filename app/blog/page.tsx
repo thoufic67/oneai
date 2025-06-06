@@ -29,8 +29,8 @@ export default function BlogPage() {
         Aiflo Blog
       </h1>
       <p className="text-lg text-default-600 text-center max-w-2xl mb-10">
-        Insights, updates, and news about Aiflo's unified AI platform. Explore
-        features, product updates, and our vision for the future of AI
+        Insights, updates, and news about Aiflo&apos;s unified AI platform.
+        Explore features, product updates, and our vision for the future of AI
         accessibility.
       </p>
       <div className="w-full mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
