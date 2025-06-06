@@ -12,9 +12,12 @@ import { Chip } from "@heroui/chip";
 
 export default function Login() {
   const [region, setRegion] = useState<"india" | "other" | "">("");
+  // Detect if running in an iframe
+  const [inIframe, setInIframe] = useState(false);
 
   useEffect(() => {
     console.log("region", region);
+    setInIframe(window.self !== window.top);
   }, [region]);
 
   return (
@@ -90,8 +93,19 @@ export default function Login() {
               >
                 Welcome! Sign in to continue.
               </p>
+              {/* If in iframe, open login in new tab/popup and show message. Else, normal login. */}
               <Button
-                onClick={() => authService.initiateGoogleLogin()}
+                onClick={() => {
+                  if (inIframe) {
+                    window.open(
+                      "https://aiflo.space/auth/login",
+                      "_blank",
+                      "width=500,height=700"
+                    );
+                  } else {
+                    authService.initiateGoogleLogin();
+                  }
+                }}
                 className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg shadow transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <svg
@@ -126,6 +140,13 @@ export default function Login() {
                 </svg>
                 Sign in with Google
               </Button>
+              {/* Show message if in iframe */}
+              {inIframe && (
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Login will open in a new window. Please return here after
+                  logging in.
+                </p>
+              )}
               <div className="flex-1" />
               <p className="text-xs text-gray-400 text-center w-full mt-4">
                 By signing in, you agree to our{" "}
