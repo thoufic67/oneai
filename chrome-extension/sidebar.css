@@ -1,0 +1,81 @@
+/* @file chrome-extension/sidebar.css
+   @description Styles for Aiflo Chrome extension sidebar and floating button. */
+
+#aiflo-sidebar-toggle-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 2147483646;
+  background: #1e293b;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+#aiflo-sidebar-toggle-btn:hover {
+  background: #334155;
+}
+
+#aiflo-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.12);
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+}
+
+.aiflo-sidebar-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+#aiflo-sidebar-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+#aiflo-sidebar-close-btn:hover {
+  background: #e2e8f0;
+}
+
+.aiflo-sidebar-iframe {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+@media (max-width: 600px) {
+  #aiflo-sidebar {
+    width: 100vw;
+  }
+  #aiflo-sidebar-toggle-btn {
+    right: 16px;
+    bottom: 16px;
+    width: 48px;
+    height: 48px;
+  }
+}
