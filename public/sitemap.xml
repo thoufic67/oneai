@@ -1,30 +1,52 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  @file public/sitemap.xml
+  @description Sitemap for Aiflo. Includes static pages and dynamic blog post URLs based on types/blog.tsx.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://aiflo.space/</loc>
+    <priority>1.0</priority>
   </url>
   <url>
     <loc>https://aiflo.space/pricing</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/blog</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/about</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/privacy</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/terms</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/cancellation</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/contact</loc>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://aiflo.space/changelog</loc>
+    <priority>0.6</priority>
+  </url>
+  <!-- Blog post URLs from types/blog.tsx -->
+  <url>
+    <loc>https://aiflo.space/blog/features-overview</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://aiflo.space/blog/aiflo-use-cases</loc>
+    <priority>0.6</priority>
   </url>
 </urlset> 
