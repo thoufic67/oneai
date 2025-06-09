@@ -25,7 +25,7 @@ function getIcon(icon: BlogPost["icon"]): JSX.Element {
 export default function BlogPage() {
   return (
     <div className="w-full min-h-dvh max-w-6xl mx-auto px-4 py-16 flex flex-col items-center">
-      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center mb-3 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500 drop-shadow-lg">
+      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center mb-3 bg-clip-text  drop-shadow-lg">
         Aiflo Blog
       </h1>
       <p className="text-lg text-default-600 text-center max-w-2xl mb-10">
@@ -40,7 +40,7 @@ export default function BlogPage() {
             href={`/blog/${post.id}`}
             className="h-full group"
           >
-            <Card className="flex flex-col h-full bg-white/30 dark:bg-default-50/30 backdrop-blur-2xl border border-white/30 dark:border-default-200/40 shadow-lg transition-all duration-200 hover:shadow-2xl hover:-translate-y-1 cursor-pointer overflow-hidden rounded-2xl">
+            <Card className="flex flex-col h-full bg-white/30 dark:bg-default-50/30 backdrop-blur-2xl border border-white/30 dark:border-default-200/40 shadow-none transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer overflow-hidden rounded-2xl">
               <div className="w-full h-40 bg-default-100 flex items-center justify-center overflow-hidden">
                 <img
                   src={post.image}

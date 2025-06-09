@@ -154,7 +154,7 @@ export default function ContactPage() {
                 className="w-full justify-between"
                 id="issue-type"
                 type="button"
-                variant="bordered"
+                variant="faded"
               >
                 {issueType ? issueType : "Please select an issue type"}
               </Button>

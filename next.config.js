@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const withMDX = require("@next/mdx")({
+  extension: /\.mdx?$/,
+});
+
+const nextConfig = withMDX({
   async rewrites() {
     return [
       {
@@ -18,6 +22,7 @@ const nextConfig = {
   },
   // This is required to support PostHog trailing slash API requests
   skipTrailingSlashRedirect: true,
-};
+  pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
+});
 
 module.exports = nextConfig;

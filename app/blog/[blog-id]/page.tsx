@@ -1,12 +1,13 @@
 // @file app/blog/[blog-id]/page.tsx
-// @description Dynamic blog post page for Aiflo. Renders a blog post in markdown with title, author, image, tags, and a right-side ToC. Uses HeroUI, Tailwind, and react-markdown.
+// @description Dynamic blog post page for Aiflo. Renders a blog post from an MDX file with title, author, image, tags, and a right-side ToC. Uses HeroUI, Tailwind, and Next.js MDX support.
 
 import { notFound } from "next/navigation";
-import { blogPosts } from "../../../types/blog";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import Image from "next/image";
 import fs from "fs/promises";
+import path from "path";
+import matter from "gray-matter";
+import Image from "next/image";
+import React from "react";
+import { BlogPost, blogPosts } from "@/types/blog";
 import { MarkdownRenderer } from "@/app/components/shared/MarkdownRenderer";
 
 export default async function BlogDetailPage({
@@ -15,66 +16,78 @@ export default async function BlogDetailPage({
   params: Promise<{ "blog-id": string }>;
 }) {
   const { "blog-id": blogId } = await params;
+
+  console.log("blogPosts", blogPosts);
+  // Find the blog post by id
   const post = blogPosts.find((p) => p.id === blogId);
-  if (!post) return notFound();
-
-  let content = post.content || "";
-  if (post.mdPath) {
-    try {
-      content = await fs.readFile(post.mdPath, "utf8");
-    } catch (e) {
-      content = "Error loading blog content.";
-    }
+  if (!post) {
+    return notFound();
   }
+  // The MDX component is imported in blogPosts for certain posts
+  // We'll use the content property if it's a function/component
+  let MDXContent: JSX.Element | null = null;
+  // if (post.content && typeof post.content === "function") {
+  //   MDXContent = post.content as unknown as JSX.Element;
+  // }
 
-  // Extract headings for ToC
-  const headings = Array.from(content.matchAll(/^#+\s+(.+)$/gm)).map(
-    (m) => m[1]
-  );
+  // Extract headings for ToC (if possible)
+  // If MDXContent is available, we can't easily extract headings from the component
+  // So we fallback to an empty ToC or use static headings if needed
+  const headings: string[] = [];
 
   return (
     <div className="w-full flex flex-col min-h-screen lg:flex-row gap-8">
       {/* Main content */}
       <div className="flex-1 min-w-0">
         <div className="mb-6">
-          <Image
-            src={post.image}
-            alt={post.imageAlt}
-            width={640}
-            height={320}
-            className="rounded-xl w-full h-56 object-contain bg-default-100 mb-4"
-            priority
-          />
-          <div className="flex items-center gap-4 mb-2">
+          {post?.image && (
             <Image
-              src={post.author.avatar}
-              alt={post.author.name}
-              width={40}
-              height={40}
-              className="rounded-full border bg-white"
+              src={post.image}
+              alt={post.imageAlt || post.title}
+              width={640}
+              height={320}
+              className="rounded-xl w-full h-56 object-contain bg-default-100 mb-4"
+              priority
             />
+          )}
+          <div className="flex items-center gap-4 mb-2">
+            {post?.author?.avatar && (
+              <Image
+                src={post.author.avatar}
+                alt={post.author.name}
+                width={40}
+                height={40}
+                className="rounded-full border bg-white"
+              />
+            )}
             <div>
-              <div className="font-semibold text-base">{post.author.name}</div>
-              <div className="text-xs text-default-500">{post.author.role}</div>
+              <div className="font-semibold text-base">
+                {post?.author?.name}
+              </div>
+              <div className="text-xs text-default-500">
+                {post?.author?.role}
+              </div>
             </div>
-            <span className="ml-4 text-xs text-default-400">{post.date}</span>
+            <span className="ml-4 text-xs text-default-400">{post?.date}</span>
           </div>
           <h1 className="text-3xl font-bold mb-2 mt-2 leading-tight">
-            {post.title}
+            {post?.title}
           </h1>
           <div className="flex flex-wrap gap-2 mb-4">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-default-200 text-xs px-2 py-1 rounded-full text-default-700"
-              >
-                {tag}
-              </span>
-            ))}
+            {Array.isArray(post.tags) &&
+              post.tags.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="bg-default-200 text-xs px-2 py-1 rounded-full text-default-700"
+                >
+                  {tag}
+                </span>
+              ))}
           </div>
         </div>
         <article className="prose prose-neutral max-w-none dark:prose-invert text-base">
-          <MarkdownRenderer content={content} />
+          {/* Render MDX content as a component if available, else fallback to string */}
+          {post.content && <MarkdownRenderer content={post.content} />}
         </article>
       </div>
       {/* ToC */}
