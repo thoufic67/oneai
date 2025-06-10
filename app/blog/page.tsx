@@ -12,7 +12,7 @@ import { useMemo } from "react";
 
 export default function BlogPage() {
   const sortedBlogPosts = useMemo(() => {
-    return blogPosts.sort((a, b) => {
+    return [...blogPosts].sort((a, b) => {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   }, []);
