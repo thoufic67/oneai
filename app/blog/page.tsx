@@ -1,9 +1,6 @@
 // @file page.tsx
 // @description Blog page for Aiflo. Displays a modern grid of blog posts using HeroUI Card components. Includes an introductory post, features overview, and roadmap, with content sourced from PRD.md.
-"use client";
 
-import { Card } from "@heroui/react";
-import { title } from "@/app/components/primitives";
 import { Sparkles, Layers, Rocket } from "lucide-react";
 import Link from "next/link";
 import { blogPosts } from "../../types/blog";
@@ -40,7 +37,7 @@ export default function BlogPage() {
             href={`/blog/${post.id}`}
             className="h-full group"
           >
-            <Card className="flex flex-col h-full bg-white/30 dark:bg-default-50/30 backdrop-blur-2xl border border-white/30 dark:border-default-200/40 shadow-none transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer overflow-hidden rounded-2xl">
+            <div className="flex flex-col h-full bg-white/30 dark:bg-default-50/30 backdrop-blur-2xl border border-white/30 dark:border-default-200/40 shadow-none transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer overflow-hidden rounded-2xl">
               <div className="w-full h-40 bg-default-100 flex items-center justify-center overflow-hidden">
                 <img
                   src={post.image}
@@ -64,7 +61,7 @@ export default function BlogPage() {
                   <span className="text-xs text-default-500">{post.date}</span>
                 </div>
               </div>
-            </Card>
+            </div>
           </Link>
         ))}
       </div>
@@ -72,8 +69,21 @@ export default function BlogPage() {
   );
 }
 
-export const metadata = {
-  title: "Blog",
-  description:
-    "Insights, updates, and news about Aiflo's unified AI platform. Explore features, product updates, and our vision for the future of AI accessibility.",
-};
+export async function generateMetadata() {
+  return {
+    title: "Blog",
+    description:
+      "Insights, updates, and news about Aiflo's unified AI platform. Explore features, product updates, and our vision for the future of AI accessibility.",
+    openGraph: {
+      title: "Blog",
+      description:
+        "Insights, updates, and news about Aiflo's unified AI platform. Explore features, product updates, and our vision for the future of AI accessibility.",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Blog",
+      description:
+        "Insights, updates, and news about Aiflo's unified AI platform. Explore features, product updates, and our vision for the future of AI accessibility.",
+    },
+  };
+}
