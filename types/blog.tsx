@@ -1,5 +1,5 @@
 // @file types/blog.ts
-// @description Blog post types and static blog post data for the Aiflo blog. Used for both the blog list and detail pages. Blog posts are now rendered from MDX files via dynamic import, not by path.
+// @description Blog post types and static blog post data for the Aiflo blog. Used for both the blog list and detail pages. Blog posts are now rendered from MDX files via dynamic import, not by path. Added comparison post vs Magai and Mammouth.
 
 export type BlogPost = {
   id: string;
@@ -307,6 +307,47 @@ Aiflo isn't just another AI tool—it's the platform that unifies, simplifies, a
       avatar: "/logos/openai.svg",
     },
     tags: ["use cases", "aiflo", "ai"],
+  },
+  {
+    id: "aiflo-vs-magai-vs-mammouth",
+    image: "/logos/rocket.svg",
+    imageAlt: "Aiflo vs Magai and Mammouth illustration",
+    icon: "rocket",
+    title: "Aiflo vs Magai and Mammouth: A Feature-by-Feature Comparison",
+    date: "2025-06-10",
+    excerpt:
+      "How does Aiflo stack up against Magai and Mammouth? We break down pricing, model coverage, UX, collaboration, and more—and show why Aiflo is the clear choice.",
+    content: `
+# Aiflo vs. Magai vs. Mammouth
+
+| Capability | Aiflo | [Magai](https://magai.co/) | [Mammouth](https://mammouth.ai) |
+|------------|-------|---------------------------|--------------------------------|
+| AI Models  | GPT-4, Claude, Gemini, Mistral, Perplexity, DeepSeek, Llama, Grok & more | GPT-4o, Claude Sonnet 4, Gemini 2.5 Pro, DeepSeek, Perplexity | GPT-4.1, Claude 3.5 Sonnet, Gemini 2.5 Flash, Llama 3 70B, Mistral Large 24.11 |
+| Image Gen. | **Built-in DALL-E** + prompt engineering | Limited (editor only) | Midjourney v6.1, FLUX Kontext Pro |
+| Unified UI | ✅ Single chat, inline model switch | ✅ Model switching mid-chat | ✅ One-click reprompting |
+| Revision History | ✅ Full message versioning | ❌ | ❌ |
+| Quota Dashboard | ✅ Real-time usage & resets | ❌ | ❌ |
+| Conversation Sharing | ✅ Public read-only links | ❌ | Partial (invite-only) |
+| Collaboration | Team workspaces (road-mapped) | ✅ Live team chats | Multi-device installs |
+| Pricing (entry) | Flexible Free & Pro tiers | $20 / month Solo | €10 / month |
+| Security | Supabase Auth + audit logs | Private data, invite-only | Edge-hosted, region restricted |
+
+### Why Aiflo Wins
+
+1. **Deeper Feature Stack** – Built-in image generation, revision history, quota dashboards, and share links extend beyond standard chat.  
+2. **Transparent Control** – Real-time usage insights and flexible plans eliminate surprise lock-outs.  
+3. **Future-Proof** – A modular architecture means new models and upcoming API access arrive faster.  
+4. **Enterprise-Ready** – Audit logs, admin dashboards, and role-based access make Aiflo a safe long-term bet.
+
+Ready to see for yourself? **[Sign up for Aiflo](http://localhost:3001/)** and experience the unified AI platform that keeps you ahead.
+
+    `,
+    author: {
+      name: "Aiflo Team",
+      role: "Product & Engineering",
+      avatar: "/logos/rocket.svg",
+    },
+    tags: ["comparison", "aiflo", "magai", "mammouth"],
   },
 ];
 
