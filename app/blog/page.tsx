@@ -71,3 +71,9 @@ export default function BlogPage() {
     </div>
   );
 }
+
+export const metadata = {
+  title: "Blog",
+  description:
+    "Insights, updates, and news about Aiflo's unified AI platform. Explore features, product updates, and our vision for the future of AI accessibility.",
+};
