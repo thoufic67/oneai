@@ -11,6 +11,38 @@ import { BlogPost, blogPosts } from "@/types/blog";
 import { MarkdownRenderer } from "@/app/components/shared/MarkdownRenderer";
 import BlurredImage from "@/app/components/blurred-image";
 
+export async function generateMetadata({
+  params,
+}: {
+  params: { "blog-id": string };
+}) {
+  const blogId = params["blog-id"];
+  const post = blogPosts.find((p) => p.id === blogId);
+
+  if (!post) {
+    return {
+      title: "Blog Post Not Found | Aiflo",
+      description: "This blog post could not be found.",
+    };
+  }
+
+  return {
+    title: post.title + " | Aiflo Blog",
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: post.image ? [post.image] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+      images: post.image ? [post.image] : [],
+    },
+  };
+}
+
 export default async function BlogDetailPage({
   params,
 }: {
