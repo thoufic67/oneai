@@ -5,6 +5,7 @@ import Link from "next/link";
 import { blogPosts } from "../../types/blog";
 import type { BlogPost } from "../../types/blog";
 import { useMemo } from "react";
+import BlurredImage from "../components/blurred-image";
 
 export default function BlogPage() {
   const sortedBlogPosts = useMemo(() => {
@@ -32,7 +33,9 @@ export default function BlogPage() {
           >
             <div className="flex flex-col h-full bg-white/30 dark:bg-default-50/30 backdrop-blur-2xl border border-white/30 dark:border-default-200/40 shadow-none transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer overflow-hidden rounded-2xl">
               <div className="w-full h-40 bg-default-100 flex items-center justify-center overflow-hidden">
-                <Image
+                <BlurredImage
+                  width={500}
+                  height={300}
                   src={post.image}
                   alt={post.imageAlt}
                   className="object-contain w-full h-full"
