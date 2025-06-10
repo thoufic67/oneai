@@ -2,30 +2,24 @@
 // @description Blog page for Aiflo. Displays a modern grid of blog posts using HeroUI Card components. Includes an introductory post, features overview, and roadmap, with content sourced from PRD.md.
 "use client";
 
-import { Card } from "@heroui/react";
+import { Card, Image } from "@heroui/react";
 import { title } from "@/app/components/primitives";
 import { Sparkles, Layers, Rocket } from "lucide-react";
 import Link from "next/link";
 import { blogPosts } from "../../types/blog";
 import type { BlogPost } from "../../types/blog";
-
-function getIcon(icon: BlogPost["icon"]): JSX.Element {
-  switch (icon) {
-    case "sparkles":
-      return <Sparkles className="w-7 h-7 text-primary" />;
-    case "layers":
-      return <Layers className="w-7 h-7 text-primary" />;
-    case "rocket":
-      return <Rocket className="w-7 h-7 text-primary" />;
-    default:
-      return <Sparkles className="w-7 h-7 text-primary" />;
-  }
-}
+import { useMemo } from "react";
 
 export default function BlogPage() {
+  const sortedBlogPosts = useMemo(() => {
+    return blogPosts.sort((a, b) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, []);
+
   return (
     <div className="w-full min-h-dvh max-w-6xl mx-auto px-4 py-16 flex flex-col items-center">
-      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center mb-3 bg-clip-text  drop-shadow-lg">
+      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-center mb-3 bg-clip-text ">
         Aiflo Blog
       </h1>
       <p className="text-lg text-default-600 text-center max-w-2xl mb-10">
@@ -34,7 +28,7 @@ export default function BlogPage() {
         accessibility.
       </p>
       <div className="w-full mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {blogPosts.map((post: BlogPost) => (
+        {sortedBlogPosts.map((post: BlogPost) => (
           <Link
             key={post.id}
             href={`/blog/${post.id}`}
@@ -42,7 +36,7 @@ export default function BlogPage() {
           >
             <Card className="flex flex-col h-full bg-white/30 dark:bg-default-50/30 backdrop-blur-2xl border border-white/30 dark:border-default-200/40 shadow-none transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer overflow-hidden rounded-2xl">
               <div className="w-full h-40 bg-default-100 flex items-center justify-center overflow-hidden">
-                <img
+                <Image
                   src={post.image}
                   alt={post.imageAlt}
                   className="object-contain w-full h-full"

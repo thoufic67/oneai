@@ -38,11 +38,11 @@ const blogPosts: BlogPost[] = [
   // },
   {
     id: "features-overview",
-    image: "/logos/gemini.svg",
+    image: "/blog/aiflo-features-overview.webp",
     imageAlt: "Aiflo features overview illustration",
     icon: "layers",
     title: "Aiflo Features Overview",
-    date: "2024-06-01",
+    date: "2025-06-01",
     excerpt:
       "Explore Aiflo's core functionalities: multi-model chat, image generation, quota management, sharing, and more. See what makes Aiflo the one-stop shop for AI.",
     content: `
@@ -62,9 +62,9 @@ Key features include:
     
     `,
     author: {
-      name: "Aiflo Team",
-      role: "Product & Engineering",
-      avatar: "/logos/gemini.svg",
+      name: "Thoufic",
+      role: "Founder",
+      avatar: "/thoufic.webp",
     },
     tags: ["features", "overview", "aiflo"],
   },
@@ -87,11 +87,11 @@ Key features include:
   // },
   {
     id: "aiflo-use-cases",
-    image: "/logos/openai.svg",
+    image: "/blog/aiflo-use-cases.webp",
     imageAlt: "Aiflo use cases illustration",
     icon: "sparkles",
     title: "Unlocking the Power of Unified AI: Real-World Use Cases for Aiflo",
-    date: "2024-06-08",
+    date: "2025-06-08",
     excerpt:
       "Discover how Aiflo's unified platform empowers professionals, developers, creatives, teams, and educators with real-world AI use cases. Explore the full feature set and see why Aiflo is the one-stop shop for all your AI needs.",
     content: `
@@ -302,15 +302,15 @@ Aiflo isn't just another AI tool—it's the platform that unifies, simplifies, a
     
     `,
     author: {
-      name: "Aiflo Team",
-      role: "Product & Engineering",
-      avatar: "/logos/openai.svg",
+      name: "Thoufic",
+      role: "Founder",
+      avatar: "/thoufic.webp",
     },
     tags: ["use cases", "aiflo", "ai"],
   },
   {
     id: "aiflo-vs-magai-vs-mammouth",
-    image: "/logos/rocket.svg",
+    image: "/blog/aiflo-vs-magai-vs-mammouth.webp",
     imageAlt: "Aiflo vs Magai and Mammouth illustration",
     icon: "rocket",
     title: "Aiflo vs Magai and Mammouth: A Feature-by-Feature Comparison",
@@ -320,7 +320,7 @@ Aiflo isn't just another AI tool—it's the platform that unifies, simplifies, a
     content: `
 # Aiflo vs. Magai vs. Mammouth
 
-| Capability | Aiflo | [Magai](https://magai.co/) | [Mammouth](https://mammouth.ai) |
+| Capability | [Aiflo](https://aiflo.space) | [Magai](https://magai.co/) | [Mammouth](https://mammouth.ai) |
 |------------|-------|---------------------------|--------------------------------|
 | AI Models  | GPT-4, Claude, Gemini, Mistral, Perplexity, DeepSeek, Llama, Grok & more | GPT-4o, Claude Sonnet 4, Gemini 2.5 Pro, DeepSeek, Perplexity | GPT-4.1, Claude 3.5 Sonnet, Gemini 2.5 Flash, Llama 3 70B, Mistral Large 24.11 |
 | Image Gen. | **Built-in DALL-E** + prompt engineering | Limited (editor only) | Midjourney v6.1, FLUX Kontext Pro |
@@ -339,13 +339,13 @@ Aiflo isn't just another AI tool—it's the platform that unifies, simplifies, a
 3. **Future-Proof** – A modular architecture means new models and upcoming API access arrive faster.  
 4. **Enterprise-Ready** – Audit logs, admin dashboards, and role-based access make Aiflo a safe long-term bet.
 
-Ready to see for yourself? **[Sign up for Aiflo](https://aiflo.space/signup)** and experience the unified AI platform that keeps you ahead.
+Ready to see for yourself? **[Sign up for Aiflo](https://aiflo.space/login)** and experience the unified AI platform that keeps you ahead.
 
     `,
     author: {
-      name: "Aiflo Team",
-      role: "Product & Engineering",
-      avatar: "/logos/rocket.svg",
+      name: "Thoufic",
+      role: "Founder",
+      avatar: "/thoufic.webp",
     },
     tags: ["comparison", "aiflo", "magai", "mammouth"],
   },

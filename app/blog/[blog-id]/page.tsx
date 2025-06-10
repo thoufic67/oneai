@@ -9,6 +9,7 @@ import Image from "next/image";
 import React from "react";
 import { BlogPost, blogPosts } from "@/types/blog";
 import { MarkdownRenderer } from "@/app/components/shared/MarkdownRenderer";
+import BlurredImage from "@/app/components/blurred-image";
 
 export default async function BlogDetailPage({
   params,
@@ -36,18 +37,18 @@ export default async function BlogDetailPage({
   const headings: string[] = [];
 
   return (
-    <div className="w-full flex flex-col min-h-screen lg:flex-row gap-8">
+    <div className="w-full flex flex-col min-h-screen max-w-4xl mx-auto lg:flex-row gap-8">
       {/* Main content */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 gap-8">
         <div className="mb-6">
           {post?.image && (
-            <Image
+            <BlurredImage
+              radius="lg"
               src={post.image}
               alt={post.imageAlt || post.title}
-              width={640}
+              width={930}
               height={320}
-              className="rounded-xl w-full h-56 object-contain bg-default-100 mb-4"
-              priority
+              className="rounded-xl h-56 object-contain mb-12 border border-default-200 shadow-sm"
             />
           )}
           <div className="flex items-center gap-4 mb-2">
@@ -78,7 +79,7 @@ export default async function BlogDetailPage({
               post.tags.map((tag: string) => (
                 <span
                   key={tag}
-                  className="bg-default-200 text-xs px-2 py-1 rounded-full text-default-700"
+                  className="bg-primary-100 text-xs px-2 py-1 rounded-full text-primary-700"
                 >
                   {tag}
                 </span>
