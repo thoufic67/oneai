@@ -14,9 +14,9 @@ import BlurredImage from "@/app/components/blurred-image";
 export async function generateMetadata({
   params,
 }: {
-  params: { "blog-id": string };
+  params: Promise<{ "blog-id": string }>;
 }) {
-  const blogId = params["blog-id"];
+  const { "blog-id": blogId } = await params;
   const post = blogPosts.find((p) => p.id === blogId);
 
   if (!post) {
@@ -69,7 +69,7 @@ export default async function BlogDetailPage({
   const headings: string[] = [];
 
   return (
-    <div className="w-full flex flex-col min-h-screen max-w-4xl mx-auto lg:flex-row gap-8">
+    <div className="w-full flex flex-col min-h-screen max-w-4xl mx-auto lg:flex-row gap-8 p-4">
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 gap-8">
         <div className="mb-6">
