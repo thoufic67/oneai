@@ -339,7 +339,7 @@ Aiflo isn't just another AI tool—it's the platform that unifies, simplifies, a
 3. **Future-Proof** – A modular architecture means new models and upcoming API access arrive faster.  
 4. **Enterprise-Ready** – Audit logs, admin dashboards, and role-based access make Aiflo a safe long-term bet.
 
-Ready to see for yourself? **[Sign up for Aiflo](http://localhost:3001/)** and experience the unified AI platform that keeps you ahead.
+Ready to see for yourself? **[Sign up for Aiflo](https://aiflo.space/signup)** and experience the unified AI platform that keeps you ahead.
 
     `,
     author: {
