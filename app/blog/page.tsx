@@ -1,7 +1,6 @@
 // @file page.tsx
 // @description Blog page for Aiflo. Displays a modern grid of blog posts using HeroUI Card components. Includes an introductory post, features overview, and roadmap, with content sourced from PRD.md.
 
-import { Sparkles, Layers, Rocket } from "lucide-react";
 import Link from "next/link";
 import { blogPosts } from "../../types/blog";
 import type { BlogPost } from "../../types/blog";
