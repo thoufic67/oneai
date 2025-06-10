@@ -1,7 +1,7 @@
 export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
-  name: "AI Flo",
+  name: "Aiflo",
   description:
     "Aiflo is a unified AI platform offering seamless access to top AI chat models (GPT-4, Gemini, Claude, Mistral, Perplexity, and more) and advanced image generation (DALL-E) under one subscription. Enjoy real-time, multi-model conversations, image uploads, quota management, and a modern, responsive UI. Perfect for individuals and teams seeking the best AI tools in one place.",
   navItems: [
