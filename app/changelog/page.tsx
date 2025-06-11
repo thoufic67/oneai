@@ -93,3 +93,19 @@ export default function ChangelogPage() {
     </div>
   );
 }
+
+// export async function generateMetadata() {
+//   return {
+//     title: "Changelog",
+//     description: "Changelog for Aiflo",
+//     openGraph: {
+//       title: "Changelog",
+//       description: "Changelog for Aiflo",
+//     },
+//     twitter: {
+//       card: "summary_large_image",
+//       title: "Changelog",
+//       description: "Changelog for Aiflo",
+//     },
+//   };
+// }

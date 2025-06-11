@@ -2,33 +2,29 @@
 
 /**
  * Settings page component that displays user settings including basic information,
- * account details, and usage statistics
+ * account details, usage statistics, and billing/invoices (now combined with Overview)
+ *
+ * Updated: Combined Overview and Billing & Invoices sections for a more streamlined UI.
  */
 
 import Link from "next/link";
-import { useAuth } from "@/app/components/auth-provider";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
-import { Switch } from "@heroui/switch";
 import { Progress } from "@heroui/progress";
-import { useState } from "react";
-import {
-  Activity,
-  CreditCard,
-  Crown,
-  Info,
-  Mail,
-  ChartBar,
-  Settings2,
-} from "lucide-react";
-import { ProtectedRoute } from "@/app/components/protected-route";
+import { useState, useEffect } from "react";
+import { Activity, Crown, Info, Mail, ChartBar } from "lucide-react";
 import { Avatar } from "@heroui/avatar";
-import { useQuota } from "@/app/hooks/useQuota";
 import { Skeleton } from "@heroui/skeleton";
-import { useSubscription } from "../hooks/useSubscription";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+
+import { useAuth } from "@/app/components/auth-provider";
+import { BackgroundGradient } from "@/app/components/background-gradient";
+import OverviewTab from "@/app/components/settings/OverviewTab";
+import UsageTab from "@/app/components/settings/UsageTab";
+import SettingsTab from "@/app/components/settings/SettingsTab";
 
 function SettingsPage() {
   const { user, subscriptionData, quotaData, quotaLoading, quotaError } =
@@ -39,6 +35,7 @@ function SettingsPage() {
   const [usageBasedPricingPremium, setUsageBasedPricingPremium] =
     useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
+
   console.log("quotaData", quotaData);
   // Helper function to format the reset date
   const formatResetDate = (date: Date) => {
@@ -47,6 +44,7 @@ function SettingsPage() {
     const diffDays = Math.ceil(
       (resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
+
     return diffDays;
   };
 
@@ -62,6 +60,7 @@ function SettingsPage() {
     try {
       const res = await fetch("/api/subscription/cancel", { method: "POST" });
       const data = await res.json();
+
       if (!res.ok)
         throw new Error(data.error || "Failed to cancel subscription");
       toast.success(
@@ -88,26 +87,26 @@ function SettingsPage() {
           <Card className="w-full">
             <CardHeader className="flex flex-row  items-center gap-3">
               <Avatar
-                src={user?.user_metadata?.avatar_url}
                 className="w-10 h-10"
+                src={user?.user_metadata?.avatar_url}
               />
               <h2 className="text-xl font-semibold">Basic Information</h2>
             </CardHeader>
             <CardBody className="space-y-4">
               <div className="space-y-2">
                 <Input
-                  label="Name"
                   isDisabled
                   defaultValue={user?.user_metadata?.name || ""}
+                  label="Name"
                   placeholder="Your name"
                   type="text"
                 />
               </div>
               <div className="space-y-2">
                 <Input
-                  label="Email"
-                  defaultValue={user?.email || ""}
                   isDisabled
+                  defaultValue={user?.email || ""}
+                  label="Email"
                   placeholder="Your email"
                   type="email"
                 />
@@ -133,9 +132,9 @@ function SettingsPage() {
                 <Button
                   as={Link}
                   href="/pricing"
-                  variant="bordered"
-                  size="md"
                   radius="lg"
+                  size="md"
+                  variant="bordered"
                 >
                   UPGRADE
                 </Button>
@@ -155,24 +154,24 @@ function SettingsPage() {
                       subscriptionData?.subscription?.metadata?.short_url ||
                       "/pricing"
                     }
-                    variant="bordered"
-                    size="md"
                     radius="lg"
+                    size="md"
                     target="_blank"
+                    variant="bordered"
                   >
                     MANAGE SUBSCRIPTION
                   </Button>
                   {/* Cancel Subscription Button */}
                   {subscriptionData?.subscription?.status === "active" && (
                     <Button
-                      variant="ghost"
-                      color="danger"
-                      size="md"
-                      radius="lg"
                       className="mt-2"
-                      onClick={handleCancelSubscription}
-                      isLoading={cancelLoading}
+                      color="danger"
                       disabled={cancelLoading}
+                      isLoading={cancelLoading}
+                      radius="lg"
+                      size="md"
+                      variant="ghost"
+                      onClick={handleCancelSubscription}
                     >
                       Cancel Subscription
                     </Button>
@@ -222,6 +221,7 @@ function SettingsPage() {
                       .filter(([key]) => key !== "large_messages")
                       .map(([key, quota]) => {
                         const resetDays = formatResetDate(quota.resetsAt);
+
                         return (
                           <div key={key} className="mb-6">
                             <div className="flex justify-between text-sm mb-2">
@@ -235,9 +235,9 @@ function SettingsPage() {
                               </div>
                             </div>
                             <Progress
-                              value={Math.min(100, quota.percentageUsed)}
                               className="w-full"
                               size="md"
+                              value={Math.min(100, quota.percentageUsed)}
                             />
                             <div className="flex justify-between text-xs text-gray-500 mt-1">
                               <span>
@@ -266,6 +266,8 @@ export default function ProtectedSettingsPage() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [selected, setSelected] = useState("Overview");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   // Helper function to format the reset date
   const formatResetDate = (date: Date) => {
@@ -274,6 +276,7 @@ export default function ProtectedSettingsPage() {
     const diffDays = Math.ceil(
       (resetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
     );
+
     return diffDays;
   };
 
@@ -289,6 +292,7 @@ export default function ProtectedSettingsPage() {
     try {
       const res = await fetch("/api/subscription/cancel", { method: "POST" });
       const data = await res.json();
+
       if (!res.ok)
         throw new Error(data.error || "Failed to cancel subscription");
       toast.success(
@@ -306,257 +310,135 @@ export default function ProtectedSettingsPage() {
   const sidebarOptions = [
     { label: "Overview", icon: <Activity className="w-4 h-4" /> },
     { label: "Usage", icon: <ChartBar className="w-4 h-4" /> },
-    { label: "Billing & Invoices", icon: <CreditCard className="w-4 h-4" /> },
-    // { label: "Settings", icon: <Settings2 className="w-4 h-4" /> },
     { label: "Contact Us", icon: <Mail className="w-4 h-4" /> },
   ];
 
-  // Sidebar click handler
+  // Sync tab with URL matrix param
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+
+    if (tabParam) {
+      const tabLabel =
+        sidebarOptions.find(
+          (opt) => opt.label.toLowerCase() === tabParam.toLowerCase()
+        )?.label || "Overview";
+
+      setSelected(tabLabel);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
   const handleSidebarClick = (label: string) => {
     if (label === "Contact Us") {
       router.push("/contact");
+
       return;
     }
     setSelected(label);
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+
+    params.set("tab", label.toLowerCase());
+    router.replace(`${pathname}?${params.toString()}`);
+  };
+
+  // Helper to map subscription status to display text and color
+  const getStatusBadge = (status: string | undefined) => {
+    switch (status) {
+      case "active":
+        return {
+          text: "Active",
+          color: "bg-green-100 text-green-700 border-green-300",
+        };
+      case "pending":
+        return {
+          text: "Pending",
+          color: "bg-yellow-100 text-yellow-700 border-yellow-300",
+        };
+      case "halted":
+        return {
+          text: "Halted",
+          color: "bg-red-100 text-red-700 border-red-300",
+        };
+      case "cancelled":
+        return {
+          text: "Cancelled",
+          color: "bg-gray-100 text-gray-700 border-gray-300",
+        };
+      case "unpaid":
+        return {
+          text: "Unpaid",
+          color: "bg-red-100 text-red-700 border-red-300",
+        };
+      default:
+        return {
+          text: status
+            ? status.charAt(0).toUpperCase() + status.slice(1)
+            : "Unknown",
+          color: "bg-gray-100 text-gray-700 border-gray-300",
+        };
+    }
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full max-w-6xl mx-auto p-2 md:p-8 gap-4 md:gap-0">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 flex md:flex-col flex-row md:py-6 py-2 md:px-4 px-2 h-fit bg-default-100/10 backdrop-blur-sm rounded-lg overflow-x-auto md:overflow-x-visible">
-        <h2 className="text-2xl font-bold mb-4 md:mb-8 hidden md:block">
-          Settings
-        </h2>
-        <nav className="flex md:flex-col flex-row gap-2 md:gap-4 text-base w-full">
-          {sidebarOptions.map((opt) => (
-            <SidebarItem
-              key={opt.label}
-              label={opt.label}
-              icon={opt.icon}
-              selected={selected === opt.label}
-              onClick={() => handleSidebarClick(opt.label)}
-            />
-          ))}
-        </nav>
-      </aside>
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center justify-start p-2 md:p-8 animate-blur-in-down w-full">
-        {selected === "Overview" && (
-          <section className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-md p-8 mb-8 flex flex-col gap-8">
-            {/* User Card */}
-            <Card className="w-full">
-              <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar
-                  src={user?.user_metadata?.avatar_url}
-                  className="w-14 h-14"
+    <div className="relative min-h-screen">
+      {/* Modern animated background */}
+      <BackgroundGradient />
+      <div className="flex flex-col md:flex-row items-start h-full max-w-6xl mx-auto p-4 md:p-8 gap-8 z-10 relative">
+        {/* Sidebar with glassmorphism and animated pill */}
+        <aside className="w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-800 flex md:flex-col flex-row p-8 h-fit bg-white/60 dark:bg-default-100/20 backdrop-blur-lg rounded-2xl shadow-lg overflow-x-auto md:overflow-x-visible relative">
+          <h2 className="text-2xl font-bold mb-4 md:mb-8 hidden md:block text-gradient bg-gradient-to-r from-primary-500 to-cyan-500 bg-clip-text text-transparent">
+            Settings
+          </h2>
+          <nav className="flex md:flex-col flex-row gap-2 md:gap-4 text-base w-full relative">
+            {sidebarOptions.map((opt, idx) => (
+              <motion.div
+                key={opt.label}
+                layout
+                className="relative"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              >
+                <SidebarItem
+                  icon={opt.icon}
+                  label={opt.label}
+                  selected={selected === opt.label}
+                  onClick={() => handleSidebarClick(opt.label)}
                 />
-                <div className="flex flex-col gap-1">
-                  <span className="text-lg font-semibold">
-                    {user?.user_metadata?.name || "User"}
-                  </span>
-                  <span className="text-gray-500 text-sm">{user?.email}</span>
-                  <span className="flex items-center gap-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-1 w-fit mt-1">
-                    {quotaData?.subscription.tier.toUpperCase() || "FREE"}
-                    {quotaData?.subscription.tier !== "free" && (
-                      <Crown className="w-4 h-4 text-orange-500" />
-                    )}
-                  </span>
-                </div>
-              </CardHeader>
-            </Card>
-          </section>
-        )}
-        {selected === "Usage" && (
-          <div className="w-full max-w-6xl flex flex-col md:flex-row gap-8 animate-blur-in-down">
-            <div className="flex-1">
-              {/* Usage Section */}
-              <Card className="w-full">
-                <CardHeader className="flex flex-col items-start gap-3">
-                  <h2 className="text-xl font-semibold">Usage</h2>
-                  <p className="text-xs text-gray-500 flex items-center gap-2">
-                    <span>
-                      <Info className="w-4 h-4" />
-                    </span>{" "}
-                    Usage usually gets updated within couple of hours.
-                  </p>
-                </CardHeader>
-                <CardBody className="space-y-6">
-                  {quotaLoading ? (
-                    <div className="space-y-6">
-                      {[1, 2, 3].map((index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex justify-between items-center">
-                            <Skeleton className="h-4 w-24 rounded-lg" />
-                            <Skeleton className="h-4 w-20 rounded-lg" />
-                          </div>
-                          <Skeleton className="h-4 w-full rounded-lg" />
-                          <div className="flex justify-between items-center">
-                            <Skeleton className="h-3 w-32 rounded-lg" />
-                            <Skeleton className="h-3 w-24 rounded-lg" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : quotaError ? (
-                    <div className="text-danger text-center py-8">
-                      Failed to load quota information
-                    </div>
-                  ) : (
-                    <div>
-                      {quotaData &&
-                        Object.entries(quotaData.quotas)
-                          .filter(([key]) => key !== "large_messages")
-                          .map(([key, quota]) => {
-                            const resetDays = formatResetDate(quota.resetsAt);
-                            return (
-                              <div key={key} className="mb-6">
-                                <div className="flex justify-between text-sm mb-2">
-                                  <span className="capitalize">
-                                    {key.replace(/_/g, " ")}
-                                  </span>
-                                  <div className="text-right">
-                                    <span>
-                                      {quota.used} / {quota.limit}
-                                    </span>
-                                  </div>
-                                </div>
-                                <Progress
-                                  value={Math.min(100, quota.percentageUsed)}
-                                  className="w-full"
-                                  size="md"
-                                />
-                                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                                  <span>
-                                    {quota.used >= quota.limit
-                                      ? `You've hit your limit of ${quota.limit} requests`
-                                      : `${quota.remaining} requests remaining`}
-                                  </span>
-                                  <span>Resets in {resetDays} days</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
-              {/* Credits Section */}
-              <Card className="w-full mt-8">
-                <CardHeader className="flex flex-row items-center gap-3">
-                  <h2 className="text-xl font-semibold">Credits</h2>
-                </CardHeader>
-                <CardBody className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span>Available Credits</span>
-                    {/* Credits are not available in quotaData. Placeholder shown. */}
-                    <span className="font-bold text-lg text-gray-400">N/A</span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Credits can be used for additional requests or features.
-                  </div>
-                </CardBody>
-              </Card>
-            </div>
-          </div>
-        )}
-        {selected === "Billing & Invoices" && (
-          <div className="w-full max-w-2xl flex flex-col gap-6 animate-blur-in-down">
-            {/* Account Section (Manage Payment) */}
-            <Card className="w-full">
-              <CardHeader className="flex flex-row items-center gap-3">
-                <h2 className="text-xl font-semibold">Billing & Invoices</h2>
-                <span className="px-2 py-1 flex items-center gap-2 text-xs bg-primary/10 text-primary rounded-full">
-                  {quotaData?.subscription.tier.toUpperCase() || "FREE"}
-                  {quotaData?.subscription.tier !== "free" && (
-                    <span className="text-xs text-gray-500">
-                      <Crown className="w-4 h-4 text-orange-500" />
-                    </span>
-                  )}
-                </span>
-              </CardHeader>
-              <CardBody className="flex flex-col gap-2">
-                {quotaData?.subscription.tier === "free" ? (
-                  <Button
-                    as={Link}
-                    href="/pricing"
-                    variant="bordered"
-                    size="md"
-                    radius="lg"
-                  >
-                    UPGRADE
-                  </Button>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-gray-500">
-                        Next Billing Date:{" "}
-                        {new Date(
-                          subscriptionData?.subscription?.current_period_end ||
-                            ""
-                        ).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <Button
-                      as={Link}
-                      href={
-                        subscriptionData?.subscription?.metadata?.short_url ||
-                        "/pricing"
-                      }
-                      variant="bordered"
-                      size="md"
-                      radius="lg"
-                      target="_blank"
-                    >
-                      MANAGE SUBSCRIPTION
-                    </Button>
-                    {/* Cancel Subscription Button */}
-                    {subscriptionData?.subscription?.status === "active" && (
-                      <Button
-                        variant="ghost"
-                        color="danger"
-                        size="md"
-                        radius="lg"
-                        className="mt-2"
-                        onClick={handleCancelSubscription}
-                        isLoading={cancelLoading}
-                        disabled={cancelLoading}
-                      >
-                        Cancel Subscription
-                      </Button>
-                    )}
-                  </>
+                {selected === opt.label && (
+                  <motion.div
+                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary-200/60 to-cyan-200/40 dark:from-primary-900/40 dark:to-cyan-900/20 z-[-1] shadow-md"
+                    layoutId="sidebar-pill"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
                 )}
-              </CardBody>
-            </Card>
-          </div>
-        )}
-        {selected === "Settings" && (
-          <section className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-2xl shadow-md p-8 mb-8 animate-blur-in-down">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold">Voice</h3>
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm">
-                  Play
-                </Button>
-                <Button variant="bordered" size="sm">
-                  Sol
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-medium">Main Language</span>
-              <Button variant="bordered" size="sm">
-                Auto-Detect
-              </Button>
-            </div>
-            <p className="text-gray-500 text-sm mt-2">
-              For best results, select the language you mainly speak. If
-              it&apos;s not listed, it may still be supported via
-              auto-detection.
-            </p>
-          </section>
-        )}
-      </main>
+              </motion.div>
+            ))}
+          </nav>
+        </aside>
+        {/* Main Content with animated transitions */}
+        <main className="flex-1 flex flex-col items-center justify-start p-8 rounded-2xl shadow-lg bg-white/80 dark:bg-gray-900/80 animate-blur-in-down-x w-full">
+          <AnimatePresence mode="wait">
+            {selected === "Overview" && (
+              <OverviewTab
+                cancelLoading={cancelLoading}
+                getStatusBadge={getStatusBadge}
+                handleCancelSubscription={handleCancelSubscription}
+                quotaData={quotaData}
+                subscriptionData={subscriptionData}
+                user={user}
+              />
+            )}
+            {selected === "Usage" && (
+              <UsageTab
+                formatResetDate={formatResetDate}
+                quotaData={quotaData}
+                quotaError={quotaError}
+                quotaLoading={quotaLoading}
+              />
+            )}
+            {selected === "Settings" && <SettingsTab />}
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
   );
 }
@@ -575,11 +457,12 @@ function SidebarItem({
 }) {
   return (
     <Button
-      variant="flat"
-      size="sm"
+      fullWidth
+      className={`transition-all duration-200 rounded-lg px-4 py-2 font-medium shadow-sm ${selected ? "scale-105 shadow-lg" : "hover:scale-105 hover:shadow-md"}`}
       color={selected ? "primary" : "default"}
-      onPress={onClick}
       startContent={icon}
+      variant={selected ? "solid" : "flat"}
+      onPress={onClick}
     >
       {label}
     </Button>

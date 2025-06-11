@@ -83,6 +83,11 @@ export default function UserProfile() {
             Settings
           </Link>
         </DropdownItem>
+        <DropdownItem key="contact" className="w-full">
+          <Link href="/contact" className="w-full text-md text-default-800">
+            Contact us
+          </Link>
+        </DropdownItem>
 
         <DropdownItem key="logout" color="danger" onClick={logout}>
           Sign Out
