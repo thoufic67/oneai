@@ -74,6 +74,8 @@ interface ChatInputProps {
   onImageUploadComplete?: (images: UploadedImageMeta[]) => void;
   onImageCleanup?: () => void;
   selectedImages?: File[];
+  uploadedImages?: UploadedImageMeta[];
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -98,20 +100,18 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       onImageUploadComplete,
       onImageCleanup,
       selectedImages: controlledSelectedImages,
+      uploadedImages: controlledUploadedImages,
+      onUploadingChange,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
       useState(webSearchEnabled);
     const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
 
-    useEffect(() => {
-      setIsImageGenEnabled(imageGenEnabled);
-    }, [imageGenEnabled]);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
-    const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>(
-      []
-    );
+    const uploadedImages = controlledUploadedImages || [];
+    const [loadingImages, setLoadingImages] = useState<UploadedImageMeta[]>([]);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [openPreviewIdx, setOpenPreviewIdx] = useState<number | undefined>(
@@ -119,6 +119,15 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     );
 
     useEffect(() => {
+      console.log("Images", { imagePreviewUrls, uploadedImages });
+    }, [imagePreviewUrls, uploadedImages]);
+
+    useEffect(() => {
+      setIsImageGenEnabled(imageGenEnabled);
+    }, [imageGenEnabled]);
+
+    useEffect(() => {
+      console.log("Images", { controlledSelectedImages });
       if (controlledSelectedImages) {
         imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
         setSelectedImages(controlledSelectedImages);
@@ -127,6 +136,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         );
       }
     }, [controlledSelectedImages]);
+
+    useEffect(() => {
+      if (onUploadingChange) onUploadingChange(uploading);
+    }, [uploading, onUploadingChange]);
 
     const toggleWebSearch = () => {
       if (isImageGenEnabled) {
@@ -185,29 +198,30 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       // Upload each new file
       setUploading(true);
       const uploads: UploadedImageMeta[] = [];
+
+      // Add loading placeholders
+      const loadingPlaceholders = files.map((file) => ({
+        url: "",
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        width: undefined,
+        height: undefined,
+        attachment_type: "image" as const,
+        attachment_url: "",
+        filePath: "",
+        localPreviewUrl: URL.createObjectURL(file),
+        loading: true,
+      }));
+      setLoadingImages((prev) => [...prev, ...loadingPlaceholders]);
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const localPreviewUrl = URL.createObjectURL(file);
-        // Add loading placeholder
-        setUploadedImages((prev) => [
-          ...prev,
-          {
-            url: "",
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            width: undefined,
-            height: undefined,
-            attachment_type: "image",
-            attachment_url: "",
-            filePath: "",
-            localPreviewUrl,
-            loading: true,
-          },
-        ]);
+        const localPreviewUrl = loadingPlaceholders[i].localPreviewUrl;
         const data = await uploadImage(file);
-        setUploadedImages((prev) => {
-          // Replace the first loading image with the result
+
+        // Update loading image with result
+        setLoadingImages((prev) => {
           const idx = prev.findIndex(
             (img) => img.localPreviewUrl === localPreviewUrl && img.loading
           );
@@ -221,6 +235,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
           };
           return updated;
         });
+
         uploads.push({
           ...data,
           localPreviewUrl,
@@ -229,7 +244,11 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         });
       }
       setUploading(false);
-      // Notify parent of all uploaded images (filter out errored ones)
+
+      // Clear loading images and notify parent of successful uploads
+      setLoadingImages((prev) =>
+        prev.filter((img) => img.loading || img.error)
+      );
       onImageUploadComplete &&
         onImageUploadComplete(
           [...uploadedImages, ...uploads].filter(
@@ -247,15 +266,18 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       }
       setSelectedImages(newFiles);
       setImagePreviewUrls(newUrls);
-      setUploadedImages((prev) => {
-        const updated = prev.filter((_, i) => i !== index);
-        // Notify parent
-        onImageUploadComplete &&
-          onImageUploadComplete(
-            updated.filter((img) => !img.error && img.attachment_url)
-          );
-        return updated;
-      });
+
+      // Remove from uploaded images and notify parent
+      const updatedUploadedImages = uploadedImages.filter(
+        (_, i) => i !== index
+      );
+      onImageUploadComplete &&
+        onImageUploadComplete(
+          updatedUploadedImages.filter(
+            (img) => !img.error && img.attachment_url
+          )
+        );
+
       onImageSelected && onImageSelected(newFiles);
     };
 
@@ -296,27 +318,30 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       // Upload each new file (only the pasted ones)
       setUploading(true);
       const uploads: UploadedImageMeta[] = [];
+
+      // Add loading placeholders
+      const pasteLoadingPlaceholders = imageFiles.map((file) => ({
+        url: "",
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        width: undefined,
+        height: undefined,
+        attachment_type: "image" as const,
+        attachment_url: "",
+        filePath: "",
+        localPreviewUrl: URL.createObjectURL(file),
+        loading: true,
+      }));
+      setLoadingImages((prev) => [...prev, ...pasteLoadingPlaceholders]);
+
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
-        const localPreviewUrl = URL.createObjectURL(file);
-        setUploadedImages((prev) => [
-          ...prev,
-          {
-            url: "",
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            width: undefined,
-            height: undefined,
-            attachment_type: "image",
-            attachment_url: "",
-            filePath: "",
-            localPreviewUrl,
-            loading: true,
-          },
-        ]);
+        const localPreviewUrl = pasteLoadingPlaceholders[i].localPreviewUrl;
         const data = await uploadImage(file);
-        setUploadedImages((prev) => {
+
+        // Update loading image with result
+        setLoadingImages((prev) => {
           const idx = prev.findIndex(
             (img) => img.localPreviewUrl === localPreviewUrl && img.loading
           );
@@ -330,6 +355,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
           };
           return updated;
         });
+
         uploads.push({
           ...data,
           localPreviewUrl,
@@ -338,7 +364,11 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         });
       }
       setUploading(false);
-      // Notify parent of all uploaded images (filter out errored ones)
+
+      // Clear loading images and notify parent of successful uploads
+      setLoadingImages((prev) =>
+        prev.filter((img) => img.loading || img.error)
+      );
       onImageUploadComplete &&
         onImageUploadComplete(
           [...uploadedImages, ...uploads].filter(
@@ -348,17 +378,19 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     };
     // --- End paste image support ---
 
+    const isInputDisabled = disabled;
+
     return (
       <div
         className={`relative group  bg-transparent transition-opacity duration-300 ${
-          disabled
+          isInputDisabled
             ? "opacity-50 cursor-not-allowed"
             : "opacity-100 cursor-pointer"
         }`}
       >
-        {uploadedImages.length > 0 && (
+        {(uploadedImages.length > 0 || loadingImages.length > 0) && (
           <div className="relative left-2 top-2 z-20 flex items-center gap-2">
-            {uploadedImages.map((img, idx) => (
+            {[...uploadedImages, ...loadingImages].map((img, idx) => (
               <div
                 key={idx}
                 className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
@@ -443,21 +475,20 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               ref={ref}
               classNames={{
                 input: `bg-transparent focus:bg-transparent resize-none w-[95%] outline-none focus:outline-none  text-sm ${
-                  disabled ? " cursor-not-allowed" : "opacity-100"
+                  isInputDisabled ? " cursor-not-allowed" : "opacity-100"
                 }`,
                 inputWrapper: `bg-transparent data-[hover=true]:bg-transparent focus:outline-none ${
-                  disabled ? " cursor-not-allowed" : "opacity-100"
+                  isInputDisabled ? " cursor-not-allowed" : "opacity-100"
                 }`,
                 ...classNames,
               }}
               value={value}
               onValueChange={onValueChange}
-              disabled={disabled}
               placeholder={placeholder}
               onKeyDown={onKeyDown}
               onPaste={handlePaste}
               endContent={
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   {endContent}
                 </div>
               }
