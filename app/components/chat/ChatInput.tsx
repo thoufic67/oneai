@@ -119,15 +119,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     );
 
     useEffect(() => {
-      console.log("Images", { imagePreviewUrls, uploadedImages });
-    }, [imagePreviewUrls, uploadedImages]);
-
-    useEffect(() => {
       setIsImageGenEnabled(imageGenEnabled);
     }, [imageGenEnabled]);
 
     useEffect(() => {
-      console.log("Images", { controlledSelectedImages });
       if (controlledSelectedImages) {
         imagePreviewUrls.forEach((url) => URL.revokeObjectURL(url));
         setSelectedImages(controlledSelectedImages);
@@ -390,76 +385,87 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       >
         {(uploadedImages.length > 0 || loadingImages.length > 0) && (
           <div className="relative left-2 top-2 z-20 flex items-center gap-2">
-            {[...uploadedImages, ...loadingImages].map((img, idx) => (
-              <div
-                key={idx}
-                className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
-              >
-                <Image
-                  src={img.localPreviewUrl}
-                  alt={`Preview ${idx + 1}`}
-                  className="object-cover w-12 h-12 rounded-md cursor-pointer opacity-90"
-                  onClick={() => setOpenPreviewIdx(idx)}
-                ></Image>
-
-                {img.loading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
-                    <Spinner size="sm" />
-                  </div>
-                )}
-                {img.error && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-red-100/80">
-                    <span className="text-xs text-red-500">{img.error}</span>
-                  </div>
-                )}
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="solid"
-                  color="default"
-                  radius="full"
-                  onPress={() => handleRemoveImage(idx)}
-                  className="absolute -top-2 -right-2 scale-75 z-10"
-                  aria-label="Remove image"
+            {(() => {
+              const allImages = [...uploadedImages, ...loadingImages];
+              return allImages.map((img, idx) => (
+                <div
+                  key={idx}
+                  className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
                 >
-                  <X className="w-4 h-4 text-gray-700" />
-                </Button>
-              </div>
-            ))}
-            {/* Modal for enlarged image preview */}
-            {typeof openPreviewIdx === "number" && openPreviewIdx >= 0 && (
-              <Modal
-                isOpen={true}
-                onOpenChange={() => setOpenPreviewIdx(undefined)}
-                backdrop="blur"
-                hideCloseButton
-                className="flex items-center justify-center shadow-none"
-              >
-                <ModalContent className="bg-white/30 sm:bg-transparent overflow-visible p-4">
-                  <Tooltip content="Close">
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      color="default"
-                      className="hidden sm:flex fixed bg-white/50 top-8 right-8 "
-                      onPress={() => setOpenPreviewIdx(undefined)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </Tooltip>
+                  <Image
+                    src={img.localPreviewUrl}
+                    alt={`Preview ${idx + 1}`}
+                    className="object-cover w-12 h-12 rounded-md cursor-pointer opacity-90"
+                    onClick={() => setOpenPreviewIdx(idx)}
+                  ></Image>
 
-                  <ModalBody className="flex items-center justify-center p-0">
-                    <img
-                      src={imagePreviewUrls[openPreviewIdx]}
-                      alt={`Preview ${openPreviewIdx + 1}`}
-                      className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[80dvw] sm:max-h-[80dvh] w-full object-contain "
-                      style={{ cursor: "zoom-out" }}
-                    />
-                  </ModalBody>
-                </ModalContent>
-              </Modal>
-            )}
+                  {img.loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                      <Spinner size="sm" />
+                    </div>
+                  )}
+                  {img.error && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-red-100/80">
+                      <span className="text-xs text-red-500">{img.error}</span>
+                    </div>
+                  )}
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="solid"
+                    color="default"
+                    radius="full"
+                    onPress={() => handleRemoveImage(idx)}
+                    className="absolute -top-2 -right-2 scale-75 z-10"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4 text-gray-700" />
+                  </Button>
+                </div>
+              ));
+            })()}
+            {/* Modal for enlarged image preview */}
+            {typeof openPreviewIdx === "number" &&
+              openPreviewIdx >= 0 &&
+              (() => {
+                const allImages = [...uploadedImages, ...loadingImages];
+                const previewImg = allImages[openPreviewIdx];
+                return (
+                  <Modal
+                    isOpen={true}
+                    onOpenChange={() => setOpenPreviewIdx(undefined)}
+                    backdrop="blur"
+                    hideCloseButton
+                    className="flex items-center justify-center shadow-none"
+                  >
+                    <ModalContent className="bg-white/30 sm:bg-transparent overflow-visible p-4">
+                      <Tooltip content="Close">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="flat"
+                          color="default"
+                          className="hidden sm:flex fixed bg-white/50 top-8 right-8 "
+                          onPress={() => setOpenPreviewIdx(undefined)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
+
+                      <ModalBody className="flex items-center justify-center p-0">
+                        {previewImg && (
+                          <img
+                            src={previewImg.localPreviewUrl}
+                            alt={`Preview ${openPreviewIdx + 1}`}
+                            className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[80dvw] sm:max-h-[80dvh] w-full object-contain "
+                            style={{ cursor: "zoom-out" }}
+                          />
+                        )}
+                      </ModalBody>
+                    </ModalContent>
+                  </Modal>
+                );
+              })()}
           </div>
         )}
         <div
