@@ -124,6 +124,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
     null
   );
   const [inputMessage, setInputMessage] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load initial values from session storage with expiration
   const [selectedModel, setSelectedModel] = useState<ModelType>(() => {
@@ -192,15 +193,21 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
   const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>([]);
 
   // Cleanup function to revoke object URLs
-  const cleanupImagePreviews = () => {
+  const cleanupImagePreviews = (
+    imagesToCleanup?: UploadedImageMeta[],
+    filesToCleanup?: File[]
+  ) => {
+    const uploadedToClean = imagesToCleanup || uploadedImages;
+    const filesToClean = filesToCleanup || selectedImageFiles;
+
     // Clean up preview URLs from uploadedImages
-    uploadedImages.forEach((img) => {
+    uploadedToClean.forEach((img) => {
       if (img.localPreviewUrl) {
         URL.revokeObjectURL(img.localPreviewUrl);
       }
     });
     // Clean up preview URLs from selectedImageFiles
-    selectedImageFiles.forEach((file) => {
+    filesToClean.forEach((file) => {
       try {
         URL.revokeObjectURL(URL.createObjectURL(file));
       } catch {}
@@ -297,9 +304,12 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInputMessage("");
+
+      // Don't cleanup images yet - wait for successful completion
+      const tempUploadedImages = [...uploadedImages];
+      const tempSelectedImageFiles = [...selectedImageFiles];
       setUploadedImages([]);
       setSelectedImageFiles([]);
-      cleanupImagePreviews();
 
       // Prepare message history for API call
       const messageHistory: Message[] = updatedMessages;
@@ -385,6 +395,8 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
             setStreamingMessage(null);
             setIsLoading(false);
             inputRef.current?.focus();
+            // Cleanup image previews on successful completion
+            cleanupImagePreviews(tempUploadedImages, tempSelectedImageFiles);
           }
         );
         setIsLoading(false);
@@ -454,6 +466,9 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
 
           // Focus the chat input after response is complete
           inputRef.current?.focus();
+
+          // Cleanup image previews on successful completion
+          cleanupImagePreviews(tempUploadedImages, tempSelectedImageFiles);
         }
       );
     } catch (error) {
@@ -465,15 +480,9 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
       setInputMessage(prevInputMessage);
       setUploadedImages(prevUploadedImages);
       setSelectedImageFiles(prevSelectedImageFiles);
-      // Clean up any new previews and restore previous previews
-      cleanupImagePreviews();
-      // Restore previews for previous uploaded images
-      prevUploadedImages.forEach((img) => {
-        if (img.localPreviewUrl) {
-          // Recreate object URL if needed (browser will handle duplicates)
-          URL.createObjectURL(new File([], img.filePath));
-        }
-      });
+
+      // No need to cleanup or recreate - the original state already has valid object URLs
+      // since we didn't cleanup on the original arrays yet
     } finally {
       setIsLoading(false);
     }
@@ -540,7 +549,7 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
             variant="ghost"
             radius="full"
             onPress={handleSubmit}
-            isDisabled={isLoading}
+            isDisabled={isLoading || isUploading}
           >
             <Send className="h-4 w-4" />
           </Button>
@@ -556,6 +565,8 @@ export function Chat({ initialMessages = [], initialConversation }: ChatProps) {
         onImageUploadComplete={setUploadedImages}
         onImageCleanup={cleanupImagePreviews}
         selectedImages={selectedImageFiles}
+        uploadedImages={uploadedImages}
+        onUploadingChange={setIsUploading}
       />
     </div>
   );

@@ -9,7 +9,7 @@ import React from "react";
 interface UsageTabProps {
   quotaData: any;
   quotaLoading: boolean;
-  quotaError: boolean;
+  quotaError: string | null;
   formatResetDate: (date: Date) => number;
 }
 
@@ -52,7 +52,9 @@ const UsageTab: React.FC<UsageTabProps> = ({
               </div>
             ) : quotaError ? (
               <div className="text-danger text-center py-8">
-                Failed to load quota information
+                {typeof quotaError === "string"
+                  ? quotaError
+                  : "Failed to load quota information"}
               </div>
             ) : (
               <div>

@@ -74,6 +74,8 @@ interface ChatInputProps {
   onImageUploadComplete?: (images: UploadedImageMeta[]) => void;
   onImageCleanup?: () => void;
   selectedImages?: File[];
+  uploadedImages?: UploadedImageMeta[];
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
@@ -98,25 +100,27 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       onImageUploadComplete,
       onImageCleanup,
       selectedImages: controlledSelectedImages,
+      uploadedImages: controlledUploadedImages,
+      onUploadingChange,
     } = props;
 
     const [isWebSearchEnabled, setIsWebSearchEnabled] =
       useState(webSearchEnabled);
     const [isImageGenEnabled, setIsImageGenEnabled] = useState(imageGenEnabled);
 
-    useEffect(() => {
-      setIsImageGenEnabled(imageGenEnabled);
-    }, [imageGenEnabled]);
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
-    const [uploadedImages, setUploadedImages] = useState<UploadedImageMeta[]>(
-      []
-    );
+    const uploadedImages = controlledUploadedImages || [];
+    const [loadingImages, setLoadingImages] = useState<UploadedImageMeta[]>([]);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [openPreviewIdx, setOpenPreviewIdx] = useState<number | undefined>(
       undefined
     );
+
+    useEffect(() => {
+      setIsImageGenEnabled(imageGenEnabled);
+    }, [imageGenEnabled]);
 
     useEffect(() => {
       if (controlledSelectedImages) {
@@ -127,6 +131,10 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         );
       }
     }, [controlledSelectedImages]);
+
+    useEffect(() => {
+      if (onUploadingChange) onUploadingChange(uploading);
+    }, [uploading, onUploadingChange]);
 
     const toggleWebSearch = () => {
       if (isImageGenEnabled) {
@@ -185,29 +193,30 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       // Upload each new file
       setUploading(true);
       const uploads: UploadedImageMeta[] = [];
+
+      // Add loading placeholders
+      const loadingPlaceholders = files.map((file) => ({
+        url: "",
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        width: undefined,
+        height: undefined,
+        attachment_type: "image" as const,
+        attachment_url: "",
+        filePath: "",
+        localPreviewUrl: URL.createObjectURL(file),
+        loading: true,
+      }));
+      setLoadingImages((prev) => [...prev, ...loadingPlaceholders]);
+
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const localPreviewUrl = URL.createObjectURL(file);
-        // Add loading placeholder
-        setUploadedImages((prev) => [
-          ...prev,
-          {
-            url: "",
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            width: undefined,
-            height: undefined,
-            attachment_type: "image",
-            attachment_url: "",
-            filePath: "",
-            localPreviewUrl,
-            loading: true,
-          },
-        ]);
+        const localPreviewUrl = loadingPlaceholders[i].localPreviewUrl;
         const data = await uploadImage(file);
-        setUploadedImages((prev) => {
-          // Replace the first loading image with the result
+
+        // Update loading image with result
+        setLoadingImages((prev) => {
           const idx = prev.findIndex(
             (img) => img.localPreviewUrl === localPreviewUrl && img.loading
           );
@@ -221,6 +230,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
           };
           return updated;
         });
+
         uploads.push({
           ...data,
           localPreviewUrl,
@@ -229,7 +239,11 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         });
       }
       setUploading(false);
-      // Notify parent of all uploaded images (filter out errored ones)
+
+      // Clear loading images and notify parent of successful uploads
+      setLoadingImages((prev) =>
+        prev.filter((img) => img.loading || img.error)
+      );
       onImageUploadComplete &&
         onImageUploadComplete(
           [...uploadedImages, ...uploads].filter(
@@ -247,15 +261,18 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       }
       setSelectedImages(newFiles);
       setImagePreviewUrls(newUrls);
-      setUploadedImages((prev) => {
-        const updated = prev.filter((_, i) => i !== index);
-        // Notify parent
-        onImageUploadComplete &&
-          onImageUploadComplete(
-            updated.filter((img) => !img.error && img.attachment_url)
-          );
-        return updated;
-      });
+
+      // Remove from uploaded images and notify parent
+      const updatedUploadedImages = uploadedImages.filter(
+        (_, i) => i !== index
+      );
+      onImageUploadComplete &&
+        onImageUploadComplete(
+          updatedUploadedImages.filter(
+            (img) => !img.error && img.attachment_url
+          )
+        );
+
       onImageSelected && onImageSelected(newFiles);
     };
 
@@ -296,27 +313,30 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       // Upload each new file (only the pasted ones)
       setUploading(true);
       const uploads: UploadedImageMeta[] = [];
+
+      // Add loading placeholders
+      const pasteLoadingPlaceholders = imageFiles.map((file) => ({
+        url: "",
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        width: undefined,
+        height: undefined,
+        attachment_type: "image" as const,
+        attachment_url: "",
+        filePath: "",
+        localPreviewUrl: URL.createObjectURL(file),
+        loading: true,
+      }));
+      setLoadingImages((prev) => [...prev, ...pasteLoadingPlaceholders]);
+
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
-        const localPreviewUrl = URL.createObjectURL(file);
-        setUploadedImages((prev) => [
-          ...prev,
-          {
-            url: "",
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            width: undefined,
-            height: undefined,
-            attachment_type: "image",
-            attachment_url: "",
-            filePath: "",
-            localPreviewUrl,
-            loading: true,
-          },
-        ]);
+        const localPreviewUrl = pasteLoadingPlaceholders[i].localPreviewUrl;
         const data = await uploadImage(file);
-        setUploadedImages((prev) => {
+
+        // Update loading image with result
+        setLoadingImages((prev) => {
           const idx = prev.findIndex(
             (img) => img.localPreviewUrl === localPreviewUrl && img.loading
           );
@@ -330,6 +350,7 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
           };
           return updated;
         });
+
         uploads.push({
           ...data,
           localPreviewUrl,
@@ -338,7 +359,11 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
         });
       }
       setUploading(false);
-      // Notify parent of all uploaded images (filter out errored ones)
+
+      // Clear loading images and notify parent of successful uploads
+      setLoadingImages((prev) =>
+        prev.filter((img) => img.loading || img.error)
+      );
       onImageUploadComplete &&
         onImageUploadComplete(
           [...uploadedImages, ...uploads].filter(
@@ -348,86 +373,99 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
     };
     // --- End paste image support ---
 
+    const isInputDisabled = disabled;
+
     return (
       <div
         className={`relative group  bg-transparent transition-opacity duration-300 ${
-          disabled
+          isInputDisabled
             ? "opacity-50 cursor-not-allowed"
             : "opacity-100 cursor-pointer"
         }`}
       >
-        {uploadedImages.length > 0 && (
+        {(uploadedImages.length > 0 || loadingImages.length > 0) && (
           <div className="relative left-2 top-2 z-20 flex items-center gap-2">
-            {uploadedImages.map((img, idx) => (
-              <div
-                key={idx}
-                className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
-              >
-                <Image
-                  src={img.localPreviewUrl}
-                  alt={`Preview ${idx + 1}`}
-                  className="object-cover w-12 h-12 rounded-md cursor-pointer opacity-90"
-                  onClick={() => setOpenPreviewIdx(idx)}
-                ></Image>
-
-                {img.loading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
-                    <Spinner size="sm" />
-                  </div>
-                )}
-                {img.error && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-red-100/80">
-                    <span className="text-xs text-red-500">{img.error}</span>
-                  </div>
-                )}
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="solid"
-                  color="default"
-                  radius="full"
-                  onPress={() => handleRemoveImage(idx)}
-                  className="absolute -top-2 -right-2 scale-75 z-10"
-                  aria-label="Remove image"
+            {(() => {
+              const allImages = [...uploadedImages, ...loadingImages];
+              return allImages.map((img, idx) => (
+                <div
+                  key={idx}
+                  className="relative w-12 h-12 rounded-md overflow-visible border border-default-300 shadow-md"
                 >
-                  <X className="w-4 h-4 text-gray-700" />
-                </Button>
-              </div>
-            ))}
-            {/* Modal for enlarged image preview */}
-            {typeof openPreviewIdx === "number" && openPreviewIdx >= 0 && (
-              <Modal
-                isOpen={true}
-                onOpenChange={() => setOpenPreviewIdx(undefined)}
-                backdrop="blur"
-                hideCloseButton
-                className="flex items-center justify-center shadow-none"
-              >
-                <ModalContent className="bg-white/30 sm:bg-transparent overflow-visible p-4">
-                  <Tooltip content="Close">
-                    <Button
-                      isIconOnly
-                      size="sm"
-                      variant="flat"
-                      color="default"
-                      className="hidden sm:flex fixed bg-white/50 top-8 right-8 "
-                      onPress={() => setOpenPreviewIdx(undefined)}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </Tooltip>
+                  <Image
+                    src={img.localPreviewUrl}
+                    alt={`Preview ${idx + 1}`}
+                    className="object-cover w-12 h-12 rounded-md cursor-pointer opacity-90"
+                    onClick={() => setOpenPreviewIdx(idx)}
+                  ></Image>
 
-                  <ModalBody className="flex items-center justify-center p-0">
-                    <img
-                      src={imagePreviewUrls[openPreviewIdx]}
-                      alt={`Preview ${openPreviewIdx + 1}`}
-                      className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[80dvw] sm:max-h-[80dvh] w-full object-contain "
-                      style={{ cursor: "zoom-out" }}
-                    />
-                  </ModalBody>
-                </ModalContent>
-              </Modal>
-            )}
+                  {img.loading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                      <Spinner size="sm" />
+                    </div>
+                  )}
+                  {img.error && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-red-100/80">
+                      <span className="text-xs text-red-500">{img.error}</span>
+                    </div>
+                  )}
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="solid"
+                    color="default"
+                    radius="full"
+                    onPress={() => handleRemoveImage(idx)}
+                    className="absolute -top-2 -right-2 scale-75 z-10"
+                    aria-label="Remove image"
+                  >
+                    <X className="w-4 h-4 text-gray-700" />
+                  </Button>
+                </div>
+              ));
+            })()}
+            {/* Modal for enlarged image preview */}
+            {typeof openPreviewIdx === "number" &&
+              openPreviewIdx >= 0 &&
+              (() => {
+                const allImages = [...uploadedImages, ...loadingImages];
+                const previewImg = allImages[openPreviewIdx];
+                return (
+                  <Modal
+                    isOpen={true}
+                    onOpenChange={() => setOpenPreviewIdx(undefined)}
+                    backdrop="blur"
+                    hideCloseButton
+                    className="flex items-center justify-center shadow-none"
+                  >
+                    <ModalContent className="bg-white/30 sm:bg-transparent overflow-visible p-4">
+                      <Tooltip content="Close">
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="flat"
+                          color="default"
+                          className="hidden sm:flex fixed bg-white/50 top-8 right-8 "
+                          onPress={() => setOpenPreviewIdx(undefined)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
+
+                      <ModalBody className="flex items-center justify-center p-0">
+                        {previewImg && (
+                          <img
+                            src={previewImg.localPreviewUrl}
+                            alt={`Preview ${openPreviewIdx + 1}`}
+                            className="rounded-lg min-w-[90dvw] max-w-[95dvw] sm:min-w-[50dvw] sm:max-w-[80dvw] sm:max-h-[80dvh] w-full object-contain "
+                            style={{ cursor: "zoom-out" }}
+                          />
+                        )}
+                      </ModalBody>
+                    </ModalContent>
+                  </Modal>
+                );
+              })()}
           </div>
         )}
         <div
@@ -443,21 +481,20 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
               ref={ref}
               classNames={{
                 input: `bg-transparent focus:bg-transparent resize-none w-[95%] outline-none focus:outline-none  text-sm ${
-                  disabled ? " cursor-not-allowed" : "opacity-100"
+                  isInputDisabled ? " cursor-not-allowed" : "opacity-100"
                 }`,
                 inputWrapper: `bg-transparent data-[hover=true]:bg-transparent focus:outline-none ${
-                  disabled ? " cursor-not-allowed" : "opacity-100"
+                  isInputDisabled ? " cursor-not-allowed" : "opacity-100"
                 }`,
                 ...classNames,
               }}
               value={value}
               onValueChange={onValueChange}
-              disabled={disabled}
               placeholder={placeholder}
               onKeyDown={onKeyDown}
               onPaste={handlePaste}
               endContent={
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
                   {endContent}
                 </div>
               }
