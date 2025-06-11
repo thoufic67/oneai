@@ -241,9 +241,16 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       setUploading(false);
 
       // Clear loading images and notify parent of successful uploads
-      setLoadingImages((prev) =>
-        prev.filter((img) => img.loading || img.error)
-      );
+      setLoadingImages((prev) => {
+        // Revoke object URLs for images that are being removed
+        const next = prev.filter((img) => img.loading || img.error);
+        prev.forEach((img) => {
+          if (!next.includes(img)) {
+            URL.revokeObjectURL(img.localPreviewUrl);
+          }
+        });
+        return next;
+      });
       onImageUploadComplete &&
         onImageUploadComplete(
           [...uploadedImages, ...uploads].filter(
@@ -361,9 +368,16 @@ const ChatInput = forwardRef<HTMLTextAreaElement, ChatInputProps>(
       setUploading(false);
 
       // Clear loading images and notify parent of successful uploads
-      setLoadingImages((prev) =>
-        prev.filter((img) => img.loading || img.error)
-      );
+      setLoadingImages((prev) => {
+        // Revoke object URLs for images that are being removed
+        const next = prev.filter((img) => img.loading || img.error);
+        prev.forEach((img) => {
+          if (!next.includes(img)) {
+            URL.revokeObjectURL(img.localPreviewUrl);
+          }
+        });
+        return next;
+      });
       onImageUploadComplete &&
         onImageUploadComplete(
           [...uploadedImages, ...uploads].filter(
