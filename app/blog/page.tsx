@@ -70,6 +70,9 @@ export async function generateMetadata() {
     title: "Blog",
     description:
       "Insights, updates, and news about Aiflo's unified AI platform. Explore features, product updates, and our vision for the future of AI accessibility.",
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/blog`,
+    },
     openGraph: {
       title: "Blog",
       description:

@@ -10,12 +10,23 @@ import { changelogEntries } from "@/types/changelog";
 import { Sparkles, Layers, Rocket } from "lucide-react";
 import { useState } from "react";
 import { MarkdownRenderer } from "@/app/components/shared/MarkdownRenderer";
+import { Metadata } from "next";
 
 const iconMap: Record<string, JSX.Element> = {
   sparkles: <Sparkles className="w-6 h-6 text-primary" />,
   layers: <Layers className="w-6 h-6 text-primary" />,
   rocket: <Rocket className="w-6 h-6 text-primary" />,
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Changelog",
+    description: "Track the latest updates and improvements to Aiflo.",
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/changelog`,
+    },
+  };
+}
 
 export default function ChangelogPage() {
   const [expanded, setExpanded] = useState<string | null>(null);

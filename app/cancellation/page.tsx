@@ -3,6 +3,17 @@
 
 import { title, subtitle } from "@/app/components/primitives";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Cancellation & Refunds",
+    description: "Learn about Aiflo's cancellation and refund policies.",
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/cancellation`,
+    },
+  };
+}
 
 export default function CancellationPolicyPage() {
   return (

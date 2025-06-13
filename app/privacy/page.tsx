@@ -3,6 +3,18 @@
 
 import { title, subtitle } from "@/app/components/primitives";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Privacy Policy",
+    description:
+      "Aiflo's privacy policy - Learn how we protect your data and privacy.",
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/privacy`,
+    },
+  };
+}
 
 export default function PrivacyPolicyPage() {
   return (

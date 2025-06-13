@@ -24,6 +24,9 @@ export async function generateMetadata() {
   return {
     title: "Pricing",
     description: `Pricing for Aiflo, starts at ${PLANS[0].price}$ / month`,
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+    },
     openGraph: {
       title: "Pricing",
       description: `Pricing for Aiflo, starts at ${PLANS[0].price}$ / month`,

@@ -3,6 +3,18 @@
 
 import { title, subtitle } from "@/app/components/primitives";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Terms of Service",
+    description:
+      "Aiflo's terms of service - Learn about our terms and conditions.",
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/terms`,
+    },
+  };
+}
 
 export default function TermsOfServicePage() {
   return (

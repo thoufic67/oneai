@@ -71,5 +71,8 @@ export function generateMetadata(): Metadata {
   return {
     title: siteConfig.name,
     description: siteConfig.description,
+    alternates: {
+      canonical: `${process.env.NEXT_PUBLIC_APP_URL}/`,
+    },
   };
 }
