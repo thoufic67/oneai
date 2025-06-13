@@ -65,7 +65,6 @@ export default function Home() {
     </main>
   );
 }
-
 // Add this function to dynamically set metadata for the landing page
 export function generateMetadata(): Metadata {
   return {
