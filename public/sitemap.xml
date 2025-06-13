@@ -5,58 +5,58 @@
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://aiflo.space/</loc>
+    <loc>https://www.aiflo.space/</loc>
     <priority>1.0</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/pricing</loc>
+    <loc>https://www.aiflo.space/pricing</loc>
     <priority>0.9</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/blog</loc>
+    <loc>https://www.aiflo.space/blog</loc>
     <priority>0.9</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/about</loc>
+    <loc>https://www.aiflo.space/about</loc>
     <priority>0.9</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/privacy</loc>
+    <loc>https://www.aiflo.space/privacy</loc>
     <priority>0.9</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/terms</loc>
+    <loc>https://www.aiflo.space/terms</loc>
     <priority>0.9</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/cancellation</loc>
+    <loc>https://www.aiflo.space/cancellation</loc>
     <priority>0.9</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/changelog</loc>
+    <loc>https://www.aiflo.space/changelog</loc>
     <priority>0.8</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <!-- Blog post URLs from types/blog.tsx -->
   <url>
-    <loc>https://aiflo.space/blog/features-overview</loc>
+    <loc>https://www.aiflo.space/blog/features-overview</loc>
     <priority>0.6</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/blog/aiflo-use-cases</loc>
+    <loc>https://www.aiflo.space/blog/aiflo-use-cases</loc>
     <priority>0.6</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
   <url>
-    <loc>https://aiflo.space/blog/aiflo-vs-magai-vs-mammouth</loc>
+    <loc>https://www.aiflo.space/blog/aiflo-vs-magai-vs-mammouth</loc>
     <priority>0.6</priority>
     <lastmod>2025-06-10</lastmod>
   </url>
